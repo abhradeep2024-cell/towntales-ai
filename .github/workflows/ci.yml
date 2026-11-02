@@ -41,7 +41,7 @@ jobs:
         run: npm run build && npm run typecheck
       - name: Run unit tests
         run: npm test
-      - name: Wait for deployed Render API and verify ChatGPT Action schema
+      - name: Wait for deployed Render API and verify ChatGPT Action schema and database
         run: |
           ready=0
           for attempt in $(seq 1 24); do
@@ -56,11 +56,20 @@ jobs:
           done
           test "$ready" -eq 1
           curl -fsS --max-time 12 https://film-studio-api.onrender.com/ | grep -q '"ok":true'
-          health_code=$(curl -sS --max-time 12 -o /tmp/film-studio-health.json -w '%{http_code}' https://film-studio-api.onrender.com/health || true)
-          echo "Render /health HTTP status: $health_code"
-          cat /tmp/film-studio-health.json || true
-          if [ "$health_code" != "200" ]; then
-            echo "::warning::Render API is reachable, but Supabase health is not green. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Render environment variables."
+          db_ready=0
+          for attempt in $(seq 1 6); do
+            health_code=$(curl -sS --max-time 15 -o /tmp/film-studio-health.json -w '%{http_code}' https://film-studio-api.onrender.com/health || true)
+            echo "Render /health attempt $attempt/6: HTTP $health_code"
+            cat /tmp/film-studio-health.json || true
+            if [ "$health_code" = "200" ] && jq -e '.ok == true and .databaseConfigured == true and .databaseConnected == true' /tmp/film-studio-health.json >/dev/null; then
+              db_ready=1
+              break
+            fi
+            sleep 10
+          done
+          if [ "$db_ready" != "1" ]; then
+            echo "::error::Render API is reachable, but Supabase database health did not pass. Verify SUPABASE_URL and the matching SUPABASE_SECRET_KEY in Render."
+            exit 1
           fi
       - name: Ensure Remotion browser
         working-directory: apps/renderer
