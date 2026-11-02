@@ -44,11 +44,11 @@ describe('ProductionSpecSchema',() => {
   });
   it('derives a missing portrait dimension from the supplied one',() => {
     const {height,...base} = valid;
-    const result = ProductionSpecSchema.safeParse({...base,aspectRatio:'9:16'});
+    const result = ProductionSpecSchema.safeParse({...base,width:720,aspectRatio:'9:16'});
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.width).toBe(1280);
-      expect(result.data.height).toBe(2276);
+      expect(result.data.width).toBe(720);
+      expect(result.data.height).toBe(1280);
     }
   });
   it('normalizes the default music and voice settings',() => {
