@@ -64,7 +64,7 @@ app.get('/health', async (_request, reply) => {
   if (!supabase) return reply.code(503).send({ok:false,service:'film-studio-api',databaseConfigured:false,databaseConnected:false});
   const {error} = await supabase.from('film_studio_jobs').select('id',{head:true}).limit(1);
   if (error) {
-    app.log.error({code:error.code,message:error.message},'Supabase health query failed');
+    app.log.error({code:error.code,message:error.message,details:error.details,hint:error.hint,status:error.status},'Supabase health query failed');
     return reply.code(503).send({ok:false,service:'film-studio-api',databaseConfigured:true,databaseConnected:false});
   }
   return {ok:true,service:'film-studio-api',databaseConfigured:true,databaseConnected:true};
