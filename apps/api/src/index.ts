@@ -8,6 +8,32 @@ const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
 const supabaseUrl = env('SUPABASE_URL');
 const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY');
+const githubActionsToken = env('GITHUB_ACTIONS_TOKEN');
+
+async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: string) => void }) {
+  if (!githubActionsToken) {
+    requestLog?.warn('GITHUB_ACTIONS_TOKEN is not configured; queued jobs will be picked up by the five-minute scheduled renderer.');
+    return 'scheduled_fallback' as const;
+  }
+  try {
+    const response = await fetch('https://api.github.com/repos/abhradeep2024-cell/towntales-ai/actions/workflows/render-worker.yml/dispatches', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${githubActionsToken}`,
+        accept: 'application/vnd.github+json',
+        'x-github-api-version': '2026-03-10',
+        'content-type': 'application/json',
+        'user-agent': 'chatgpt-film-studio'
+      },
+      body: JSON.stringify({ ref: 'main' })
+    });
+    if (!response.ok) throw new Error(`GitHub workflow dispatch failed (${response.status}): ${(await response.text()).slice(0, 500)}`);
+    return 'dispatched' as const;
+  } catch (error) {
+    requestLog?.warn({ err: error }, 'Renderer dispatch failed; scheduled queue polling remains enabled.');
+    return 'scheduled_fallback' as const;
+  }
+}
 const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'film-studio-private';
 let supabase: SupabaseClient | undefined;
 if (supabaseUrl && serviceKey) supabase = createClient(supabaseUrl, serviceKey, {auth:{persistSession:false,autoRefreshToken:false}});
@@ -36,7 +62,8 @@ app.post('/v1/jobs', async (request, reply) => {
       production_specification:parsed.data.production
     }).select('id,status,progress,created_at').single();
     if (error) throw error;
-    return reply.code(202).send(data);
+    const renderDispatch = await dispatchRenderer(request.log);
+    return reply.code(202).send({ ...data, renderDispatch });
   } catch (error) {
     request.log.error(error); return reply.code(503).send({error:'job_creation_failed'});
   }
@@ -115,7 +142,8 @@ app.post('/v1/jobs/:id/retry', async (request, reply) => {
     }).eq('id', id).eq('status', 'failed').eq('attempt_count', existing.attempt_count).select('id,status,progress').maybeSingle();
     if (error) throw error;
     if (!data) return reply.code(409).send({ error: 'job_state_changed_retry_again' });
-    return reply.code(202).send(data);
+    const renderDispatch = await dispatchRenderer(request.log);
+    return reply.code(202).send({ ...data, renderDispatch });
   } catch (error) {
     request.log.error(error);
     return reply.code(503).send({ error: 'job_retry_failed' });
