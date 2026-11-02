@@ -27,4 +27,14 @@ Requires Node.js 22+, FFmpeg, Python 3.11+, and browser support.
 
 See docs/ARCHITECTURE.md, docs/PRODUCT_REQUIREMENTS.md, docs/LEMO_INTEGRATION.md, docs/CHATGPT_ACTIONS_SETUP.md, docs/DEPLOYMENT.md and docs/IMPLEMENTATION_STATUS.md.
 
-Status: the earlier five-second Remotion render is verified. Multi-scene, vertical, voice/music, Lemo page rendering, live database access and GPT Action end-to-end runs are pending CI and deployment checks.
+## Verification status (2026-11-03)
+- Latest recorded Film Studio CI run passed build, type checks, unit tests and the six render smoke outputs (landscape, audio/voice, multi-scene, vertical, Lemo page and Art Deco engine).
+- Render API deployment is live and its root endpoint responds HTTP 200.
+- Supabase authentication after the owner's latest secret-key replacement has not yet been verified by a fresh database health request. Do not treat a live Render deployment or a passing render-only CI run as proof of database connectivity.
+- A production job has not yet been verified end to end through queue claim, rendering, private bucket upload, QC, signed URL generation and playback.
+- GPT Action configuration and authenticated Action calls still require owner-side setup and testing.
+
+## Known limits
+- A Lemo style still requires ChatGPT to generate a film-specific Lemo page using the selected style guide and engine source. The repository does not contain 66 prebuilt job-specific templates.
+- Procedural music is a basic original pad; sophisticated sampled scores, action-timed foley, Whisper transcript validation and iterative auto-QC remain future work.
+- A successful CI artifact is not the same as a verified Supabase output URL from a live Render job.
