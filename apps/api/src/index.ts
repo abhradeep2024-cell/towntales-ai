@@ -4,6 +4,7 @@ import { CreateJobSchema } from '@film-studio/contracts';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const app = Fastify({logger: true, bodyLimit: 4_000_000});
@@ -14,11 +15,7 @@ const supabaseUrl = env('SUPABASE_URL');
 // Prefer the current opaque secret key. Supabase requires sb_secret_* keys in
 // the apikey header only; supabase-js normally mirrors its key into Authorization.
 const serviceKey = env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
-const supabaseApiKeyFetch: typeof fetch = async (input, init) => {
-  const headers = new Headers(init?.headers);
-  headers.delete('Authorization');
-  return fetch(input, { ...init, headers });
-};
+const supabaseApiKeyFetch = createSupabaseApiKeyFetch();
 const githubActionsToken = env('GITHUB_ACTIONS_TOKEN');
 
 async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: string) => void }) {
