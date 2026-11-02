@@ -41,12 +41,22 @@ jobs:
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         with:
           node-version: 22
-      - name: Install system FFmpeg
+      - name: Install system FFmpeg and local voice fallback
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng
+      - name: Install application dependencies
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         run: npm install --no-audit --no-fund
+      - name: Install Lemo-Opuscar renderer dependencies
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: |
+          npm --prefix vendor/lemo-opuscar install --no-audit --no-fund
+          node vendor/lemo-opuscar/node_modules/playwright-core/cli.js install chromium-headless-shell
+      - name: Install optional Edge TTS
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --disable-pip-version-check edge-tts
       - name: Build application workspaces
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         run: npm run build
@@ -56,4 +66,6 @@ jobs:
         run: npx remotion browser ensure
       - name: Claim and render one queued job
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        env:
+          PYTHON_EXECUTABLE: .venv/bin/python
         run: npm run render:worker:once --workspace=apps/renderer
