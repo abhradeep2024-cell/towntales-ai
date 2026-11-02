@@ -51,11 +51,12 @@ export const ProductionSpecSchema = z.object({
   audio: z.object({
     musicEnabled: z.boolean().default(true),
     voiceEnabled: z.boolean().default(true),
+    burnSubtitles: z.boolean().default(false),
     voice: z.string().min(1).max(120).default('en-US-AriaNeural'),
     musicStyle: z.enum(['ambient','uplifting','suspense']).default('ambient'),
     musicVolume: z.number().min(0).max(0.5).default(0.12),
     voiceVolume: z.number().min(0).max(2).default(1)
-  }).default({musicEnabled:true,voiceEnabled:true,voice:'en-US-AriaNeural',musicStyle:'ambient',musicVolume:0.12,voiceVolume:1})
+  }).default({musicEnabled:true,voiceEnabled:true,burnSubtitles:false,voice:'en-US-AriaNeural',musicStyle:'ambient',musicVolume:0.12,voiceVolume:1})
 }).superRefine((spec, ctx) => {
   const sceneDuration = spec.scenes.reduce((sum, scene) => sum + scene.durationSeconds, 0);
   if (Math.abs(sceneDuration - spec.durationSeconds) > 1) ctx.addIssue({code: 'custom', path: ['scenes'], message: 'Scene durations must add up to the requested runtime (±1 second).'});
