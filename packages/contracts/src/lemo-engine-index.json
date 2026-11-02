@@ -1,0 +1,3684 @@
+{
+  "schemaVersion": 1,
+  "source": "https://github.com/lemomo-ai/lemo-opuscar",
+  "sourceCommit": "bebbbe1aa92a3cb4bb6f83500e61b23a17d1aa00",
+  "licence": "MIT",
+  "description": "Pinned style-demo source index. Engine files are preferred; demo-reference files are reference-only and contain story-specific material that must not be copied into new films.",
+  "styleCount": 66,
+  "fileCount": 708,
+  "maxFileBytes": 40000,
+  "styles": {
+    "archive-lighttable": [
+      {
+        "path": "assets/tex/layers.json",
+        "bytes": 83,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 6318,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1078,
+        "role": "bootstrap"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 4361,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/cuecheck.mjs",
+        "bytes": 989,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 2298,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1807,
+        "role": "demo-reference"
+      }
+    ],
+    "art-deco": [
+      {
+        "path": "engine/bulbs.js",
+        "bytes": 10790,
+        "role": "engine"
+      },
+      {
+        "path": "engine/cam.js",
+        "bytes": 1706,
+        "role": "engine"
+      },
+      {
+        "path": "engine/deco.js",
+        "bytes": 21500,
+        "role": "engine"
+      },
+      {
+        "path": "engine/type.js",
+        "bytes": 16867,
+        "role": "engine"
+      },
+      {
+        "path": "film.js",
+        "bytes": 6642,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 13939,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 388,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 961,
+        "role": "bootstrap"
+      },
+      {
+        "path": "shots_kitchen.js",
+        "bytes": 11826,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots_lobby.js",
+        "bytes": 5677,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots_misc.js",
+        "bytes": 12789,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots_out.js",
+        "bytes": 3214,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots_roof.js",
+        "bytes": 14889,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots_stairs.js",
+        "bytes": 3687,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3430,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/dump_timeline.mjs",
+        "bytes": 635,
+        "role": "demo-reference"
+      }
+    ],
+    "ascii-crt": [
+      {
+        "path": "art.js",
+        "bytes": 13453,
+        "role": "demo-reference"
+      },
+      {
+        "path": "crt.js",
+        "bytes": 9310,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 341,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 36385,
+        "role": "bootstrap"
+      },
+      {
+        "path": "term.js",
+        "bytes": 6988,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 554,
+        "role": "demo-reference"
+      }
+    ],
+    "backrooms": [
+      {
+        "path": "figures.js",
+        "bytes": 5200,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 639,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 11732,
+        "role": "bootstrap"
+      },
+      {
+        "path": "osd.js",
+        "bytes": 5046,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 4572,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 5998,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.js",
+        "bytes": 3423,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tex.js",
+        "bytes": 10774,
+        "role": "demo-reference"
+      },
+      {
+        "path": "thing2d.js",
+        "bytes": 4966,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vhs.js",
+        "bytes": 6601,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voices_fx/words.json",
+        "bytes": 1872,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 24627,
+        "role": "demo-reference"
+      }
+    ],
+    "blueprint": [
+      {
+        "path": "draw.js",
+        "bytes": 14459,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 26942,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 343,
+        "role": "bootstrap"
+      },
+      {
+        "path": "machine.js",
+        "bytes": 24965,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 6532,
+        "role": "bootstrap"
+      },
+      {
+        "path": "paper.js",
+        "bytes": 8655,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 20986,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.json",
+        "bytes": 762,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 1022,
+        "role": "demo-reference"
+      }
+    ],
+    "brick-toy": [
+      {
+        "path": "actors.js",
+        "bytes": 4221,
+        "role": "demo-reference"
+      },
+      {
+        "path": "bricks.js",
+        "bytes": 4915,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 572,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 21361,
+        "role": "bootstrap"
+      },
+      {
+        "path": "rockets.js",
+        "bytes": 19840,
+        "role": "demo-reference"
+      },
+      {
+        "path": "set.js",
+        "bytes": 7820,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 3077,
+        "role": "demo-reference"
+      }
+    ],
+    "briefing-board": [
+      {
+        "path": "audio/cues.json",
+        "bytes": 1127,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/dur.json",
+        "bytes": 127,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/words.json",
+        "bytes": 1573,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 9064,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 2408,
+        "role": "bootstrap"
+      },
+      {
+        "path": "kit/batch.mjs",
+        "bytes": 2073,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/arch.json",
+        "bytes": 802,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/beam.json",
+        "bytes": 701,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/cable_half.json",
+        "bytes": 794,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/cable.json",
+        "bytes": 878,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/print_arch.json",
+        "bytes": 257,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/print_cable.json",
+        "bytes": 260,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/print_ship.json",
+        "bytes": 259,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/print_susp.json",
+        "bytes": 269,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/ship_side.json",
+        "bytes": 718,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/ship.json",
+        "bytes": 774,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/susp_raw.json",
+        "bytes": 742,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/objects/suspension.json",
+        "bytes": 965,
+        "role": "demo-reference"
+      },
+      {
+        "path": "kit/README.md",
+        "bytes": 6894,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/camcheck.mjs",
+        "bytes": 8139,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/rescheck.mjs",
+        "bytes": 1730,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 2358,
+        "role": "demo-reference"
+      }
+    ],
+    "caption-news": [
+      {
+        "path": "assets/states.json",
+        "bytes": 37815,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/cues.json",
+        "bytes": 1745,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/dur.json",
+        "bytes": 182,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/words.json",
+        "bytes": 2956,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 11814,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 862,
+        "role": "bootstrap"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 4574,
+        "role": "demo-reference"
+      }
+    ],
+    "cel-anime-80s": [
+      {
+        "path": "bg.js",
+        "bytes": 16675,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cel.js",
+        "bytes": 5809,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fx.js",
+        "bytes": 6031,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hands.js",
+        "bytes": 2567,
+        "role": "demo-reference"
+      },
+      {
+        "path": "head80.js",
+        "bytes": 24208,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hud.js",
+        "bytes": 1692,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 375,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 4754,
+        "role": "bootstrap"
+      },
+      {
+        "path": "pal.js",
+        "bytes": 3127,
+        "role": "demo-reference"
+      },
+      {
+        "path": "post.js",
+        "bytes": 10466,
+        "role": "demo-reference"
+      },
+      {
+        "path": "rider.js",
+        "bytes": 11736,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes1.js",
+        "bytes": 14050,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes2.js",
+        "bytes": 19054,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes3.js",
+        "bytes": 27081,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes4.js",
+        "bytes": 17710,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots.js",
+        "bytes": 7603,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 3127,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 2350,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/still.mjs",
+        "bytes": 2013,
+        "role": "demo-reference"
+      }
+    ],
+    "chalkboard": [
+      {
+        "path": "FACTS.md",
+        "bytes": 2046,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 477,
+        "role": "bootstrap"
+      },
+      {
+        "path": "js/ancient.js",
+        "bytes": 3808,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/app.js",
+        "bytes": 14434,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/chalk.js",
+        "bytes": 26663,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/film.js",
+        "bytes": 22993,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/hand.js",
+        "bytes": 11858,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/hz.js",
+        "bytes": 9457,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/lab.js",
+        "bytes": 1650,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/post.js",
+        "bytes": 3256,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/props.js",
+        "bytes": 7441,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/r2d.js",
+        "bytes": 4436,
+        "role": "demo-reference"
+      },
+      {
+        "path": "js/stage.js",
+        "bytes": 9000,
+        "role": "demo-reference"
+      },
+      {
+        "path": "lines_en.json",
+        "bytes": 2253,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo_en/dur.json",
+        "bytes": 126,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/dur.json",
+        "bytes": 126,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/words.json",
+        "bytes": 3545,
+        "role": "demo-reference"
+      }
+    ],
+    "circuit-board": [
+      {
+        "path": "data/subs_en.json",
+        "bytes": 1145,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 5801,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 327,
+        "role": "bootstrap"
+      },
+      {
+        "path": "src/charger.js",
+        "bytes": 7870,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/city.js",
+        "bytes": 4943,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/font.js",
+        "bytes": 9546,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/geo.js",
+        "bytes": 3640,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/hanzi.js",
+        "bytes": 9707,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/house.js",
+        "bytes": 6946,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/levels.js",
+        "bytes": 3041,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/loss.js",
+        "bytes": 2035,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/main.js",
+        "bytes": 24891,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/palette.js",
+        "bytes": 1046,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/parts.js",
+        "bytes": 10979,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/post.js",
+        "bytes": 3965,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/render.js",
+        "bytes": 28647,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/world.js",
+        "bytes": 28070,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice_en/dur.json",
+        "bytes": 165,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/dur.json",
+        "bytes": 167,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/words.json",
+        "bytes": 6477,
+        "role": "demo-reference"
+      }
+    ],
+    "city-symphony": [
+      {
+        "path": "cues.json",
+        "bytes": 962,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 4935,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1119,
+        "role": "bootstrap"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 7298,
+        "role": "demo-reference"
+      },
+      {
+        "path": "texts.json",
+        "bytes": 2834,
+        "role": "demo-reference"
+      }
+    ],
+    "countdown": [
+      {
+        "path": "audio/cues.json",
+        "bytes": 2124,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/dur.json",
+        "bytes": 30,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/words.json",
+        "bytes": 449,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 8231,
+        "role": "demo-reference"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 3790,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 1165,
+        "role": "demo-reference"
+      }
+    ],
+    "crayon-book": [
+      {
+        "path": "chars.js",
+        "bytes": 32010,
+        "role": "demo-reference"
+      },
+      {
+        "path": "crayon.js",
+        "bytes": 13323,
+        "role": "demo-reference"
+      },
+      {
+        "path": "end.js",
+        "bytes": 15113,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 16611,
+        "role": "demo-reference"
+      },
+      {
+        "path": "gl.js",
+        "bytes": 12352,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 378,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 904,
+        "role": "bootstrap"
+      },
+      {
+        "path": "pal.js",
+        "bytes": 899,
+        "role": "demo-reference"
+      },
+      {
+        "path": "rig.js",
+        "bytes": 2840,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 7994,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.json",
+        "bytes": 583,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.mjs",
+        "bytes": 702,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 2713,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 12758,
+        "role": "demo-reference"
+      }
+    ],
+    "dark-keynote": [
+      {
+        "path": "engine.js",
+        "bytes": 32318,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 2313,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 370,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 890,
+        "role": "bootstrap"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3446,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/dump_timeline.mjs",
+        "bytes": 646,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 837,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 12839,
+        "role": "demo-reference"
+      }
+    ],
+    "data-physical": [
+      {
+        "path": "data.js",
+        "bytes": 965,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/owid_solar_capacity.metadata.json",
+        "bytes": 1116,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/owid_wind_capacity.metadata.json",
+        "bytes": 1166,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 5660,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 16469,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fonts.css",
+        "bytes": 1064,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 551,
+        "role": "bootstrap"
+      },
+      {
+        "path": "set.js",
+        "bytes": 11815,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3686,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 1980,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/fonts.mjs",
+        "bytes": 1992,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/srt.mjs",
+        "bytes": 477,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1111,
+        "role": "demo-reference"
+      }
+    ],
+    "dataviz": [
+      {
+        "path": "data/jja.json",
+        "bytes": 1966,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine.js",
+        "bytes": 25178,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 31997,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 346,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 2391,
+        "role": "bootstrap"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 2288,
+        "role": "demo-reference"
+      }
+    ],
+    "desktop-flythrough": [
+      {
+        "path": "FACTS.md",
+        "bytes": 4284,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1670,
+        "role": "bootstrap"
+      },
+      {
+        "path": "src/anim.js",
+        "bytes": 2721,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/camera.js",
+        "bytes": 3108,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/captions.js",
+        "bytes": 1738,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/cards.js",
+        "bytes": 4014,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/main.js",
+        "bytes": 4279,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/post.js",
+        "bytes": 6363,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/shots.js",
+        "bytes": 3169,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/vo.js",
+        "bytes": 2991,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/voxel.js",
+        "bytes": 4574,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/world.js",
+        "bytes": 8010,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/camspeed.mjs",
+        "bytes": 1383,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/dur.json",
+        "bytes": 211,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/lines_en.json",
+        "bytes": 1828,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/words.json",
+        "bytes": 5301,
+        "role": "demo-reference"
+      }
+    ],
+    "engraving": [
+      {
+        "path": "content_alt.json",
+        "bytes": 1803,
+        "role": "demo-reference"
+      },
+      {
+        "path": "content.json",
+        "bytes": 2353,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine/burin.js",
+        "bytes": 33064,
+        "role": "engine"
+      },
+      {
+        "path": "engine/copper.js",
+        "bytes": 12503,
+        "role": "engine"
+      },
+      {
+        "path": "engine/index.js",
+        "bytes": 2153,
+        "role": "engine"
+      },
+      {
+        "path": "engine/plate.js",
+        "bytes": 9974,
+        "role": "engine"
+      },
+      {
+        "path": "engine/wash.js",
+        "bytes": 7693,
+        "role": "engine"
+      },
+      {
+        "path": "example/index.html",
+        "bytes": 1830,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 27561,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 380,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 782,
+        "role": "bootstrap"
+      },
+      {
+        "path": "subjects/bee.js",
+        "bytes": 24894,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subjects/details.js",
+        "bytes": 16815,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subjects/scallop.js",
+        "bytes": 6153,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/events.mjs",
+        "bytes": 825,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/readcheck/index.html",
+        "bytes": 2138,
+        "role": "demo-reference"
+      }
+    ],
+    "game-show": [
+      {
+        "path": "frame_head.html",
+        "bytes": 10387,
+        "role": "demo-reference"
+      },
+      {
+        "path": "package.json",
+        "bytes": 308,
+        "role": "demo-reference"
+      },
+      {
+        "path": "render.mjs",
+        "bytes": 3986,
+        "role": "demo-reference"
+      }
+    ],
+    "glass-product": [
+      {
+        "path": "cues.json",
+        "bytes": 267,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 566,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 20885,
+        "role": "bootstrap"
+      },
+      {
+        "path": "product.js",
+        "bytes": 14620,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 3338,
+        "role": "demo-reference"
+      },
+      {
+        "path": "studio.js",
+        "bytes": 8956,
+        "role": "demo-reference"
+      }
+    ],
+    "halftone-dossier": [
+      {
+        "path": "fetch_fonts.mjs",
+        "bytes": 772,
+        "role": "demo-reference"
+      },
+      {
+        "path": "package-lock.json",
+        "bytes": 697,
+        "role": "demo-reference"
+      },
+      {
+        "path": "package.json",
+        "bytes": 302,
+        "role": "demo-reference"
+      },
+      {
+        "path": "render.mjs",
+        "bytes": 4490,
+        "role": "demo-reference"
+      }
+    ],
+    "hd-2d": [
+      {
+        "path": "chars.js",
+        "bytes": 13883,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cliff.js",
+        "bytes": 29856,
+        "role": "demo-reference"
+      },
+      {
+        "path": "forest_art.js",
+        "bytes": 5926,
+        "role": "demo-reference"
+      },
+      {
+        "path": "forest.js",
+        "bytes": 12071,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fx.js",
+        "bytes": 13318,
+        "role": "demo-reference"
+      },
+      {
+        "path": "harbor.js",
+        "bytes": 22104,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 557,
+        "role": "bootstrap"
+      },
+      {
+        "path": "kit.js",
+        "bytes": 10045,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 3398,
+        "role": "bootstrap"
+      },
+      {
+        "path": "post_ts.js",
+        "bytes": 7263,
+        "role": "demo-reference"
+      },
+      {
+        "path": "px.js",
+        "bytes": 12560,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sfx_events.json",
+        "bytes": 682,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 1690,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/render_range.mjs",
+        "bytes": 2736,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/sheet/index.html",
+        "bytes": 1285,
+        "role": "demo-reference"
+      },
+      {
+        "path": "ui.js",
+        "bytes": 8659,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo_times.json",
+        "bytes": 199,
+        "role": "demo-reference"
+      }
+    ],
+    "hologram-hud": [
+      {
+        "path": "content_alt.json",
+        "bytes": 1920,
+        "role": "demo-reference"
+      },
+      {
+        "path": "content.json",
+        "bytes": 1745,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine/holo.js",
+        "bytes": 19803,
+        "role": "engine"
+      },
+      {
+        "path": "engine/hud.js",
+        "bytes": 21142,
+        "role": "engine"
+      },
+      {
+        "path": "film.js",
+        "bytes": 25710,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 1594,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 374,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 1125,
+        "role": "bootstrap"
+      },
+      {
+        "path": "models/gen_kite.mjs",
+        "bytes": 5547,
+        "role": "demo-reference"
+      },
+      {
+        "path": "models/gen_volt.mjs",
+        "bytes": 7544,
+        "role": "demo-reference"
+      },
+      {
+        "path": "models/mkmodel.mjs",
+        "bytes": 15226,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 1298,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/make_lines.mjs",
+        "bytes": 1033,
+        "role": "demo-reference"
+      }
+    ],
+    "impasto": [
+      {
+        "path": "engine/impasto.js",
+        "bytes": 21794,
+        "role": "engine"
+      },
+      {
+        "path": "engine/plate.js",
+        "bytes": 11816,
+        "role": "engine"
+      },
+      {
+        "path": "film.js",
+        "bytes": 25696,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 281,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 239,
+        "role": "bootstrap"
+      },
+      {
+        "path": "test.js",
+        "bytes": 3309,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3923,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/dump_timeline.mjs",
+        "bytes": 408,
+        "role": "demo-reference"
+      }
+    ],
+    "ink-wash": [
+      {
+        "path": "climax.js",
+        "bytes": 8351,
+        "role": "demo-reference"
+      },
+      {
+        "path": "comp.js",
+        "bytes": 9418,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cross.js",
+        "bytes": 6828,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cues.json",
+        "bytes": 362,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cues.mjs",
+        "bytes": 261,
+        "role": "demo-reference"
+      },
+      {
+        "path": "face.js",
+        "bytes": 7228,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 5148,
+        "role": "demo-reference"
+      },
+      {
+        "path": "glyph.js",
+        "bytes": 5305,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hero.js",
+        "bytes": 20979,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 353,
+        "role": "bootstrap"
+      },
+      {
+        "path": "ink.js",
+        "bytes": 11400,
+        "role": "demo-reference"
+      },
+      {
+        "path": "land.js",
+        "bytes": 10900,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 2071,
+        "role": "bootstrap"
+      },
+      {
+        "path": "passage.js",
+        "bytes": 9686,
+        "role": "demo-reference"
+      },
+      {
+        "path": "seal.js",
+        "bytes": 2338,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 5089,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots.js",
+        "bytes": 3249,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 1527,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.js",
+        "bytes": 1288,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 3028,
+        "role": "demo-reference"
+      },
+      {
+        "path": "wave.js",
+        "bytes": 4537,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 10351,
+        "role": "demo-reference"
+      }
+    ],
+    "iso-infographic": [
+      {
+        "path": "engine.js",
+        "bytes": 32906,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hero.js",
+        "bytes": 9597,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 428,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 543,
+        "role": "bootstrap"
+      },
+      {
+        "path": "tests.js",
+        "bytes": 1547,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 2685,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 36567,
+        "role": "demo-reference"
+      }
+    ],
+    "isometric-picture-book": [
+      {
+        "path": "engine.js",
+        "bytes": 32906,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 3221,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 39329,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 585,
+        "role": "bootstrap"
+      },
+      {
+        "path": "kit.js",
+        "bytes": 13493,
+        "role": "demo-reference"
+      },
+      {
+        "path": "lines_en.json",
+        "bytes": 1579,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 1001,
+        "role": "bootstrap"
+      },
+      {
+        "path": "places.js",
+        "bytes": 10861,
+        "role": "demo-reference"
+      },
+      {
+        "path": "plane.js",
+        "bytes": 12838,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/motion_check.mjs",
+        "bytes": 2874,
+        "role": "demo-reference"
+      }
+    ],
+    "kino-montage": [
+      {
+        "path": "assets/bld.json",
+        "bytes": 315,
+        "role": "demo-reference"
+      },
+      {
+        "path": "assets/clips.json",
+        "bytes": 1705,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/cues.json",
+        "bytes": 1357,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/dur.json",
+        "bytes": 155,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/words.json",
+        "bytes": 1928,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 8896,
+        "role": "demo-reference"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 5168,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/cues.mjs",
+        "bytes": 1382,
+        "role": "demo-reference"
+      }
+    ],
+    "lidar-survey": [
+      {
+        "path": "cues.json",
+        "bytes": 1552,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/facts.json",
+        "bytes": 2113,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/profile_C.json",
+        "bytes": 14705,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/walls_traced.json",
+        "bytes": 2069,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/walls.json",
+        "bytes": 32093,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 5730,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 31233,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1171,
+        "role": "bootstrap"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 4328,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 2155,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1154,
+        "role": "demo-reference"
+      }
+    ],
+    "living-screencast": [
+      {
+        "path": "clawd.js",
+        "bytes": 5974,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 36375,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 18188,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 10259,
+        "role": "bootstrap"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 667,
+        "role": "demo-reference"
+      },
+      {
+        "path": "ui.js",
+        "bytes": 17112,
+        "role": "demo-reference"
+      }
+    ],
+    "lowpoly-island": [
+      {
+        "path": "index.html",
+        "bytes": 563,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 15223,
+        "role": "bootstrap"
+      },
+      {
+        "path": "post.js",
+        "bytes": 7067,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sea.js",
+        "bytes": 5409,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 5162,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 39012,
+        "role": "demo-reference"
+      }
+    ],
+    "memphis-diorama": [
+      {
+        "path": "index.html",
+        "bytes": 562,
+        "role": "bootstrap"
+      },
+      {
+        "path": "memphis.js",
+        "bytes": 18439,
+        "role": "demo-reference"
+      },
+      {
+        "path": "people.js",
+        "bytes": 2206,
+        "role": "demo-reference"
+      }
+    ],
+    "microgame": [
+      {
+        "path": "chars.js",
+        "bytes": 20159,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 18389,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 10563,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_ascii.js",
+        "bytes": 9981,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_blue.js",
+        "bytes": 10427,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_boss.js",
+        "bytes": 22311,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_crayon.js",
+        "bytes": 13920,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_ink.js",
+        "bytes": 14916,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_pixel.js",
+        "bytes": 9940,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_riso.js",
+        "bytes": 8874,
+        "role": "demo-reference"
+      },
+      {
+        "path": "g_swiss.js",
+        "bytes": 7693,
+        "role": "demo-reference"
+      },
+      {
+        "path": "glpass.js",
+        "bytes": 9187,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hud.js",
+        "bytes": 9549,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 378,
+        "role": "bootstrap"
+      },
+      {
+        "path": "lines.json.asr.json",
+        "bytes": 2974,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 2488,
+        "role": "bootstrap"
+      },
+      {
+        "path": "stage.js",
+        "bytes": 8756,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 2424,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/dump_timeline.mjs",
+        "bytes": 422,
+        "role": "demo-reference"
+      },
+      {
+        "path": "toon.js",
+        "bytes": 4853,
+        "role": "demo-reference"
+      }
+    ],
+    "microscope": [
+      {
+        "path": "assets/plates/nucleus.json",
+        "bytes": 153,
+        "role": "demo-reference"
+      },
+      {
+        "path": "assets/plates/plates.json",
+        "bytes": 7736,
+        "role": "demo-reference"
+      },
+      {
+        "path": "config.json",
+        "bytes": 138,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cues.json",
+        "bytes": 1092,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 5570,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 30689,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 937,
+        "role": "bootstrap"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3426,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 2836,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1143,
+        "role": "demo-reference"
+      }
+    ],
+    "midcentury-toon": [
+      {
+        "path": "content_alt.json",
+        "bytes": 3073,
+        "role": "demo-reference"
+      },
+      {
+        "path": "content.json",
+        "bytes": 3105,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine/chars.js",
+        "bytes": 18546,
+        "role": "engine"
+      },
+      {
+        "path": "engine/icons.js",
+        "bytes": 7542,
+        "role": "engine"
+      },
+      {
+        "path": "engine/toon.js",
+        "bytes": 20249,
+        "role": "engine"
+      },
+      {
+        "path": "index.html",
+        "bytes": 365,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 1004,
+        "role": "bootstrap"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 4661,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/cues.mjs",
+        "bytes": 596,
+        "role": "demo-reference"
+      }
+    ],
+    "news-package": [
+      {
+        "path": "assets/meta.json",
+        "bytes": 67,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/kospi_raw_naver_api.json",
+        "bytes": 18376,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/kospi_raw_naver_mobile.json",
+        "bytes": 15605,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 15270,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1020,
+        "role": "bootstrap"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 3633,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/dur.json",
+        "bytes": 113,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vo/words.json",
+        "bytes": 4374,
+        "role": "demo-reference"
+      }
+    ],
+    "newsreel": [
+      {
+        "path": "FACTS.md",
+        "bytes": 9534,
+        "role": "demo-reference"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 7937,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 765,
+        "role": "demo-reference"
+      }
+    ],
+    "one-line": [
+      {
+        "path": "cam.js",
+        "bytes": 2266,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cues.json",
+        "bytes": 457,
+        "role": "demo-reference"
+      },
+      {
+        "path": "face.js",
+        "bytes": 12719,
+        "role": "demo-reference"
+      },
+      {
+        "path": "geom.js",
+        "bytes": 7404,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hands.js",
+        "bytes": 3209,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 461,
+        "role": "bootstrap"
+      },
+      {
+        "path": "ink.js",
+        "bytes": 10764,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 5537,
+        "role": "bootstrap"
+      },
+      {
+        "path": "paper.js",
+        "bytes": 5535,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots.js",
+        "bytes": 2661,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 1111,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.js",
+        "bytes": 3205,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/probe.mjs",
+        "bytes": 1916,
+        "role": "demo-reference"
+      }
+    ],
+    "paper-lantern": [
+      {
+        "path": "FACTS.md",
+        "bytes": 517,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1723,
+        "role": "bootstrap"
+      },
+      {
+        "path": "src/lib.js",
+        "bytes": 2791,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/main.js",
+        "bytes": 3168,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/paper.js",
+        "bytes": 14398,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/post.js",
+        "bytes": 6647,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/shots.js",
+        "bytes": 33533,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/stage.js",
+        "bytes": 2694,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/world.js",
+        "bytes": 18833,
+        "role": "demo-reference"
+      }
+    ],
+    "paper-popup": [
+      {
+        "path": "actors.js",
+        "bytes": 6780,
+        "role": "demo-reference"
+      },
+      {
+        "path": "art.js",
+        "bytes": 34405,
+        "role": "demo-reference"
+      },
+      {
+        "path": "book.js",
+        "bytes": 9220,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cutmesh.js",
+        "bytes": 3648,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fetch_fonts.mjs",
+        "bytes": 1254,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fonts.css",
+        "bytes": 6379,
+        "role": "demo-reference"
+      },
+      {
+        "path": "gltest.mjs",
+        "bytes": 1396,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hud.js",
+        "bytes": 9242,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 578,
+        "role": "bootstrap"
+      },
+      {
+        "path": "lib.js",
+        "bytes": 2783,
+        "role": "demo-reference"
+      },
+      {
+        "path": "make_srt.mjs",
+        "bytes": 1847,
+        "role": "demo-reference"
+      },
+      {
+        "path": "package-lock.json",
+        "bytes": 1012,
+        "role": "demo-reference"
+      },
+      {
+        "path": "package.json",
+        "bytes": 331,
+        "role": "demo-reference"
+      },
+      {
+        "path": "paper.js",
+        "bytes": 4793,
+        "role": "demo-reference"
+      },
+      {
+        "path": "post.js",
+        "bytes": 4827,
+        "role": "demo-reference"
+      },
+      {
+        "path": "probe.mjs",
+        "bytes": 706,
+        "role": "demo-reference"
+      },
+      {
+        "path": "render.mjs",
+        "bytes": 3953,
+        "role": "demo-reference"
+      },
+      {
+        "path": "serve.mjs",
+        "bytes": 926,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sets.js",
+        "bytes": 16136,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.html",
+        "bytes": 2159,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shot.mjs",
+        "bytes": 909,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 4085,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.html",
+        "bytes": 2800,
+        "role": "demo-reference"
+      }
+    ],
+    "papercut-red": [
+      {
+        "path": "climax.js",
+        "bytes": 4613,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fold.js",
+        "bytes": 13782,
+        "role": "demo-reference"
+      },
+      {
+        "path": "girl.js",
+        "bytes": 17730,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hud.js",
+        "bytes": 3094,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 376,
+        "role": "bootstrap"
+      },
+      {
+        "path": "light.js",
+        "bytes": 7658,
+        "role": "demo-reference"
+      },
+      {
+        "path": "motifs.js",
+        "bytes": 6620,
+        "role": "demo-reference"
+      },
+      {
+        "path": "nian.js",
+        "bytes": 14823,
+        "role": "demo-reference"
+      },
+      {
+        "path": "paper.js",
+        "bytes": 13971,
+        "role": "demo-reference"
+      },
+      {
+        "path": "rig.js",
+        "bytes": 1817,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 11311,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 1839,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 2282,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tuanhua.js",
+        "bytes": 9720,
+        "role": "demo-reference"
+      },
+      {
+        "path": "village.js",
+        "bytes": 9151,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 9180,
+        "role": "demo-reference"
+      }
+    ],
+    "pictogram-motion": [
+      {
+        "path": "engine.js",
+        "bytes": 18107,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 976,
+        "role": "bootstrap"
+      },
+      {
+        "path": "voice/cues.js",
+        "bytes": 1454,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/vo.json",
+        "bytes": 1148,
+        "role": "demo-reference"
+      }
+    ],
+    "pixel-rpg": [
+      {
+        "path": "font.js",
+        "bytes": 7415,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 411,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 15542,
+        "role": "bootstrap"
+      },
+      {
+        "path": "memscenes.js",
+        "bytes": 21806,
+        "role": "demo-reference"
+      },
+      {
+        "path": "memsprites.js",
+        "bytes": 1862,
+        "role": "demo-reference"
+      },
+      {
+        "path": "portraits.js",
+        "bytes": 6419,
+        "role": "demo-reference"
+      },
+      {
+        "path": "props.js",
+        "bytes": 10214,
+        "role": "demo-reference"
+      },
+      {
+        "path": "px.js",
+        "bytes": 10823,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes.js",
+        "bytes": 15577,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 10500,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sprites.js",
+        "bytes": 21967,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 1044,
+        "role": "demo-reference"
+      },
+      {
+        "path": "ui.js",
+        "bytes": 7827,
+        "role": "demo-reference"
+      }
+    ],
+    "printed-long-take": [
+      {
+        "path": "FACTS.md",
+        "bytes": 6774,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 440,
+        "role": "bootstrap"
+      },
+      {
+        "path": "lines_en.json",
+        "bytes": 1857,
+        "role": "demo-reference"
+      },
+      {
+        "path": "lines_zh.json",
+        "bytes": 1149,
+        "role": "demo-reference"
+      },
+      {
+        "path": "look.js",
+        "bytes": 23684,
+        "role": "demo-reference"
+      },
+      {
+        "path": "props.js",
+        "bytes": 10841,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scene.js",
+        "bytes": 36271,
+        "role": "demo-reference"
+      },
+      {
+        "path": "textures.js",
+        "bytes": 23050,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3733,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/en/dur.json",
+        "bytes": 167,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/en/words.json",
+        "bytes": 3268,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/zh/dur.json",
+        "bytes": 164,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 29457,
+        "role": "demo-reference"
+      }
+    ],
+    "risograph": [
+      {
+        "path": "draw.js",
+        "bytes": 6136,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 19331,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 337,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 2965,
+        "role": "bootstrap"
+      },
+      {
+        "path": "rider.js",
+        "bytes": 23831,
+        "role": "demo-reference"
+      },
+      {
+        "path": "riso.js",
+        "bytes": 9145,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes.js",
+        "bytes": 12235,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes2.js",
+        "bytes": 12834,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 5563,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/video_png.mjs",
+        "bytes": 2412,
+        "role": "demo-reference"
+      }
+    ],
+    "rubber-hose": [
+      {
+        "path": "bg.js",
+        "bytes": 9799,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cast.js",
+        "bytes": 10497,
+        "role": "demo-reference"
+      },
+      {
+        "path": "chars.js",
+        "bytes": 26670,
+        "role": "demo-reference"
+      },
+      {
+        "path": "events.js",
+        "bytes": 2985,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 3684,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 342,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 3946,
+        "role": "bootstrap"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 12866,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 6301,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/still.mjs",
+        "bytes": 2238,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 691,
+        "role": "demo-reference"
+      },
+      {
+        "path": "toon.js",
+        "bytes": 9294,
+        "role": "demo-reference"
+      },
+      {
+        "path": "ui.js",
+        "bytes": 3381,
+        "role": "demo-reference"
+      }
+    ],
+    "satellite-briefing": [
+      {
+        "path": "assets/plates/plates.json",
+        "bytes": 28959,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cues.json",
+        "bytes": 1324,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine.js",
+        "bytes": 18263,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 10504,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1177,
+        "role": "bootstrap"
+      },
+      {
+        "path": "overlay.js",
+        "bytes": 5823,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 4818,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 2652,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/plates_spec.json",
+        "bytes": 4795,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1154,
+        "role": "demo-reference"
+      }
+    ],
+    "scifi-toon": [
+      {
+        "path": "chars.js",
+        "bytes": 19699,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 336,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 32084,
+        "role": "bootstrap"
+      },
+      {
+        "path": "srt.mjs",
+        "bytes": 1012,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 4224,
+        "role": "demo-reference"
+      },
+      {
+        "path": "toon.js",
+        "bytes": 8916,
+        "role": "demo-reference"
+      },
+      {
+        "path": "worlds.js",
+        "bytes": 26186,
+        "role": "demo-reference"
+      }
+    ],
+    "shadow-puppet": [
+      {
+        "path": "backstage.js",
+        "bytes": 9257,
+        "role": "demo-reference"
+      },
+      {
+        "path": "carve.js",
+        "bytes": 11395,
+        "role": "demo-reference"
+      },
+      {
+        "path": "gl.js",
+        "bytes": 9047,
+        "role": "demo-reference"
+      },
+      {
+        "path": "houyi.js",
+        "bytes": 22919,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hud.js",
+        "bytes": 1911,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 380,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 26449,
+        "role": "bootstrap"
+      },
+      {
+        "path": "poses.js",
+        "bytes": 903,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenery.js",
+        "bytes": 14436,
+        "role": "demo-reference"
+      },
+      {
+        "path": "stage.js",
+        "bytes": 7686,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 2101,
+        "role": "demo-reference"
+      },
+      {
+        "path": "suns.js",
+        "bytes": 6469,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 12260,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/probe.mjs",
+        "bytes": 1391,
+        "role": "demo-reference"
+      }
+    ],
+    "silent-film": [
+      {
+        "path": "cardspecs.js",
+        "bytes": 1394,
+        "role": "demo-reference"
+      },
+      {
+        "path": "chars.js",
+        "bytes": 18285,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine/cards.js",
+        "bytes": 7094,
+        "role": "engine"
+      },
+      {
+        "path": "engine/figure.js",
+        "bytes": 28392,
+        "role": "engine"
+      },
+      {
+        "path": "engine/film.js",
+        "bytes": 11918,
+        "role": "engine"
+      },
+      {
+        "path": "engine/heads.js",
+        "bytes": 22075,
+        "role": "engine"
+      },
+      {
+        "path": "engine/ink.js",
+        "bytes": 16432,
+        "role": "engine"
+      },
+      {
+        "path": "engine/redraw.js",
+        "bytes": 9339,
+        "role": "engine"
+      },
+      {
+        "path": "film.js",
+        "bytes": 6584,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 11998,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 373,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 1119,
+        "role": "bootstrap"
+      },
+      {
+        "path": "poses.js",
+        "bytes": 5140,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sets.js",
+        "bytes": 13784,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheets.js",
+        "bytes": 4956,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots.js",
+        "bytes": 31133,
+        "role": "demo-reference"
+      },
+      {
+        "path": "stage.js",
+        "bytes": 2029,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3191,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/dump_timeline.mjs",
+        "bytes": 455,
+        "role": "demo-reference"
+      }
+    ],
+    "silkscreen-poster": [
+      {
+        "path": "engine/poster.js",
+        "bytes": 15794,
+        "role": "engine"
+      },
+      {
+        "path": "engine/scenes.js",
+        "bytes": 22904,
+        "role": "engine"
+      },
+      {
+        "path": "engine/silk.js",
+        "bytes": 21326,
+        "role": "engine"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 2578,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 29088,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 343,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 963,
+        "role": "bootstrap"
+      },
+      {
+        "path": "voice/cues.json",
+        "bytes": 1821,
+        "role": "demo-reference"
+      },
+      {
+        "path": "voice/subs.json",
+        "bytes": 1327,
+        "role": "demo-reference"
+      }
+    ],
+    "spy-titles": [
+      {
+        "path": "chars.js",
+        "bytes": 21523,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 24045,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 10788,
+        "role": "demo-reference"
+      },
+      {
+        "path": "glyph.js",
+        "bytes": 3624,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 390,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 2185,
+        "role": "bootstrap"
+      },
+      {
+        "path": "paper.js",
+        "bytes": 10437,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scenes.js",
+        "bytes": 21117,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 7336,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 1502,
+        "role": "demo-reference"
+      },
+      {
+        "path": "title.js",
+        "bytes": 5446,
+        "role": "demo-reference"
+      }
+    ],
+    "stained-glass": [
+      {
+        "path": "comp.js",
+        "bytes": 14934,
+        "role": "demo-reference"
+      },
+      {
+        "path": "cues.json",
+        "bytes": 865,
+        "role": "demo-reference"
+      },
+      {
+        "path": "dragon.js",
+        "bytes": 18374,
+        "role": "demo-reference"
+      },
+      {
+        "path": "frames.js",
+        "bytes": 1714,
+        "role": "demo-reference"
+      },
+      {
+        "path": "glass.js",
+        "bytes": 12939,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 387,
+        "role": "bootstrap"
+      },
+      {
+        "path": "knight.js",
+        "bytes": 17787,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 1305,
+        "role": "bootstrap"
+      },
+      {
+        "path": "scene.js",
+        "bytes": 6828,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 15908,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.js",
+        "bytes": 2350,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 8386,
+        "role": "demo-reference"
+      },
+      {
+        "path": "window.js",
+        "bytes": 20091,
+        "role": "demo-reference"
+      }
+    ],
+    "swiss-motion": [
+      {
+        "path": "ease.js",
+        "bytes": 1851,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 30232,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 352,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 878,
+        "role": "bootstrap"
+      }
+    ],
+    "teardown": [
+      {
+        "path": "cues.json",
+        "bytes": 1199,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 6175,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 1311,
+        "role": "bootstrap"
+      },
+      {
+        "path": "src/comps.js",
+        "bytes": 5445,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/main.js",
+        "bytes": 17574,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/overlay.js",
+        "bytes": 11149,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/parts.js",
+        "bytes": 8321,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/pcbtex.js",
+        "bytes": 4427,
+        "role": "demo-reference"
+      },
+      {
+        "path": "src/timeline.js",
+        "bytes": 5319,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 1963,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/step2mesh.mjs",
+        "bytes": 1530,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1090,
+        "role": "demo-reference"
+      }
+    ],
+    "telestrator": [
+      {
+        "path": "assets/pitch.json",
+        "bytes": 1308,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/cues.json",
+        "bytes": 1074,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/dur.json",
+        "bytes": 116,
+        "role": "demo-reference"
+      },
+      {
+        "path": "audio/vo/words.json",
+        "bytes": 1499,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 8891,
+        "role": "demo-reference"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 6756,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/license-evidence.json",
+        "bytes": 619,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/pitch.json",
+        "bytes": 2688,
+        "role": "demo-reference"
+      },
+      {
+        "path": "vdur.json",
+        "bytes": 116,
+        "role": "demo-reference"
+      }
+    ],
+    "tilt-shift": [
+      {
+        "path": "cues.json",
+        "bytes": 483,
+        "role": "demo-reference"
+      },
+      {
+        "path": "ducks.js",
+        "bytes": 10038,
+        "role": "demo-reference"
+      },
+      {
+        "path": "geo.js",
+        "bytes": 6180,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 561,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 31300,
+        "role": "bootstrap"
+      },
+      {
+        "path": "post.js",
+        "bytes": 8134,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sky.js",
+        "bytes": 6528,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 3221,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.mjs",
+        "bytes": 692,
+        "role": "demo-reference"
+      },
+      {
+        "path": "traffic.js",
+        "bytes": 18432,
+        "role": "demo-reference"
+      },
+      {
+        "path": "train.js",
+        "bytes": 3361,
+        "role": "demo-reference"
+      }
+    ],
+    "transit-map": [
+      {
+        "path": "FACTS.md",
+        "bytes": 7872,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 39069,
+        "role": "demo-reference"
+      },
+      {
+        "path": "gl.js",
+        "bytes": 8734,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 561,
+        "role": "bootstrap"
+      },
+      {
+        "path": "net.js",
+        "bytes": 14857,
+        "role": "demo-reference"
+      }
+    ],
+    "ukiyoe": [
+      {
+        "path": "index.html",
+        "bytes": 345,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 18242,
+        "role": "bootstrap"
+      },
+      {
+        "path": "nature.js",
+        "bytes": 12111,
+        "role": "demo-reference"
+      },
+      {
+        "path": "print.js",
+        "bytes": 19583,
+        "role": "demo-reference"
+      },
+      {
+        "path": "story.js",
+        "bytes": 1485,
+        "role": "demo-reference"
+      },
+      {
+        "path": "traveler.js",
+        "bytes": 13600,
+        "role": "demo-reference"
+      },
+      {
+        "path": "views.js",
+        "bytes": 29228,
+        "role": "demo-reference"
+      },
+      {
+        "path": "wave.js",
+        "bytes": 12643,
+        "role": "demo-reference"
+      }
+    ],
+    "urban-sketch": [
+      {
+        "path": "api.js",
+        "bytes": 557,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.js",
+        "bytes": 28063,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 487,
+        "role": "bootstrap"
+      },
+      {
+        "path": "look.js",
+        "bytes": 784,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 228,
+        "role": "bootstrap"
+      },
+      {
+        "path": "poses.js",
+        "bytes": 4876,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 1961,
+        "role": "demo-reference"
+      },
+      {
+        "path": "subs.json",
+        "bytes": 243,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export_cues.mjs",
+        "bytes": 764,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 35895,
+        "role": "demo-reference"
+      }
+    ],
+    "visual-investigation": [
+      {
+        "path": "audio/cues.json",
+        "bytes": 1971,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 12432,
+        "role": "demo-reference"
+      },
+      {
+        "path": "film.json",
+        "bytes": 2481,
+        "role": "demo-reference"
+      },
+      {
+        "path": "SOURCES.md",
+        "bytes": 4759,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1906,
+        "role": "demo-reference"
+      }
+    ],
+    "watercolor": [
+      {
+        "path": "aus.js",
+        "bytes": 23419,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine.js",
+        "bytes": 8486,
+        "role": "demo-reference"
+      },
+      {
+        "path": "extract_aus.mjs",
+        "bytes": 1568,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fetch_fonts.mjs",
+        "bytes": 1135,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fonts.css",
+        "bytes": 11293,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 421,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 19065,
+        "role": "bootstrap"
+      },
+      {
+        "path": "plants.js",
+        "bytes": 14039,
+        "role": "demo-reference"
+      },
+      {
+        "path": "render.mjs",
+        "bytes": 4995,
+        "role": "demo-reference"
+      },
+      {
+        "path": "scene.js",
+        "bytes": 35322,
+        "role": "demo-reference"
+      }
+    ],
+    "white-model": [
+      {
+        "path": "cues.json",
+        "bytes": 1220,
+        "role": "demo-reference"
+      },
+      {
+        "path": "data/stats.json",
+        "bytes": 8522,
+        "role": "demo-reference"
+      },
+      {
+        "path": "FACTS.md",
+        "bytes": 8149,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 605,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 17045,
+        "role": "bootstrap"
+      },
+      {
+        "path": "overlay.js",
+        "bytes": 7187,
+        "role": "demo-reference"
+      },
+      {
+        "path": "studio.js",
+        "bytes": 14577,
+        "role": "demo-reference"
+      },
+      {
+        "path": "timeline.js",
+        "bytes": 3914,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/export.mjs",
+        "bytes": 2134,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subcheck.mjs",
+        "bytes": 1129,
+        "role": "demo-reference"
+      }
+    ],
+    "whiteboard": [
+      {
+        "path": "engine/wb.js",
+        "bytes": 32649,
+        "role": "engine"
+      },
+      {
+        "path": "film.js",
+        "bytes": 30962,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 337,
+        "role": "bootstrap"
+      },
+      {
+        "path": "main.js",
+        "bytes": 421,
+        "role": "bootstrap"
+      },
+      {
+        "path": "test.js",
+        "bytes": 1354,
+        "role": "demo-reference"
+      },
+      {
+        "path": "tools/subs.mjs",
+        "bytes": 669,
+        "role": "demo-reference"
+      }
+    ],
+    "woodcut": [
+      {
+        "path": "chars.js",
+        "bytes": 21756,
+        "role": "demo-reference"
+      },
+      {
+        "path": "engine/filter.js",
+        "bytes": 5883,
+        "role": "engine"
+      },
+      {
+        "path": "engine/hatch.js",
+        "bytes": 12224,
+        "role": "engine"
+      },
+      {
+        "path": "engine/index.js",
+        "bytes": 8018,
+        "role": "engine"
+      },
+      {
+        "path": "engine/knife.js",
+        "bytes": 7696,
+        "role": "engine"
+      },
+      {
+        "path": "engine/print.js",
+        "bytes": 7223,
+        "role": "engine"
+      },
+      {
+        "path": "film.js",
+        "bytes": 2054,
+        "role": "demo-reference"
+      },
+      {
+        "path": "fx.js",
+        "bytes": 13916,
+        "role": "demo-reference"
+      },
+      {
+        "path": "hands.js",
+        "bytes": 15604,
+        "role": "demo-reference"
+      },
+      {
+        "path": "index.html",
+        "bytes": 374,
+        "role": "bootstrap"
+      },
+      {
+        "path": "interior.js",
+        "bytes": 8952,
+        "role": "demo-reference"
+      },
+      {
+        "path": "main.js",
+        "bytes": 785,
+        "role": "bootstrap"
+      },
+      {
+        "path": "rig.js",
+        "bytes": 3174,
+        "role": "demo-reference"
+      },
+      {
+        "path": "sheet.js",
+        "bytes": 7210,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots.js",
+        "bytes": 14674,
+        "role": "demo-reference"
+      },
+      {
+        "path": "shots2.js",
+        "bytes": 34188,
+        "role": "demo-reference"
+      },
+      {
+        "path": "stage.js",
+        "bytes": 2299,
+        "role": "demo-reference"
+      },
+      {
+        "path": "test.js",
+        "bytes": 7322,
+        "role": "demo-reference"
+      },
+      {
+        "path": "trans.js",
+        "bytes": 3802,
+        "role": "demo-reference"
+      },
+      {
+        "path": "views.js",
+        "bytes": 9336,
+        "role": "demo-reference"
+      },
+      {
+        "path": "world.js",
+        "bytes": 14764,
+        "role": "demo-reference"
+      }
+    ]
+  }
+}
