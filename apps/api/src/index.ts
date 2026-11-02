@@ -73,6 +73,16 @@ async function getStyleCatalog() {
 }
 
 const styleGuideCache = new Map<string, string>();
+const styleEngineCache = new Map<string, string>();
+let styleEngineIndexCache: any;
+async function getStyleEngineIndex() {
+  if (!styleEngineIndexCache) {
+    const raw = await readFile(join(process.cwd(), 'packages', 'contracts', 'src', 'lemo-engine-index.json'), 'utf8');
+    styleEngineIndexCache = JSON.parse(raw);
+  }
+  return styleEngineIndexCache;
+}
+
 app.get('/v1/styles', async (request, reply) => {
   if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
   try {
@@ -109,6 +119,44 @@ app.get('/v1/styles/:slug', async (request, reply) => {
     return {style,styleGuide:guide,sourceCommit:catalog.sourceCommit};
   } catch (error) {
     request.log.error(error); return reply.code(503).send({error:'style_guide_unavailable'});
+  }
+});
+
+app.get('/v1/styles/:slug/engine', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const {slug} = request.params as {slug:string};
+  const query = request.query as {file?:string};
+  try {
+    const catalog = await getStyleCatalog();
+    const style = catalog.styles.find((item:any) => item.slug === slug);
+    if (!style) return reply.code(404).send({error:'style_not_found'});
+    const engineIndex = await getStyleEngineIndex();
+    const files = engineIndex.styles[slug] ?? [];
+    if (!query.file) {
+      return {
+        style,
+        sourceCommit:engineIndex.sourceCommit,
+        engineFiles:files.filter((file:any) => file.role === 'engine'),
+        bootstrapFiles:files.filter((file:any) => file.role === 'bootstrap'),
+        demoReferenceFiles:files.filter((file:any) => file.role === 'demo-reference'),
+        instruction:'Read engine files as technical references. Bootstrap and demo-reference files may contain the example film’s story, timeline, dialogue, shots or assets; do not reuse those creative elements.'
+      };
+    }
+    const selected = files.find((file:any) => file.path === query.file);
+    if (!selected) return reply.code(404).send({error:'engine_file_not_found'});
+    const cacheKey = `${slug}/${selected.path}`;
+    let content = styleEngineCache.get(cacheKey);
+    if (!content) {
+      const url = `https://raw.githubusercontent.com/lemomo-ai/lemo-opuscar/${engineIndex.sourceCommit}/styles/${slug}/demo/${selected.path}`;
+      const response = await fetch(url,{signal:AbortSignal.timeout(10000)});
+      if (!response.ok) return reply.code(502).send({error:'engine_source_unavailable'});
+      content = await response.text();
+      if (Buffer.byteLength(content,'utf8') > engineIndex.maxFileBytes) return reply.code(413).send({error:'engine_source_too_large'});
+      styleEngineCache.set(cacheKey,content);
+    }
+    return {styleSlug:slug,file:selected.path,role:selected.role,bytes:Buffer.byteLength(content,'utf8'),sourceCommit:engineIndex.sourceCommit,content};
+  } catch (error) {
+    request.log.error(error); return reply.code(503).send({error:'style_engine_unavailable'});
   }
 });
 
