@@ -252,6 +252,7 @@ components:
           properties:
             musicEnabled: { type: boolean, default: true }
             voiceEnabled: { type: boolean, default: true }
+            burnSubtitles: { type: boolean, default: false }
             voice: { type: string, default: en-US-AriaNeural }
             musicStyle: { type: string, enum: [ambient, uplifting, suspense], default: ambient }
             musicVolume: { type: number, minimum: 0, maximum: 0.5, default: 0.12 }
