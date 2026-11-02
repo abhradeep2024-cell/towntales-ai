@@ -42,6 +42,7 @@ jobs:
       - name: Run unit tests
         run: npm test
       - name: Wait for deployed Render API and verify ChatGPT Action schema and database
+        if: github.event_name == 'push'
         run: |
           ready=0
           for attempt in $(seq 1 24); do
