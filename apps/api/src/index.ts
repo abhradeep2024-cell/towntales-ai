@@ -11,7 +11,14 @@ const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
 const supabaseUrl = env('SUPABASE_URL');
-const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY') || env('SUPABASE_SECRET_KEY');
+// Prefer the current opaque secret key. Supabase requires sb_secret_* keys in
+// the apikey header only; supabase-js normally mirrors its key into Authorization.
+const serviceKey = env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseApiKeyFetch: typeof fetch = async (input, init) => {
+  const headers = new Headers(init?.headers);
+  headers.delete('Authorization');
+  return fetch(input, { ...init, headers });
+};
 const githubActionsToken = env('GITHUB_ACTIONS_TOKEN');
 
 async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: string) => void }) {
@@ -40,7 +47,7 @@ async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: st
 }
 const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'towntales-assets';
 let supabase: SupabaseClient | undefined;
-if (supabaseUrl && serviceKey) supabase = createClient(supabaseUrl, serviceKey, {auth:{persistSession:false,autoRefreshToken:false}});
+if (supabaseUrl && serviceKey) supabase = createClient(supabaseUrl, serviceKey, {auth:{persistSession:false,autoRefreshToken:false},global:{fetch:supabaseApiKeyFetch}});
 
 function bearer(request: {headers: Record<string, unknown>}) {
   const value = request.headers.authorization;
