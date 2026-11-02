@@ -98,6 +98,30 @@ app.post('/internal/jobs/:id/complete', async (request, reply) => {
   }
 });
 
+app.post('/v1/jobs/:id/retry', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({ error: 'unauthorized' });
+  const { id } = request.params as { id: string };
+  try {
+    const db = requireDb();
+    const { data: existing, error: readError } = await db.from('film_studio_jobs')
+      .select('id,status,attempt_count,max_attempts').eq('id', id).maybeSingle();
+    if (readError) throw readError;
+    if (!existing) return reply.code(404).send({ error: 'job_not_found' });
+    if (existing.status !== 'failed' || existing.attempt_count >= existing.max_attempts) {
+      return reply.code(409).send({ error: 'job_not_retryable', attemptCount: existing.attempt_count, maxAttempts: existing.max_attempts });
+    }
+    const { data, error } = await db.from('film_studio_jobs').update({
+      status: 'queued', progress: 0, error: null, output_key: null, output_bytes: null, qc_report: null, updated_at: new Date().toISOString()
+    }).eq('id', id).eq('status', 'failed').eq('attempt_count', existing.attempt_count).select('id,status,progress').maybeSingle();
+    if (error) throw error;
+    if (!data) return reply.code(409).send({ error: 'job_state_changed_retry_again' });
+    return reply.code(202).send(data);
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(503).send({ error: 'job_retry_failed' });
+  }
+});
+
 app.post('/v1/jobs/:id/cancel', async (request, reply) => {
   if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
   const {id} = request.params as {id:string};
