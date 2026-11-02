@@ -1,0 +1,59 @@
+name: Film Studio Renderer
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+concurrency:
+  group: film-studio-render-queue
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  render-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      RENDERER_SHARED_SECRET: ${{ secrets.RENDERER_SHARED_SECRET }}
+      SUPABASE_STORAGE_BUCKET: film-studio-private
+      RENDER_ONCE: 'true'
+      REMOTION_CONCURRENCY: '2'
+    steps:
+      - name: Check required deployment secrets
+        run: |
+          missing=0
+          for name in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY API_BASE_URL RENDERER_SHARED_SECRET; do
+            if [ -z "${!name}" ]; then
+              echo "::notice::Repository secret $name is not configured. Renderer run skipped."
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            echo "FILM_STUDIO_SECRETS_MISSING=true" >> "$GITHUB_ENV"
+          fi
+      - uses: actions/checkout@v4
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        with:
+          node-version: 22
+      - name: Install system FFmpeg
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install dependencies
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: npm install --no-audit --no-fund
+      - name: Build application workspaces
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: npm run build
+      - name: Ensure Remotion browser
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        working-directory: apps/renderer
+        run: npx remotion browser ensure
+      - name: Claim and render one queued job
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: npm run render:worker:once --workspace=apps/renderer
