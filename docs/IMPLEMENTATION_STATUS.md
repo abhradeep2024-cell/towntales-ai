@@ -13,7 +13,7 @@
 
 ## Not yet verified
 - Dependency installation, typecheck, build and automated test suite.
-- Real MP4 render, playback and frame-by-frame inspection.
+- Real MP4 render, playback and frame-by-frame inspection (added as a GitHub Actions CI artifact; pending).
 - Supabase migrations and private bucket creation.
 - Render deployment and live API/worker operation.
 - Runtime asset-management/upload endpoints and complete 66-style renderer adapters.
