@@ -20,7 +20,7 @@ export const ProjectFilesSchema = z.record(z.string(), z.string()).superRefine((
   if (totalBytes > 1_800_000) ctx.addIssue({code:'custom',path:[],message:'Project text assets must total 1.8 MB or less. Put small media in data URIs and keep assets optimized.'});
   const allSource = entries.map(([, source]) => source).join('\n');
   for (const contract of ['window.DUR','window.render','window.READY']) {
-    if (!allSource.includes(contract)) ctx.addIssue({code:'custom',path:['index.html'],message:\`The project bundle must implement the Lemo page contract: \${contract}.\`});
+    if (!allSource.includes(contract)) ctx.addIssue({code:'custom',path:['index.html'],message:'The project bundle must implement the Lemo page contract: ' + contract + '.'});
   }
   const remoteResourcePatterns = [
     /<(script|link|img|audio|video|source)\b[^>]*(src|href)\s*=\s*["']\s*https?:\/\//i,
