@@ -49,8 +49,6 @@ export const ProductionSpecSchema = z.object({
   projectFiles: ProjectFilesSchema.optional(),
   subtitles: z.array(z.object({start: z.number().nonnegative(), end: z.number().positive(), text: z.string().min(1).max(500)})).max(300).default([]),
   audio: z.object({
-    musicAssetId: z.string().optional(),
-    voiceAssetId: z.string().optional(),
     musicEnabled: z.boolean().default(true),
     voiceEnabled: z.boolean().default(true),
     voice: z.string().min(1).max(120).default('en-US-AriaNeural'),
