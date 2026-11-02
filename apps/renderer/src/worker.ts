@@ -52,7 +52,7 @@ async function runJob(job: any, serveUrl: string) {
       durationInFrames: Math.round(production.durationSeconds * production.fps)
     };
     await renderMedia({
-      composition: actual, serveUrl, codec: 'h264', outputLocation: outputPath,
+      composition: actual, serveUrl, codec: 'h264', outputLocation: outputPath, crf: 28, x264Preset: 'veryfast',
       inputProps: { production }, concurrency,
       onProgress: async ({ progress }) => {
         const { data: current, error } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
@@ -66,11 +66,18 @@ async function runJob(job: any, serveUrl: string) {
     const metadata = JSON.parse(probe.stdout);
     const bytes = (await stat(outputPath)).size;
     if (!bytes || bytes < 1000) throw new Error('Rendered MP4 is unexpectedly small.');
+    if (bytes > 50 * 1024 * 1024) throw new Error('Rendered MP4 exceeds the existing Supabase bucket limit of 50 MB. Reduce duration, resolution, or visual complexity.');
     await execFileAsync('ffmpeg', ['-v', 'error', '-i', outputPath, '-f', 'null', '-']);
     const duration = Number(metadata.format?.duration ?? 0);
     if (Math.abs(duration - production.durationSeconds) > 1) throw new Error(`Duration mismatch: expected ${production.durationSeconds}s, got ${duration}s.`);
     const video = (metadata.streams ?? []).find((stream: any) => stream.codec_type === 'video');
     if (!video || video.width !== production.width || video.height !== production.height) throw new Error('Video dimensions do not match the production specification.');
+    const [frameNumerator, frameDenominator] = String(video.r_frame_rate ?? '0/1').split('/').map(Number);
+    const actualFps = frameDenominator ? frameNumerator / frameDenominator : 0;
+    if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Frame rate does not match the production specification.');
+    const audioPresent = (metadata.streams ?? []).some((stream: any) => stream.codec_type === 'audio');
+    const audioRequested = Boolean(production.audio?.musicAssetId || production.audio?.voiceAssetId);
+    if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was rendered. Audio asset mixing is not enabled yet.');
 
     const { data: latest, error: latestError } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
     if (latestError) throw latestError;
@@ -84,7 +91,7 @@ async function runJob(job: any, serveUrl: string) {
       passed: true,
       checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true },
       durationSeconds: duration, width: video.width, height: video.height, bytes,
-      audioPresent: (metadata.streams ?? []).some((stream: any) => stream.codec_type === 'audio'),
+      audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
       validatedAt: new Date().toISOString()
     };
     await api(`/internal/jobs/${jobId}/complete`, { outputKey: objectKey, outputBytes: bytes, qcReport });
