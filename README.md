@@ -4,6 +4,7 @@ Free-tier-first, ChatGPT-directed film production. ChatGPT is the creative direc
 
 ## Boundaries
 - No Gemini or paid API dependency.
+- Render hosts the authenticated API; public GitHub Actions runners perform Chromium/Remotion rendering to avoid Render's free 512 MB / 0.1 CPU instance limit.
 - Remotion composes supplied assets, graphics, typography, procedural animation and audio; it is not a text-to-video model.
 - Render target begins with 5-second 720p smoke tests, then multi-scene, audio, subtitles and vertical output.
 - Supabase Storage stays private. Service-role keys remain server-side.
