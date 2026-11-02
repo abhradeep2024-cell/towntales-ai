@@ -9,7 +9,7 @@ const landscapeProduction = {
   fps: 30 as const, width: 1280, height: 720,
   scenes: [{id:'scene-1',title:'Film Studio',durationSeconds:5,visualDirection:'A clean cinematic title reveal',narration:'',onScreenText:['FILM STUDIO'],background:'#101522'}],
   subtitles: [{start:1,end:3,text:'Five second render test'}],
-  audio: {musicEnabled:false,voiceEnabled:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
+  audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
 
 const multiSceneProduction = {
@@ -22,7 +22,7 @@ const multiSceneProduction = {
     {id:'scene-3',title:'The Resolution',durationSeconds:4,visualDirection:'The composition resolves into a final frame',narration:'',onScreenText:['03 · RESOLUTION'],background:'#243c48'}
   ],
   subtitles: [{start:0.5,end:2.5,text:'A signal appears.'},{start:3.5,end:5.5,text:'A response follows.'},{start:7,end:9.5,text:'The story resolves.'}],
-  audio: {musicEnabled:false,voiceEnabled:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
+  audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
 
 const verticalProduction = {
@@ -31,7 +31,7 @@ const verticalProduction = {
   fps: 30 as const, width: 720, height: 1280,
   scenes: [{id:'scene-1',title:'VERTICAL',durationSeconds:5,visualDirection:'A title framed for portrait mobile viewing',narration:'',onScreenText:['9:16 · 720 × 1280'],background:'#101522'}],
   subtitles: [{start:1,end:3,text:'Portrait render check'}],
-  audio: {musicEnabled:false,voiceEnabled:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
+  audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
 
 export const FilmStudioRoot:React.FC = () => <>
