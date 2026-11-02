@@ -18,9 +18,19 @@ export const ProjectFilesSchema = z.record(z.string(), z.string()).superRefine((
     totalBytes += new TextEncoder().encode(content).length;
   }
   if (totalBytes > 1_800_000) ctx.addIssue({code:'custom',path:[],message:'Project text assets must total 1.8 MB or less. Put small media in data URIs and keep assets optimized.'});
-  const html = files['index.html'] ?? '';
+  const allSource = entries.map(([, source]) => source).join('\\n');
   for (const contract of ['window.DUR','window.render','window.READY']) {
-    if (!html.includes(contract)) ctx.addIssue({code:'custom',path:['index.html'],message:`index.html must implement the Lemo page contract: ${contract}.`});
+    if (!allSource.includes(contract)) ctx.addIssue({code:'custom',path:['index.html'],message:`The project bundle must implement the Lemo page contract: ${contract}.`});
+  }
+  const remoteResourcePatterns = [
+    /<(script|link|img|audio|video|source)\\b[^>]*(src|href)\\s*=\\s*["']\\s*https?:\\/\\//i,
+    /@import\\s+(?:url\\()?\\s*["']?https?:\\/\\//i,
+    /\\b(?:import|export)\\s+[^;]*?\\bfrom\\s*["']https?:\\/\\//is,
+    /\\bimport\\s*\\(\\s*["']https?:\\/\\//i,
+    /\\bfetch\\s*\\(\\s*["']https?:\\/\\//i
+  ];
+  if (remoteResourcePatterns.some((pattern) => pattern.test(allSource))) {
+    ctx.addIssue({code:'custom',path:[],message:'Lemo project files must load scripts, styles and media locally; remote resource URLs are not allowed.'});
   }
 });
 
