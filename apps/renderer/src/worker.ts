@@ -93,7 +93,7 @@ async function runJob(job: any, serveUrl: string) {
     const audioScript = join(process.cwd(), 'apps', 'renderer', 'scripts', 'audio_pipeline.py');
     await execFileAsync(env('PYTHON_EXECUTABLE') ?? 'python3', [
       audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
-      ...(production.projectFiles ? ['--burn-subtitles'] : [])
+      ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : [])
     ], { timeout: 4 * 60 * 1000, maxBuffer: 2_000_000 });
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
@@ -129,7 +129,7 @@ async function runJob(job: any, serveUrl: string) {
       checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true, audioPresent: audioRequested ? audioPresent : true },
       durationSeconds: duration, width: video.width, height: video.height, fps: actualFps, bytes,
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
-      audioMode: { musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled, musicStyle: production.audio.musicStyle },
+      audioMode: { musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled, burnSubtitles: production.audio.burnSubtitles, musicStyle: production.audio.musicStyle },
       validatedAt: new Date().toISOString()
     };
     await api(`/internal/jobs/${jobId}/complete`, { outputKey: objectKey, outputBytes: bytes, qcReport });
