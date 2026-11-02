@@ -2,14 +2,24 @@
   "name": "chatgpt-film-studio",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:api": "npm --workspace apps/api run dev",
     "dev:renderer": "npm --workspace apps/renderer run dev",
     "build": "npm --workspace packages/contracts run build && npm run build --workspaces --if-present",
     "typecheck": "npm --workspace packages/contracts run typecheck && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "render:smoke": "npm --workspace apps/renderer run render:smoke"
+    "render:smoke": "npm --workspace apps/renderer run render:smoke",
+    "render:smoke:multi": "remotion render apps/renderer/src/index.tsx FilmStudioMultiSceneSmoke /tmp/film-studio-multi-scene.mp4 --log=error",
+    "render:smoke:vertical": "remotion render apps/renderer/src/index.tsx FilmStudioVerticalSmoke /tmp/film-studio-vertical.mp4 --log=error",
+    "render:lemo:smoke": "node vendor/lemo-opuscar/core/render/video.mjs apps/renderer/fixtures/lemo-smoke --fps 30 --workers 2 --out /tmp/film-studio-lemo-smoke.mp4 --size 1280x720 && ffprobe -v error -show_entries format=duration,size:stream=codec_type,width,height,r_frame_rate -of json /tmp/film-studio-lemo-smoke.mp4",
+    "test:audio": "python3 apps/renderer/scripts/audio_pipeline.py --spec apps/renderer/fixtures/audio-smoke.json --video /tmp/film-studio-smoke.mp4 --output /tmp/film-studio-audio-smoke.mp4 --workdir /tmp/film-studio-audio-test",
+    "test:project": "node -e \"const {ProductionSpecSchema}=require('./packages/contracts/dist/index.js'); console.log(ProductionSpecSchema.safeParse({}).success ? 'unexpected success' : 'schema rejects empty production');\""
   },
-  "engines": {"node": ">=22"}
+  "engines": {
+    "node": ">=22"
+  }
 }
