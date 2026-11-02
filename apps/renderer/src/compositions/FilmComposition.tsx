@@ -22,10 +22,10 @@ export const FilmComposition:React.FC<{production:ProductionSpec}> = ({productio
 
 const SceneCard:React.FC<{scene:ProductionSpec['scenes'][number];index:number}> = ({scene,index}) => {
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
+  const {fps,durationInFrames} = useVideoConfig();
   const enter = spring({frame,fps,config:{damping:18}});
   const opacity = interpolate(frame,[0,12],[0,1],{extrapolateRight:'clamp'});
-  const zoom = interpolate(frame,[0,150],[1.08,1],{extrapolateRight:'clamp'});
+  const zoom = interpolate(frame,[0,durationInFrames],[1.08,1],{extrapolateRight:'clamp'});
   return <AbsoluteFill style={{background:scene.background,justifyContent:'center',alignItems:'center',padding:90,opacity,transform:`scale(${zoom})`}}>
     <div style={{position:'absolute',top:54,left:64,fontSize:20,letterSpacing:5,opacity:0.55}}>CHAPTER {String(index+1).padStart(2,'0')}</div>
     <div style={{fontSize:76,fontWeight:750,textAlign:'center',transform:`translateY(${(1-enter)*45}px)`}}>{scene.title}</div>
