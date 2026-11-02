@@ -11,7 +11,7 @@ const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
 const supabaseUrl = env('SUPABASE_URL');
-const serviceKey = env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
+const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY') || env('SUPABASE_SECRET_KEY');
 const githubActionsToken = env('GITHUB_ACTIONS_TOKEN');
 
 async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: string) => void }) {
