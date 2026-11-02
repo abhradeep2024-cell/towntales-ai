@@ -1,0 +1,16 @@
+{
+  "name":"@film-studio/renderer","version":"0.1.0","private":true,"type":"module",
+  "scripts":{
+    "dev":"remotion studio src/index.tsx",
+    "build":"tsc -p tsconfig.json",
+    "typecheck":"tsc --noEmit -p tsconfig.json",
+    "render:smoke":"remotion render src/index.tsx FilmStudioSmoke /tmp/film-studio-smoke.mp4 --log=error && ffprobe -v error -show_entries format=duration,size -of json /tmp/film-studio-smoke.mp4",
+    "start":"tsx src/worker.ts"
+  },
+  "dependencies":{
+    "@remotion/cli":"^4.0.398","@remotion/renderer":"^4.0.398","@remotion/bundler":"^4.0.398",
+    "remotion":"^4.0.398","react":"^19.1.1","react-dom":"^19.1.1",
+    "@film-studio/contracts":"0.1.0","@supabase/supabase-js":"^2.57.4"
+  },
+  "devDependencies":{"@types/react":"^19.1.13","@types/node":"^22.18.6","typescript":"^5.9.2","tsx":"^4.20.5"}
+}
