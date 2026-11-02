@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "title": "Audio smoke",
+  "idea": "A five-second speech and music mux test",
+  "styleId": "swiss-motion",
+  "durationSeconds": 5,
+  "aspectRatio": "16:9",
+  "fps": 30,
+  "width": 1280,
+  "height": 720,
+  "scenes": [
+    {
+      "id": "audio-1",
+      "title": "Audio test",
+      "durationSeconds": 5,
+      "visualDirection": "Audio pipeline verification",
+      "narration": "This is the Film Studio voice and music test.",
+      "background": "#101522"
+    }
+  ],
+  "subtitles": [{"start":0.3,"end":4.8,"text":"This is the Film Studio voice and music test."}],
+  "audio": {
+    "musicEnabled": true,
+    "voiceEnabled": true,
+    "voice": "en-US-AriaNeural",
+    "musicStyle": "ambient",
+    "musicVolume": 0.12,
+    "voiceVolume": 1
+  }
+}
