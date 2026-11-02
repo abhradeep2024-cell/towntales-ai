@@ -10,7 +10,8 @@
     "render:smoke": "remotion render src/index.tsx FilmStudioSmoke /tmp/film-studio-smoke.mp4 --log=error && ffprobe -v error -show_entries format=duration,size -of json /tmp/film-studio-smoke.mp4",
     "start": "tsx src/worker.ts",
     "render:worker:once": "RENDER_ONCE=true tsx src/worker.ts",
-    "browser:ensure": "remotion browser ensure"
+    "browser:ensure": "remotion browser ensure",
+    "test:audio": "python3 apps/renderer/scripts/audio_pipeline.py --spec apps/renderer/fixtures/audio-smoke.json --video /tmp/film-studio-smoke.mp4 --output /tmp/film-studio-audio-smoke.mp4 --workdir /tmp/film-studio-audio-test"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.398",
