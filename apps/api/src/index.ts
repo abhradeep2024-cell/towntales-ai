@@ -1,8 +1,10 @@
 import Fastify from 'fastify';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { CreateJobSchema } from '@film-studio/contracts';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-const app = Fastify({logger: true, bodyLimit: 1_000_000});
+const app = Fastify({logger: true, bodyLimit: 4_000_000});
 const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
@@ -51,6 +53,64 @@ function requireDb() {
 }
 
 app.get('/health', async () => ({ok:true,service:'film-studio-api',databaseConfigured:Boolean(supabase)}));
+
+app.get('/openapi.yaml', async (_request, reply) => {
+  try {
+    const schema = await readFile(join(process.cwd(), 'openapi.yaml'), 'utf8');
+    return reply.type('application/yaml; charset=utf-8').send(schema);
+  } catch {
+    return reply.code(404).send({error:'openapi_schema_not_found'});
+  }
+});
+
+let styleCatalogCache: any;
+async function getStyleCatalog() {
+  if (!styleCatalogCache) {
+    const raw = await readFile(join(process.cwd(), 'packages', 'contracts', 'src', 'lemo-style-catalog.json'), 'utf8');
+    styleCatalogCache = JSON.parse(raw);
+  }
+  return styleCatalogCache;
+}
+
+const styleGuideCache = new Map<string, string>();
+app.get('/v1/styles', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  try {
+    const query = request.query as {q?:string;category?:string};
+    const catalog = await getStyleCatalog();
+    const q = (query.q ?? '').trim().toLowerCase();
+    const category = (query.category ?? '').trim().toLowerCase();
+    const styles = catalog.styles.filter((style: any) =>
+      (!q || [style.slug,style.name,style.nameZh,style.demo].some((value:string) => String(value).toLowerCase().includes(q))) &&
+      (!category || style.category.toLowerCase() === category)
+    );
+    return {source:catalog.source,sourceCommit:catalog.sourceCommit,count:styles.length,styles};
+  } catch (error) {
+    request.log.error(error); return reply.code(503).send({error:'style_catalog_unavailable'});
+  }
+});
+
+app.get('/v1/styles/:slug', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const {slug} = request.params as {slug:string};
+  try {
+    const catalog = await getStyleCatalog();
+    const style = catalog.styles.find((item:any) => item.slug === slug);
+    if (!style) return reply.code(404).send({error:'style_not_found'});
+    let guide = styleGuideCache.get(slug);
+    if (!guide) {
+      const url = `https://raw.githubusercontent.com/lemomo-ai/lemo-opuscar/${catalog.sourceCommit}/styles/${slug}/STYLE.md`;
+      const response = await fetch(url, {signal:AbortSignal.timeout(8000)});
+      if (!response.ok) return reply.code(502).send({error:'style_guide_fetch_failed'});
+      guide = await response.text();
+      if (guide.length > 25_000) guide = guide.slice(0,25_000);
+      styleGuideCache.set(slug,guide);
+    }
+    return {style,styleGuide:guide,sourceCommit:catalog.sourceCommit};
+  } catch (error) {
+    request.log.error(error); return reply.code(503).send({error:'style_guide_unavailable'});
+  }
+});
 
 app.post('/v1/jobs', async (request, reply) => {
   if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
