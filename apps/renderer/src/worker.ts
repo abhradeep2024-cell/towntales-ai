@@ -3,7 +3,7 @@ import { getCompositions, renderMedia } from '@remotion/renderer';
 import { createClient } from '@supabase/supabase-js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -40,28 +40,63 @@ async function runJob(job: any, serveUrl: string) {
   const production = parsed.data;
   const workDir = await mkdtemp(join(tmpdir(), 'film-studio-'));
   const outputPath = join(workDir, 'final.mp4');
+  const silentPath = join(workDir, 'picture-only.mp4');
+  const specPath = join(workDir, 'production.json');
 
   try {
-    const compositions = await getCompositions(serveUrl, { inputProps: { production }, ...(browserExecutable ? { browserExecutable } : {}) });
-    const composition = compositions.find((item) => item.id === 'FilmStudio');
-    if (!composition) throw new Error('FilmStudio composition was not registered.');
-    const actual = {
-      ...composition,
-      width: production.width,
-      height: production.height,
-      fps: production.fps,
-      durationInFrames: Math.round(production.durationSeconds * production.fps)
-    };
-    await renderMedia({
-      composition: actual, serveUrl, codec: 'h264', outputLocation: outputPath, crf: 28, x264Preset: 'veryfast',
-      inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
-      onProgress: async ({ progress }) => {
-        const { data: current, error } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
-        if (error) throw error;
-        if (current.status === 'cancelled') throw new Error('JOB_CANCELLED');
-        await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: Math.max(2, Math.min(92, Math.round(progress * 90))) });
+    let renderer: 'lemo-opuscar' | 'remotion' = 'remotion';
+    if (production.projectFiles) {
+      renderer = 'lemo-opuscar';
+      const projectDir = join(workDir, 'lemo-project');
+      await mkdir(projectDir, { recursive: true });
+      for (const [relativePath, contents] of Object.entries(production.projectFiles)) {
+        const target = join(projectDir, relativePath);
+        await mkdir(join(target, '..'), { recursive: true });
+        await writeFile(target, contents, 'utf8');
       }
-    });
+      const lemoEntry = join(process.cwd(), 'vendor', 'lemo-opuscar', 'core', 'render', 'video.mjs');
+      try { await stat(lemoEntry); } catch { throw new Error('The pinned Lemo-Opuscar submodule is missing. Check out the repository with submodules and install vendor/lemo-opuscar dependencies.'); }
+      await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 8 });
+      await execFileAsync('node', [lemoEntry, projectDir, '--fps', String(production.fps), '--workers', String(concurrency), '--out', silentPath, '--size', `${production.width}x${production.height}`], { timeout: 12 * 60 * 1000, maxBuffer: 2_000_000 });
+      await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 82 });
+    } else {
+      const compositions = await getCompositions(serveUrl, { inputProps: { production }, ...(browserExecutable ? { browserExecutable } : {}) });
+      const composition = compositions.find((item) => item.id === 'FilmStudio');
+      if (!composition) throw new Error('FilmStudio composition was not registered.');
+      const actual = {
+        ...composition,
+        width: production.width,
+        height: production.height,
+        fps: production.fps,
+        durationInFrames: Math.round(production.durationSeconds * production.fps)
+      };
+      let lastSync = 0;
+      let lastProgress = -1;
+      await renderMedia({
+        composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 28, x264Preset: 'veryfast',
+        inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
+        onProgress: async ({ progress }) => {
+          const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));
+          const now = Date.now();
+          if (pct === lastProgress && now - lastSync < 2500) return;
+          const { data: current, error } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
+          if (error) throw error;
+          if (current.status === 'cancelled') throw new Error('JOB_CANCELLED');
+          if (pct !== lastProgress) await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: pct });
+          lastProgress = pct;
+          lastSync = now;
+        }
+      });
+    }
+
+    await writeFile(specPath, JSON.stringify(production), 'utf8');
+    const audioScript = join(process.cwd(), 'apps', 'renderer', 'scripts', 'audio_pipeline.py');
+    await execFileAsync(env('PYTHON_EXECUTABLE') ?? 'python3', [
+      audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
+      ...(production.projectFiles ? ['--burn-subtitles'] : [])
+    ], { timeout: 4 * 60 * 1000, maxBuffer: 2_000_000 });
+
+    await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
 
     const probe = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration,size:stream=codec_type,width,height,r_frame_rate', '-of', 'json', outputPath]);
     const metadata = JSON.parse(probe.stdout);
@@ -77,8 +112,8 @@ async function runJob(job: any, serveUrl: string) {
     const actualFps = frameDenominator ? frameNumerator / frameDenominator : 0;
     if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Frame rate does not match the production specification.');
     const audioPresent = (metadata.streams ?? []).some((stream: any) => stream.codec_type === 'audio');
-    const audioRequested = Boolean(production.audio?.musicAssetId || production.audio?.voiceAssetId);
-    if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was rendered. Audio asset mixing is not enabled yet.');
+    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)) || production.audio?.musicAssetId || production.audio?.voiceAssetId);
+    if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was found in the final MP4.');
 
     const { data: latest, error: latestError } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
     if (latestError) throw latestError;
@@ -90,9 +125,11 @@ async function runJob(job: any, serveUrl: string) {
     if (uploadError) throw uploadError;
     const qcReport = {
       passed: true,
-      checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true },
-      durationSeconds: duration, width: video.width, height: video.height, bytes,
+      renderer,
+      checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true, audioPresent: audioRequested ? audioPresent : true },
+      durationSeconds: duration, width: video.width, height: video.height, fps: actualFps, bytes,
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
+      audioMode: { musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled, musicStyle: production.audio.musicStyle },
       validatedAt: new Date().toISOString()
     };
     await api(`/internal/jobs/${jobId}/complete`, { outputKey: objectKey, outputBytes: bytes, qcReport });
