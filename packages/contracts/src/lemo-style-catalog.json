@@ -1,0 +1,471 @@
+{
+  "source": "https://github.com/lemomo-ai/lemo-opuscar",
+  "sourceCommit": "bebbbe1aa92a3cb4bb6f83500e61b23a17d1aa00",
+  "licence": "MIT",
+  "generatedAt": "2026-11-02",
+  "count": 66,
+  "styles": [
+    {
+      "slug": "caption-news",
+      "name": "Caption News",
+      "nameZh": "字幕新闻",
+      "category": "Edit & Documentary",
+      "demo": "The Bee Ledger"
+    },
+    {
+      "slug": "newsreel",
+      "name": "1920s Newsreel",
+      "nameZh": "1920s 新闻影片",
+      "category": "Edit & Documentary",
+      "demo": "Knock-Knee Alert"
+    },
+    {
+      "slug": "countdown",
+      "name": "Live Countdown Split-screen",
+      "nameZh": "实时倒计时分屏",
+      "category": "Edit & Documentary",
+      "demo": "Counting Itself Down"
+    },
+    {
+      "slug": "city-symphony",
+      "name": "Time-lapse Symphony",
+      "nameZh": "延时交响",
+      "category": "Edit & Documentary",
+      "demo": "One Day in New York"
+    },
+    {
+      "slug": "visual-investigation",
+      "name": "Visual Investigation",
+      "nameZh": "视觉调查",
+      "category": "Edit & Documentary",
+      "demo": "The Hindenburg: Four Minutes, 32 Seconds"
+    },
+    {
+      "slug": "kino-montage",
+      "name": "Constructivist Montage",
+      "nameZh": "构成主义蒙太奇",
+      "category": "Edit & Documentary",
+      "demo": "410 Days"
+    },
+    {
+      "slug": "telestrator",
+      "name": "Sports Telestrator",
+      "nameZh": "体育战术板",
+      "category": "Edit & Documentary",
+      "demo": "Freeze Frame"
+    },
+    {
+      "slug": "news-package",
+      "name": "Broadcast News Package",
+      "nameZh": "电视新闻包装",
+      "category": "Edit & Documentary",
+      "demo": "The Week in AI"
+    },
+    {
+      "slug": "satellite-briefing",
+      "name": "Satellite Briefing",
+      "nameZh": "卫星简报",
+      "category": "Evidence Films",
+      "demo": "The Map Still Says Sea"
+    },
+    {
+      "slug": "briefing-board",
+      "name": "Engineering Briefing Board",
+      "nameZh": "工程简报板",
+      "category": "Evidence Films",
+      "demo": "The Ship Decides"
+    },
+    {
+      "slug": "lidar-survey",
+      "name": "LiDAR Survey",
+      "nameZh": "点云测绘",
+      "category": "Evidence Films",
+      "demo": "The Fields Under the Forest"
+    },
+    {
+      "slug": "white-model",
+      "name": "Projection on White Model",
+      "nameZh": "白模投影",
+      "category": "Evidence Films",
+      "demo": "How a Flattened City Grew Back"
+    },
+    {
+      "slug": "data-physical",
+      "name": "Data Physicalization",
+      "nameZh": "数据实物化",
+      "category": "Evidence Films",
+      "demo": "Two Spirals"
+    },
+    {
+      "slug": "teardown",
+      "name": "Exploded Teardown",
+      "nameZh": "产品拆解",
+      "category": "Evidence Films",
+      "demo": "21 Keys, Opened"
+    },
+    {
+      "slug": "microscope",
+      "name": "Microscope Story",
+      "nameZh": "显微叙事",
+      "category": "Evidence Films",
+      "demo": "Measured Blue"
+    },
+    {
+      "slug": "archive-lighttable",
+      "name": "Archive Light Table",
+      "nameZh": "档案灯台",
+      "category": "Evidence Films",
+      "demo": "Two Seconds Short"
+    },
+    {
+      "slug": "crayon-book",
+      "name": "Crayon Picture Book",
+      "nameZh": "蜡笔儿童绘本",
+      "category": "Hand-drawn & Painting",
+      "demo": "The Moon Can't Sleep"
+    },
+    {
+      "slug": "watercolor",
+      "name": "Watercolor Brush",
+      "nameZh": "水彩笔刷",
+      "category": "Hand-drawn & Painting",
+      "demo": "Follow the Rain"
+    },
+    {
+      "slug": "ink-wash",
+      "name": "Chinese Ink Wash",
+      "nameZh": "中国水墨",
+      "category": "Hand-drawn & Painting",
+      "demo": "The Swordsman and the River"
+    },
+    {
+      "slug": "impasto",
+      "name": "Impasto Oil Painting",
+      "nameZh": "油画厚涂",
+      "category": "Hand-drawn & Painting",
+      "demo": "The Colour of Rain"
+    },
+    {
+      "slug": "one-line",
+      "name": "One-line Drawing",
+      "nameZh": "一笔画",
+      "category": "Hand-drawn & Painting",
+      "demo": "The Line That Never Lifted"
+    },
+    {
+      "slug": "whiteboard",
+      "name": "Whiteboard Explainer",
+      "nameZh": "白板讲解",
+      "category": "Hand-drawn & Painting",
+      "demo": "Einstein in Your Pocket"
+    },
+    {
+      "slug": "urban-sketch",
+      "name": "Urban Sketch · Pen & Wash",
+      "nameZh": "钢笔淡彩",
+      "category": "Hand-drawn & Painting",
+      "demo": "Where the Wind Went"
+    },
+    {
+      "slug": "chalkboard",
+      "name": "Chalkboard",
+      "nameZh": "黑板粉笔",
+      "category": "Hand-drawn & Painting",
+      "demo": "The Story of Chinese Characters"
+    },
+    {
+      "slug": "shadow-puppet",
+      "name": "Shadow Puppetry",
+      "nameZh": "皮影戏",
+      "category": "East Asian Traditions",
+      "demo": "Hou Yi Shoots the Suns"
+    },
+    {
+      "slug": "ukiyoe",
+      "name": "Ukiyo-e",
+      "nameZh": "浮世绘",
+      "category": "East Asian Traditions",
+      "demo": "Toward the Mountain"
+    },
+    {
+      "slug": "papercut-red",
+      "name": "Red Paper-cut",
+      "nameZh": "红色窗花剪纸",
+      "category": "East Asian Traditions",
+      "demo": "Nian Comes to Town"
+    },
+    {
+      "slug": "paper-lantern",
+      "name": "Paper-cut Lightbox",
+      "nameZh": "纸雕灯影",
+      "category": "East Asian Traditions",
+      "demo": "The Last Night Train"
+    },
+    {
+      "slug": "risograph",
+      "name": "Risograph Print",
+      "nameZh": "Risograph 孔版印刷",
+      "category": "Print & Printmaking",
+      "demo": "Sunday Ride"
+    },
+    {
+      "slug": "halftone-dossier",
+      "name": "Halftone Dossier",
+      "nameZh": "复古半调案卷",
+      "category": "Print & Printmaking",
+      "demo": "Case File: Chubby"
+    },
+    {
+      "slug": "woodcut",
+      "name": "Woodcut Print",
+      "nameZh": "木刻版画",
+      "category": "Print & Printmaking",
+      "demo": "The Bell Founder"
+    },
+    {
+      "slug": "engraving",
+      "name": "Copperplate Engraving",
+      "nameZh": "铜版画",
+      "category": "Print & Printmaking",
+      "demo": "The Honeybee, Plate VII"
+    },
+    {
+      "slug": "silkscreen-poster",
+      "name": "Silkscreen Travel Poster",
+      "nameZh": "丝印旅行海报",
+      "category": "Print & Printmaking",
+      "demo": "The Long Way Home"
+    },
+    {
+      "slug": "printed-long-take",
+      "name": "Printed Long Take",
+      "nameZh": "印刷长镜头",
+      "category": "Print & Printmaking",
+      "demo": "Thirty-Three Cranes"
+    },
+    {
+      "slug": "swiss-motion",
+      "name": "Swiss Motion Graphics",
+      "nameZh": "瑞士动态排版",
+      "category": "Graphic & Type",
+      "demo": "Five Rules for a Poster"
+    },
+    {
+      "slug": "spy-titles",
+      "name": "60s Spy Title Sequence",
+      "nameZh": "60s 间谍片头",
+      "category": "Graphic & Type",
+      "demo": "The Velvet Cipher"
+    },
+    {
+      "slug": "art-deco",
+      "name": "Art Deco",
+      "nameZh": "装饰艺术",
+      "category": "Graphic & Type",
+      "demo": "Midnight at the Starlight Hotel"
+    },
+    {
+      "slug": "blueprint",
+      "name": "Blueprint",
+      "nameZh": "蓝图 / 工程制图",
+      "category": "Graphic & Type",
+      "demo": "Patent Pending: The Cloud Catcher"
+    },
+    {
+      "slug": "stained-glass",
+      "name": "Stained Glass",
+      "nameZh": "彩色玻璃窗",
+      "category": "Graphic & Type",
+      "demo": "The Dragon of the East Window"
+    },
+    {
+      "slug": "pictogram-motion",
+      "name": "Pictogram Motion",
+      "nameZh": "象形运动图形",
+      "category": "Graphic & Type",
+      "demo": "Left Behind"
+    },
+    {
+      "slug": "ascii-crt",
+      "name": "ASCII / CRT Terminal",
+      "nameZh": "ASCII / CRT 终端",
+      "category": "Graphic & Type",
+      "demo": "Tranquility.log"
+    },
+    {
+      "slug": "dataviz",
+      "name": "Data Storytelling",
+      "nameZh": "数据叙事",
+      "category": "Information & Keynote",
+      "demo": "A Hundred Summers"
+    },
+    {
+      "slug": "iso-infographic",
+      "name": "Isometric Infographic",
+      "nameZh": "等距信息图",
+      "category": "Information & Keynote",
+      "demo": "From Bean to Cup"
+    },
+    {
+      "slug": "dark-keynote",
+      "name": "Dark Tech Keynote",
+      "nameZh": "暗色科技发布",
+      "category": "Information & Keynote",
+      "demo": "Room to Think"
+    },
+    {
+      "slug": "living-screencast",
+      "name": "Living Screencast",
+      "nameZh": "活体实机录屏",
+      "category": "Information & Keynote",
+      "demo": "Clawd Moves In"
+    },
+    {
+      "slug": "hologram-hud",
+      "name": "Sci-fi Hologram HUD",
+      "nameZh": "科幻全息界面",
+      "category": "Information & Keynote",
+      "demo": "Volt · Spec Scan"
+    },
+    {
+      "slug": "transit-map",
+      "name": "Transit Map",
+      "nameZh": "地铁线路图",
+      "category": "Information & Keynote",
+      "demo": "6 Kilometres"
+    },
+    {
+      "slug": "isometric-picture-book",
+      "name": "Isometric Picture Book",
+      "nameZh": "等距绘本",
+      "category": "Information & Keynote",
+      "demo": "Seventy-Two Seats"
+    },
+    {
+      "slug": "circuit-board",
+      "name": "Circuit Board",
+      "nameZh": "电路板",
+      "category": "Information & Keynote",
+      "demo": "Seven Milliseconds"
+    },
+    {
+      "slug": "rubber-hose",
+      "name": "1930s Rubber Hose Cartoon",
+      "nameZh": "1930s 橡皮管卡通",
+      "category": "Cartoon & Anime",
+      "demo": "Coffee Cup Chase"
+    },
+    {
+      "slug": "cel-anime-80s",
+      "name": "80s Cel Anime",
+      "nameZh": "80 年代赛璐璐",
+      "category": "Cartoon & Anime",
+      "demo": "City Lights, 1987"
+    },
+    {
+      "slug": "scifi-toon",
+      "name": "Sci-Fi Sitcom Toon",
+      "nameZh": "科幻情景喜剧卡通",
+      "category": "Cartoon & Anime",
+      "demo": "Coffee Run"
+    },
+    {
+      "slug": "midcentury-toon",
+      "name": "Mid-century Cartoon",
+      "nameZh": "50s 扁平卡通",
+      "category": "Cartoon & Anime",
+      "demo": "Meet Pip"
+    },
+    {
+      "slug": "pixel-rpg",
+      "name": "16-bit Pixel RPG",
+      "nameZh": "16-bit 像素 RPG",
+      "category": "Games",
+      "demo": "The Last Save Point"
+    },
+    {
+      "slug": "hd-2d",
+      "name": "HD-2D",
+      "nameZh": "HD-2D",
+      "category": "Games",
+      "demo": "The Lampbearer"
+    },
+    {
+      "slug": "microgame",
+      "name": "Microgame Frenzy",
+      "nameZh": "微游戏快闪",
+      "category": "Games",
+      "demo": "Five-Second Astronaut"
+    },
+    {
+      "slug": "game-show",
+      "name": "Game Show Flat",
+      "nameZh": "综艺节奏扁平",
+      "category": "Games",
+      "demo": "Rhythm of AI, 1997 → 2026"
+    },
+    {
+      "slug": "silent-film",
+      "name": "1920s Silent Film",
+      "nameZh": "1920s 默片",
+      "category": "Cinema & Eras",
+      "demo": "The Runaway Loaf"
+    },
+    {
+      "slug": "backrooms",
+      "name": "Liminal Found Footage",
+      "nameZh": "后室 / 新怪谈",
+      "category": "Cinema & Eras",
+      "demo": "Night Shift Orientation"
+    },
+    {
+      "slug": "brick-toy",
+      "name": "Brick Toy",
+      "nameZh": "积木玩具",
+      "category": "Materials & 3D",
+      "demo": "Rocket from Spare Parts"
+    },
+    {
+      "slug": "paper-popup",
+      "name": "Paper Pop-up Book",
+      "nameZh": "纸片立体书",
+      "category": "Materials & 3D",
+      "demo": "Pip's Paper Adventure"
+    },
+    {
+      "slug": "tilt-shift",
+      "name": "Tilt-Shift Miniature",
+      "nameZh": "移轴微缩",
+      "category": "Materials & 3D",
+      "demo": "Toy Town Rush Hour"
+    },
+    {
+      "slug": "lowpoly-island",
+      "name": "Low-poly Isometric Island",
+      "nameZh": "低多边形等距",
+      "category": "Materials & 3D",
+      "demo": "The Island That Grew"
+    },
+    {
+      "slug": "glass-product",
+      "name": "Glass Product Render",
+      "nameZh": "玻璃质感产品",
+      "category": "Materials & 3D",
+      "demo": "Aura — Hear the Light"
+    },
+    {
+      "slug": "memphis-diorama",
+      "name": "Memphis Diorama",
+      "nameZh": "孟菲斯微缩景观",
+      "category": "Materials & 3D",
+      "demo": "Four Seasons in Pomelo Town"
+    },
+    {
+      "slug": "desktop-flythrough",
+      "name": "Desktop Flythrough",
+      "nameZh": "桌面穿梭",
+      "category": "Materials & 3D",
+      "demo": "Before the Ding"
+    }
+  ]
+}
