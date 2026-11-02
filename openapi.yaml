@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: Authenticated interface for creating and managing video production jobs.
 servers:
-  - url: https://YOUR-RENDER-API.onrender.com
+  - url: https://film-studio-api.onrender.com
 security:
   - bearerAuth: []
 paths:
@@ -24,6 +24,67 @@ paths:
                   ok: { type: boolean }
                   service: { type: string }
                   databaseConfigured: { type: boolean }
+  /openapi.yaml:
+    get:
+      operationId: getOpenApiSchema
+      summary: Get the current Film Studio Action schema
+      security: []
+      responses:
+        '200':
+          description: OpenAPI schema
+          content:
+            application/yaml:
+              schema: { type: string }
+  /v1/styles:
+    get:
+      operationId: listFilmStyles
+      summary: List the pinned Lemo-Opuscar styles
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema: { type: string }
+          description: Search style name, slug, translated name or sample title.
+        - in: query
+          name: category
+          required: false
+          schema: { type: string }
+          description: Exact Lemo style category.
+      responses:
+        '200':
+          description: Available visual styles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  styles:
+                    type: array
+                    items: { $ref: '#/components/schemas/Style' }
+        '401': { description: Unauthorized }
+  /v1/styles/{slug}:
+    get:
+      operationId: getFilmStyleGuide
+      summary: Retrieve a style's directing and visual invariants
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Style and full STYLE.md guide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  style: { $ref: '#/components/schemas/Style' }
+                  styleGuide: { type: string }
+                  sourceCommit: { type: string }
+        '401': { description: Unauthorized }
+        '404': { description: Style not found }
   /v1/jobs:
     post:
       operationId: createRenderJob
@@ -124,6 +185,15 @@ components:
       type: http
       scheme: bearer
   schemas:
+    Style:
+      type: object
+      required: [slug, name, category]
+      properties:
+        slug: { type: string }
+        name: { type: string }
+        nameZh: { type: string }
+        category: { type: string }
+        demo: { type: string }
     Scene:
       type: object
       required: [id, title, durationSeconds, visualDirection]
@@ -155,6 +225,13 @@ components:
         fps: { type: integer, enum: [24, 25, 30], default: 30 }
         width: { type: integer, minimum: 320, maximum: 1920, default: 1280 }
         height: { type: integer, minimum: 320, maximum: 1920, default: 720 }
+        projectFiles:
+          type: object
+          description: >-
+            Optional complete Lemo-Opuscar film page, generated specifically for this production.
+            Must contain index.html implementing window.DUR, window.render(t), and window.READY.
+            Use only local text files; keep the total below 1.8 MB. No remote scripts or assets.
+          additionalProperties: { type: string }
         scenes:
           type: array
           minItems: 1
@@ -175,7 +252,12 @@ components:
           properties:
             musicAssetId: { type: string }
             voiceAssetId: { type: string }
-            musicVolume: { type: number, minimum: 0, maximum: 1, default: 0.18 }
+            musicEnabled: { type: boolean, default: true }
+            voiceEnabled: { type: boolean, default: true }
+            voice: { type: string, default: en-US-AriaNeural }
+            musicStyle: { type: string, enum: [ambient, uplifting, suspense], default: ambient }
+            musicVolume: { type: number, minimum: 0, maximum: 0.5, default: 0.12 }
+            voiceVolume: { type: number, minimum: 0, maximum: 2, default: 1 }
     Job:
       type: object
       properties:
@@ -183,6 +265,7 @@ components:
         status: { type: string, enum: [queued, rendering, uploading, completed, failed, cancelled] }
         progress: { type: integer, minimum: 0, maximum: 100 }
         created_at: { type: string, format: date-time }
+        renderDispatch: { type: string, enum: [dispatched, scheduled_fallback] }
     JobStatus:
       allOf:
         - $ref: '#/components/schemas/Job'
