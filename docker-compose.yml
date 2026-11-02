@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    command: npm --workspace apps/api start
+    env_file: .env
+    ports: ["8080:8080"]
+  renderer:
+    build: .
+    command: npm --workspace apps/renderer start
+    env_file: .env
+    depends_on: [api]
