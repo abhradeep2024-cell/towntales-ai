@@ -19,3 +19,17 @@ jobs:
       - run: npm run build
       - run: npm run typecheck
       - run: npm test
+      - name: Install FFmpeg for MP4 metadata validation
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Ensure Remotion browser
+        working-directory: apps/renderer
+        run: npx remotion browser ensure
+      - name: Render and decode a real five-second MP4
+        run: npm run render:smoke
+      - name: Upload smoke-render artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: film-studio-smoke-mp4
+          path: /tmp/film-studio-smoke.mp4
+          if-no-files-found: error
+          retention-days: 3
