@@ -8,6 +8,7 @@
 - Renderer worker design with job claim, render, FFmpeg decode, ffprobe validation and private upload.
 - Additive Supabase SQL migration.
 - PRD and architecture documentation.
+- Lemo-Opuscar is pinned as a Git submodule, with the MIT source licence and directing workflow documented.
 
 ## Not yet verified
 - Dependency installation, typecheck, build and automated test suite.
