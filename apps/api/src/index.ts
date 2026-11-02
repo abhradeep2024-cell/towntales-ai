@@ -2,8 +2,10 @@ import Fastify from 'fastify';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { CreateJobSchema } from '@film-studio/contracts';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const app = Fastify({logger: true, bodyLimit: 4_000_000});
 const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
@@ -66,7 +68,7 @@ app.get('/health', async (_request, reply) => {
 
 app.get('/openapi.yaml', async (_request, reply) => {
   try {
-    const schema = await readFile(join(process.cwd(), 'openapi.yaml'), 'utf8');
+    const schema = await readFile(join(appRoot, 'openapi.yaml'), 'utf8');
     return reply.type('application/yaml; charset=utf-8').send(schema);
   } catch {
     return reply.code(404).send({error:'openapi_schema_not_found'});
@@ -76,7 +78,7 @@ app.get('/openapi.yaml', async (_request, reply) => {
 let styleCatalogCache: any;
 async function getStyleCatalog() {
   if (!styleCatalogCache) {
-    const raw = await readFile(join(process.cwd(), 'packages', 'contracts', 'src', 'lemo-style-catalog.json'), 'utf8');
+    const raw = await readFile(join(appRoot, 'packages', 'contracts', 'src', 'lemo-style-catalog.json'), 'utf8');
     styleCatalogCache = JSON.parse(raw);
   }
   return styleCatalogCache;
@@ -87,7 +89,7 @@ const styleEngineCache = new Map<string, string>();
 let styleEngineIndexCache: any;
 async function getStyleEngineIndex() {
   if (!styleEngineIndexCache) {
-    const raw = await readFile(join(process.cwd(), 'packages', 'contracts', 'src', 'lemo-engine-index.json'), 'utf8');
+    const raw = await readFile(join(appRoot, 'packages', 'contracts', 'src', 'lemo-engine-index.json'), 'utf8');
     styleEngineIndexCache = JSON.parse(raw);
   }
   return styleEngineIndexCache;
