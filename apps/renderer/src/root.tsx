@@ -1,7 +1,7 @@
 import React from 'react';
 import {Composition} from 'remotion';
-import {FilmComposition} from './compositions/FilmComposition.js';
-import {FilmStudioSmoke} from './compositions/FilmStudioSmoke.js';
+import {FilmComposition} from './compositions/FilmComposition';
+import {FilmStudioSmoke} from './compositions/FilmStudioSmoke';
 
 export const FilmStudioRoot:React.FC = () => <>
   <Composition id="FilmStudio" component={FilmComposition} durationInFrames={150} fps={30} width={1280} height={720}
