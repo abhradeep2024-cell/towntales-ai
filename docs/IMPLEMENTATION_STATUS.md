@@ -22,7 +22,7 @@
 - Original Art Deco style-engine page is included in CI. The first run exposed and fixed a fixture typo; the corrected native engine render is pending CI confirmation. The other 65 styles still need representative rendering tests.
 - Edge TTS voice network call and espeak fallback in CI.
 - Full end-to-end job through the deployed API, worker, private bucket upload, signed URL and final MP4 inspection.
-- Render API's Supabase service-role environment value and GitHub Actions deployment secrets must be configured by the owner.
+- Render API's Supabase backend key and GitHub Actions deployment secrets must be configured by the owner. `SUPABASE_SECRET_KEY` is preferred; the matching legacy `SUPABASE_SERVICE_ROLE_KEY` remains supported.
 - GPT Action must be added manually in the GPT editor and tested with the owner-managed bearer API key.
 
 ## Limitations to keep explicit

@@ -4,10 +4,10 @@
 Use the Animation workspace and deploy the Dockerfile as a single free Web Service. It only hosts the Fastify API; do not run Chromium on Render's free 0.1 CPU / 512 MB instance. Free services sleep after 15 minutes of no inbound traffic, so expect cold starts. The filesystem is ephemeral.
 
 ## GitHub Actions renderer
-The repository is public so standard GitHub-hosted Actions runners can execute the Remotion/Chromium render workload without consuming paid minutes. The renderer workflow is manually dispatched by the API when GITHUB_ACTIONS_TOKEN is configured; otherwise it polls the queue every five minutes. Its job installs FFmpeg, espeak-ng, Edge TTS and the pinned Lemo-Opuscar renderer. Add the repository Actions secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `API_BASE_URL`, and `RENDERER_SHARED_SECRET`. For immediate dispatch, set a fine-grained GitHub token with only Actions:write as the Render API service's `GITHUB_ACTIONS_TOKEN` environment variable. The scheduled fallback does not require that token.
+The repository is public so standard GitHub-hosted Actions runners can execute the Remotion/Chromium render workload without consuming paid minutes. The renderer workflow is manually dispatched by the API when GITHUB_ACTIONS_TOKEN is configured; otherwise it polls the queue every five minutes. Its job installs FFmpeg, espeak-ng, Edge TTS and the pinned Lemo-Opuscar renderer. Add the repository Actions secrets `SUPABASE_URL`, `API_BASE_URL`, and `RENDERER_SHARED_SECRET`, plus either `SUPABASE_SECRET_KEY` (preferred current `sb_secret_…`) or the matching legacy `SUPABASE_SERVICE_ROLE_KEY`. Never store both in source. For immediate dispatch, set a fine-grained GitHub token with only Actions:write as the Render API service's `GITHUB_ACTIONS_TOKEN` environment variable. The scheduled fallback does not require that token.
 
 ## Supabase
-Use a dedicated project or an explicitly approved existing project. Create a private `towntales-assets` bucket with upload limits. Apply migrations only after project identity and quota verification. Never expose the service-role key.
+Use a dedicated project or an explicitly approved existing project. Create a private `towntales-assets` bucket with upload limits. Apply migrations only after project identity and quota verification. Never expose the secret key or legacy service-role key.
 
 ## ChatGPT integration
 Expose authenticated OpenAPI-compatible operations for job creation, status, cancellation and signed output retrieval. Keep API and worker tokens distinct.

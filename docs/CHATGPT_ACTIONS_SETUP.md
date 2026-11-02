@@ -16,7 +16,7 @@ The API expects an `API_TOKEN` environment variable. Never put this token in Git
 1. Generate a new random secret locally (for example, `openssl rand -hex 32`).
 2. Set it as `API_TOKEN` in the Render service environment.
 3. Keep the same value in a password manager so it can be entered into the GPT editor.
-4. Also set `SUPABASE_SERVICE_ROLE_KEY` in Render. The API needs this server-side key to access Film Studio tables and create signed output links.
+4. Also set `SUPABASE_SECRET_KEY` in Render using a secret key from this exact project (starts with `sb_secret_`). It is preferred for backend access. The legacy `service_role` JWT can be used as `SUPABASE_SERVICE_ROLE_KEY` instead, but it must come from the same project. The API needs this server-side key to access Film Studio tables and create signed output links.
 
 Rotating `API_TOKEN` invalidates previously configured GPT Actions until their authentication value is updated.
 
@@ -51,16 +51,17 @@ For every film:
 ## 5. GitHub Actions worker secrets
 In GitHub → Settings → Secrets and variables → Actions, configure:
 - `SUPABASE_URL`: `https://hnjcayazxsrmercryztr.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY`: the Supabase secret key, stored only as an Actions secret
+- `SUPABASE_SECRET_KEY`: the project's `sb_secret_…` key (preferred), stored only as an Actions secret
+- Or `SUPABASE_SERVICE_ROLE_KEY`: the matching legacy service_role JWT, as a fallback
 - `API_BASE_URL`: `https://film-studio-api.onrender.com`
 - `RENDERER_SHARED_SECRET`: the same value set in Render as `RENDERER_SHARED_SECRET`
 
 The scheduled worker runs every five minutes. For immediate dispatch, optionally configure a fine-grained GitHub token with only Actions:write on this repository as Render's `GITHUB_ACTIONS_TOKEN`. This token also remains server-side.
 
 ## 6. Troubleshooting
-- `databaseConfigured: false`: set Render's `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- `databaseConfigured: false`: set Render's `SUPABASE_URL` and a matching `SUPABASE_SECRET_KEY` or legacy `SUPABASE_SERVICE_ROLE_KEY`.
 - `renderDispatch: scheduled_fallback`: this is expected without `GITHUB_ACTIONS_TOKEN`; the queue is polled every five minutes.
 - Job stays queued: verify all four repository Action secrets and check the Film Studio Renderer workflow run.
 - Lemo project fails to load a module: use absolute Lemo library paths and ensure the required style engine is available in the pinned submodule. Keep scripts/fonts/assets local.
 - MP4 exceeds 50 MB: shorten the film, lower output resolution, simplify visuals, or use a lighter codec/CRF before upload.
-- Signed URL fails: check that the existing `towntales-assets` bucket is still private and that Render's service-role key is correct.
+- Signed URL fails: check that the existing `towntales-assets` bucket is still private and that Render's secret/service-role key belongs to the configured project.

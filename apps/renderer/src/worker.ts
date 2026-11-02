@@ -14,7 +14,7 @@ const env = (key: string) => process.env[key];
 const apiBase = (env('API_BASE_URL') ?? 'http://localhost:8080').replace(/\/$/, '');
 const workerSecret = env('RENDERER_SHARED_SECRET');
 const supabaseUrl = env('SUPABASE_URL');
-const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY');
+const serviceKey = env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
 if (!workerSecret || !supabaseUrl || !serviceKey) throw new Error('Worker secrets are not configured.');
 
 const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
