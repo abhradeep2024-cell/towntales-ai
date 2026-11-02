@@ -18,7 +18,7 @@ const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY');
 if (!workerSecret || !supabaseUrl || !serviceKey) throw new Error('Worker secrets are not configured.');
 
 const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'film-studio-private';
+const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'towntales-assets';
 const outputDir = env('RENDER_OUTPUT_DIR') ?? join(tmpdir(), 'film-studio-renders');
 const concurrency = Math.max(1, Math.min(2, Number(env('REMOTION_CONCURRENCY') ?? 1)));
 
