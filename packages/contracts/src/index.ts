@@ -44,7 +44,25 @@ export const SceneSchema = z.object({
   background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522')
 });
 
-export const ProductionSpecSchema = z.object({
+export const ProductionSpecSchema = z.preprocess((input) => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return input;
+  const spec = input as Record<string, unknown>;
+  const ratio = spec.aspectRatio;
+  if (ratio !== '16:9' && ratio !== '9:16' && ratio !== '1:1') return input;
+
+  let width = typeof spec.width === 'number' ? spec.width : undefined;
+  let height = typeof spec.height === 'number' ? spec.height : undefined;
+
+  if (width === undefined && height === undefined) {
+    [width, height] = ratio === '16:9' ? [1280, 720] : ratio === '9:16' ? [720, 1280] : [1080, 1080];
+  } else if (width === undefined && height !== undefined) {
+    width = ratio === '16:9' ? Math.round(height * 16 / 9) : ratio === '9:16' ? Math.round(height * 9 / 16) : height;
+  } else if (height === undefined && width !== undefined) {
+    height = ratio === '16:9' ? Math.round(width * 9 / 16) : ratio === '9:16' ? Math.round(width * 16 / 9) : width;
+  }
+
+  return {...spec, width, height};
+}, z.object({
   schemaVersion: z.literal(1),
   title: z.string().min(1).max(160),
   idea: z.string().min(1).max(8000),
@@ -73,7 +91,7 @@ export const ProductionSpecSchema = z.object({
   if (spec.aspectRatio === '9:16' && spec.width >= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '9:16 output requires portrait dimensions.'});
   if (spec.aspectRatio === '16:9' && spec.width <= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '16:9 output requires landscape dimensions.'});
   if (spec.aspectRatio === '1:1' && spec.width !== spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '1:1 output requires equal dimensions.'});
-});
+}));
 
 export const CreateJobSchema = z.object({production: ProductionSpecSchema});
 export type ProductionSpec = z.infer<typeof ProductionSpecSchema>;

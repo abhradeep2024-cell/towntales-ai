@@ -261,8 +261,8 @@ components:
         durationSeconds: { type: integer, minimum: 1, maximum: 90 }
         aspectRatio: { type: string, enum: ['16:9', '9:16', '1:1'] }
         fps: { type: integer, enum: [24, 25, 30], default: 30 }
-        width: { type: integer, minimum: 320, maximum: 1920, default: 1280 }
-        height: { type: integer, minimum: 320, maximum: 1920, default: 720 }
+        width: { type: integer, minimum: 320, maximum: 1920, description: 'Optional. If omitted, derived from aspectRatio; defaults to 1280 for 16:9, 720 for 9:16, and 1080 for 1:1.' }
+        height: { type: integer, minimum: 320, maximum: 1920, description: 'Optional. If omitted, derived from aspectRatio; defaults to 720 for 16:9, 1280 for 9:16, and 1080 for 1:1.' }
         projectFiles:
           type: object
           description: >-

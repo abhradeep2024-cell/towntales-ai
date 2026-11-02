@@ -24,6 +24,33 @@ describe('ProductionSpecSchema',() => {
   it('accepts a valid portrait production',() => {
     expect(ProductionSpecSchema.safeParse({...valid,aspectRatio:'9:16',width:720,height:1280}).success).toBe(true);
   });
+  it('defaults an omitted portrait canvas to 720×1280',() => {
+    const {width,height,...base} = valid;
+    const result = ProductionSpecSchema.safeParse({...base,aspectRatio:'9:16'});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.width).toBe(720);
+      expect(result.data.height).toBe(1280);
+    }
+  });
+  it('defaults an omitted square canvas to 1080×1080',() => {
+    const {width,height,...base} = valid;
+    const result = ProductionSpecSchema.safeParse({...base,aspectRatio:'1:1'});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.width).toBe(1080);
+      expect(result.data.height).toBe(1080);
+    }
+  });
+  it('derives a missing portrait dimension from the supplied one',() => {
+    const {height,...base} = valid;
+    const result = ProductionSpecSchema.safeParse({...base,aspectRatio:'9:16'});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.width).toBe(1280);
+      expect(result.data.height).toBe(2276);
+    }
+  });
   it('normalizes the default music and voice settings',() => {
     const result = ProductionSpecSchema.safeParse(valid);
     expect(result.success).toBe(true);
