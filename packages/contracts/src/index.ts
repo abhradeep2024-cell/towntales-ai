@@ -3,6 +3,27 @@ import { z } from 'zod';
 export const AspectRatioSchema = z.enum(['16:9', '9:16', '1:1']);
 export const JobStatusSchema = z.enum(['queued', 'rendering', 'uploading', 'completed', 'failed', 'cancelled']);
 
+export const ProjectFilesSchema = z.record(z.string(), z.string()).superRefine((files, ctx) => {
+  const entries = Object.entries(files);
+  if (!files['index.html']) ctx.addIssue({code:'custom',path:['index.html'],message:'A Lemo film project must contain index.html.'});
+  if (entries.length > 40) ctx.addIssue({code:'custom',path:[],message:'A film project may contain at most 40 text assets.'});
+  let totalBytes = 0;
+  for (const [name, content] of entries) {
+    if (!/^[a-zA-Z0-9._/-]{1,180}$/.test(name) || name.startsWith('/') || name.split('/').some((part) => !part || part === '.' || part === '..')) {
+      ctx.addIssue({code:'custom',path:[name],message:'Unsafe project path.'});
+    }
+    if (!/\.(html|js|mjs|css|json|svg|txt|srt|xml)$/i.test(name)) {
+      ctx.addIssue({code:'custom',path:[name],message:'Project files must be text-based HTML, JS, CSS, JSON, SVG, TXT, SRT or XML.'});
+    }
+    totalBytes += new TextEncoder().encode(content).length;
+  }
+  if (totalBytes > 1_800_000) ctx.addIssue({code:'custom',path:[],message:'Project text assets must total 1.8 MB or less. Put small media in data URIs and keep assets optimized.'});
+  const html = files['index.html'] ?? '';
+  for (const contract of ['window.DUR','window.render','window.READY']) {
+    if (!html.includes(contract)) ctx.addIssue({code:'custom',path:['index.html'],message:`index.html must implement the Lemo page contract: ${contract}.`});
+  }
+});
+
 export const SceneSchema = z.object({
   id: z.string().min(1).max(80),
   title: z.string().min(1).max(160),
@@ -25,8 +46,18 @@ export const ProductionSpecSchema = z.object({
   width: z.number().int().min(320).max(1920).default(1280),
   height: z.number().int().min(320).max(1920).default(720),
   scenes: z.array(SceneSchema).min(1).max(30),
+  projectFiles: ProjectFilesSchema.optional(),
   subtitles: z.array(z.object({start: z.number().nonnegative(), end: z.number().positive(), text: z.string().min(1).max(500)})).max(300).default([]),
-  audio: z.object({musicAssetId: z.string().optional(), voiceAssetId: z.string().optional(), musicVolume: z.number().min(0).max(1).default(0.18)}).default({ musicVolume: 0.18 })
+  audio: z.object({
+    musicAssetId: z.string().optional(),
+    voiceAssetId: z.string().optional(),
+    musicEnabled: z.boolean().default(true),
+    voiceEnabled: z.boolean().default(true),
+    voice: z.string().min(1).max(120).default('en-US-AriaNeural'),
+    musicStyle: z.enum(['ambient','uplifting','suspense']).default('ambient'),
+    musicVolume: z.number().min(0).max(0.5).default(0.12),
+    voiceVolume: z.number().min(0).max(2).default(1)
+  }).default({musicEnabled:true,voiceEnabled:true,voice:'en-US-AriaNeural',musicStyle:'ambient',musicVolume:0.12,voiceVolume:1})
 }).superRefine((spec, ctx) => {
   const sceneDuration = spec.scenes.reduce((sum, scene) => sum + scene.durationSeconds, 0);
   if (Math.abs(sceneDuration - spec.durationSeconds) > 1) ctx.addIssue({code: 'custom', path: ['scenes'], message: 'Scene durations must add up to the requested runtime (±1 second).'});
