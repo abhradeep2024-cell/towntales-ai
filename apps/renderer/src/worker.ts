@@ -21,6 +21,7 @@ const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession:
 const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'towntales-assets';
 const outputDir = env('RENDER_OUTPUT_DIR') ?? join(tmpdir(), 'film-studio-renders');
 const concurrency = Math.max(1, Math.min(2, Number(env('REMOTION_CONCURRENCY') ?? 1)));
+const browserExecutable = env('REMOTION_BROWSER_EXECUTABLE');
 
 async function api(path: string, body: unknown = {}) {
   const response = await fetch(`${apiBase}${path}`, {
@@ -41,7 +42,7 @@ async function runJob(job: any, serveUrl: string) {
   const outputPath = join(workDir, 'final.mp4');
 
   try {
-    const compositions = await getCompositions(serveUrl, { inputProps: { production } });
+    const compositions = await getCompositions(serveUrl, { inputProps: { production }, ...(browserExecutable ? { browserExecutable } : {}) });
     const composition = compositions.find((item) => item.id === 'FilmStudio');
     if (!composition) throw new Error('FilmStudio composition was not registered.');
     const actual = {
@@ -53,7 +54,7 @@ async function runJob(job: any, serveUrl: string) {
     };
     await renderMedia({
       composition: actual, serveUrl, codec: 'h264', outputLocation: outputPath, crf: 28, x264Preset: 'veryfast',
-      inputProps: { production }, concurrency,
+      inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
       onProgress: async ({ progress }) => {
         const { data: current, error } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
         if (error) throw error;

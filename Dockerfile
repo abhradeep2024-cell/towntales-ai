@@ -1,8 +1,7 @@
-FROM node:22-bookworm-slim AS build
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg chromium ca-certificates fonts-liberation && rm -rf /var/lib/apt/lists/*
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+FROM node:22-bookworm-slim
 WORKDIR /app
 COPY . .
-RUN npm install && npm run build
-EXPOSE 8080
+RUN npm install --no-audit --no-fund && npm run build
+ENV NODE_ENV=production
+EXPOSE 10000
 CMD ["npm","--workspace","apps/api","start"]
