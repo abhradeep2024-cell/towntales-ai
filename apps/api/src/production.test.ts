@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {ProductionSpecSchema} from '@film-studio/contracts';
+import {createSupabaseApiKeyFetch} from './supabase-api-key-fetch.js';
 
 const valid = {
   schemaVersion:1 as const,title:'Smoke test',idea:'A short test film',styleId:'swiss-motion',
@@ -88,5 +89,21 @@ describe('ProductionSpecSchema',() => {
   });
   it('keeps the Lemo project source optional for structured Remotion scenes',() => {
     expect(ProductionSpecSchema.safeParse(valid).success).toBe(true);
+  });
+});
+
+
+describe('Supabase API key transport', () => {
+  it('keeps the apikey header and removes Authorization for opaque secret keys', async () => {
+    let captured: Headers | undefined;
+    const wrapped = createSupabaseApiKeyFetch(async (_input, init) => {
+      captured = new Headers(init?.headers);
+      return new Response('ok');
+    });
+    await wrapped('https://example.supabase.co/rest/v1/test', {
+      headers: { apikey: 'sb_secret_test', Authorization: 'Bearer sb_secret_test' }
+    });
+    expect(captured?.get('apikey')).toBe('sb_secret_test');
+    expect(captured?.has('Authorization')).toBe(false);
   });
 });
