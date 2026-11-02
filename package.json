@@ -1,0 +1,15 @@
+{
+  "name": "chatgpt-film-studio",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:api": "npm --workspace apps/api run dev",
+    "dev:renderer": "npm --workspace apps/renderer run dev",
+    "build": "npm --workspace packages/contracts run build && npm run build --workspaces --if-present",
+    "typecheck": "npm --workspace packages/contracts run typecheck && npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "render:smoke": "npm --workspace apps/renderer run render:smoke"
+  },
+  "engines": {"node": ">=22"}
+}
