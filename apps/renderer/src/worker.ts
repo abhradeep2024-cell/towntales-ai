@@ -17,7 +17,17 @@ const supabaseUrl = env('SUPABASE_URL');
 const serviceKey = env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
 if (!workerSecret || !supabaseUrl || !serviceKey) throw new Error('Worker secrets are not configured.');
 
-const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+// Opaque sb_secret_* keys are API keys, not JWTs. Send them only in apikey,
+// never as Authorization: Bearer; legacy service_role JWTs still work via the same path.
+const supabaseApiKeyFetch: typeof fetch = async (input, init) => {
+  const headers = new Headers(init?.headers);
+  headers.delete('Authorization');
+  return fetch(input, { ...init, headers });
+};
+const supabase = createClient(supabaseUrl, serviceKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+  global: { fetch: supabaseApiKeyFetch }
+});
 const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'towntales-assets';
 const outputDir = env('RENDER_OUTPUT_DIR') ?? join(tmpdir(), 'film-studio-renders');
 const concurrency = Math.max(1, Math.min(2, Number(env('REMOTION_CONCURRENCY') ?? 1)));
