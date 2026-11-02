@@ -18,7 +18,7 @@
 
 ## Pending verification after the current commits
 - Latest CI build and the new audio/multi-scene/portrait/Lemo integration suite.
-- Lemo style project render beyond the simple contract smoke page.
+- Original Art Deco style-engine page now has its own smoke render; 65 other styles still need their own style-specific project pages and representative integration tests.
 - Edge TTS voice network call and espeak fallback in CI.
 - Full end-to-end job through the deployed API, worker, private bucket upload, signed URL and final MP4 inspection.
 - Render API's Supabase service-role environment value and GitHub Actions deployment secrets must be configured by the owner.
