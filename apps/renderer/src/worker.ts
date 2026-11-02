@@ -97,12 +97,13 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
   const entry = new URL('./index.tsx', import.meta.url).pathname;
   const serveUrl = await bundle({ entryPoint: entry, onProgress: (progress) => console.log(`Bundle ${Math.round(progress * 100)}%`) });
+  const processOnce = env('RENDER_ONCE') === 'true';
   console.log(`Film Studio renderer ready. concurrency=${concurrency}`);
 
   while (true) {
     try {
       const claimed = await api('/internal/jobs/claim');
-      if (!claimed.job) { await new Promise((resolve) => setTimeout(resolve, 5000)); continue; }
+      if (!claimed.job) { if (processOnce) return; await new Promise((resolve) => setTimeout(resolve, 5000)); continue; }
       try {
         await runJob(claimed.job, serveUrl);
       } catch (error) {
@@ -116,8 +117,10 @@ async function main() {
           }
         }
       }
+      if (processOnce) return;
     } catch (error) {
       console.error('Worker polling failed:', error);
+      if (processOnce) throw error;
       await new Promise((resolve) => setTimeout(resolve, 10000));
     }
   }
