@@ -41,13 +41,27 @@ jobs:
         run: npm run build && npm run typecheck
       - name: Run unit tests
         run: npm test
-      - name: Verify deployed Render API and ChatGPT Action schema
+      - name: Wait for deployed Render API and verify ChatGPT Action schema
         run: |
-          curl --retry 10 --retry-delay 6 --retry-connrefused --max-time 12 -fsS https://film-studio-api.onrender.com/ | grep -q '"ok":true'
-          curl --retry 10 --retry-delay 6 --retry-connrefused --max-time 12 -fsS https://film-studio-api.onrender.com/openapi.yaml -o /tmp/film-studio-openapi.yaml
-          grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml
-          grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml
-          grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml
+          ready=0
+          for attempt in $(seq 1 24); do
+            if curl -fsS --max-time 12 https://film-studio-api.onrender.com/openapi.yaml -o /tmp/film-studio-openapi.yaml; then
+              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml; then
+                ready=1
+                break
+              fi
+            fi
+            echo "Waiting for Render to serve the latest Action schema (attempt $attempt/24)..."
+            sleep 10
+          done
+          test "$ready" -eq 1
+          curl -fsS --max-time 12 https://film-studio-api.onrender.com/ | grep -q '"ok":true'
+          health_code=$(curl -sS --max-time 12 -o /tmp/film-studio-health.json -w '%{http_code}' https://film-studio-api.onrender.com/health || true)
+          echo "Render /health HTTP status: $health_code"
+          cat /tmp/film-studio-health.json || true
+          if [ "$health_code" != "200" ]; then
+            echo "::warning::Render API is reachable, but Supabase health is not green. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Render environment variables."
+          fi
       - name: Ensure Remotion browser
         working-directory: apps/renderer
         run: npx remotion browser ensure

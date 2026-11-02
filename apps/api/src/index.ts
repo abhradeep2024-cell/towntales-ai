@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const app = Fastify({logger: true, bodyLimit: 4_000_000});
 const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
