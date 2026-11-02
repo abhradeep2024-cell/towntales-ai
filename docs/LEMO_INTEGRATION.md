@@ -8,7 +8,7 @@
 - Do not modify the upstream submodule for an individual film.
 
 ## What is integrated
-The API exposes the pinned 66-style catalog at GET /v1/styles, a selected STYLE.md at GET /v1/styles/{slug}, and a pinned source index at GET /v1/styles/{slug}/engine. Request the exact source module with the file query parameter. Each production may submit projectFiles with a complete film page. The renderer writes these text assets to an isolated temporary folder and invokes Lemo's own core/render/video.mjs headless-browser renderer. This uses the shared Lemo core toolkit and page contract rather than imitating its output with a universal Remotion template.
+The API exposes the pinned 66-style catalog at GET /v1/styles, a selected STYLE.md at GET /v1/styles/{slug}, and a pinned source index at GET /v1/styles/{slug}/engine. Request the exact source module with the file query parameter. Each production may submit projectFiles with a complete film page. The renderer writes these text assets to an isolated temporary folder and invokes Lemo's own core/render/video.mjs headless-browser renderer. CI tests both a minimal contract page and a separate original Art Deco page that imports Lemo's pinned deco.js and type.js engines, including gold strokes, sunburst, arch, title bar and clock primitives. This uses the shared Lemo core toolkit and page contract rather than imitating its output with a universal Remotion template.
 
 A Lemo page must:
 - Define positive window.DUR in seconds, equal to the production's target runtime.
