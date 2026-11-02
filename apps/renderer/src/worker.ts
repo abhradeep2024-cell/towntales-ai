@@ -112,7 +112,7 @@ async function runJob(job: any, serveUrl: string) {
     const actualFps = frameDenominator ? frameNumerator / frameDenominator : 0;
     if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Frame rate does not match the production specification.');
     const audioPresent = (metadata.streams ?? []).some((stream: any) => stream.codec_type === 'audio');
-    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)) || production.audio?.musicAssetId || production.audio?.voiceAssetId);
+    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)));
     if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was found in the final MP4.');
 
     const { data: latest, error: latestError } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
