@@ -26,7 +26,7 @@ export const ProductionSpecSchema = z.object({
   height: z.number().int().min(320).max(1920).default(720),
   scenes: z.array(SceneSchema).min(1).max(30),
   subtitles: z.array(z.object({start: z.number().nonnegative(), end: z.number().positive(), text: z.string().min(1).max(500)})).max(300).default([]),
-  audio: z.object({musicAssetId: z.string().optional(), voiceAssetId: z.string().optional(), musicVolume: z.number().min(0).max(1).default(0.18)}).default({})
+  audio: z.object({musicAssetId: z.string().optional(), voiceAssetId: z.string().optional(), musicVolume: z.number().min(0).max(1).default(0.18)}).default({ musicVolume: 0.18 })
 }).superRefine((spec, ctx) => {
   const sceneDuration = spec.scenes.reduce((sum, scene) => sum + scene.durationSeconds, 0);
   if (Math.abs(sceneDuration - spec.durationSeconds) > 1) ctx.addIssue({code: 'custom', path: ['scenes'], message: 'Scene durations must add up to the requested runtime (±1 second).'});
