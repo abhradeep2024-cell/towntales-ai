@@ -18,6 +18,6 @@ Requires Node.js 22+, FFmpeg and Remotion-compatible Chromium libraries.
 4. `npm run dev:api`
 5. `npm run render:smoke`
 
-See `docs/ARCHITECTURE.md`, `docs/PRODUCT_REQUIREMENTS.md`, `docs/DEPLOYMENT.md` and `docs/IMPLEMENTATION_STATUS.md`.
+See `docs/ARCHITECTURE.md`, `docs/PRODUCT_REQUIREMENTS.md`, `docs/LEMO_INTEGRATION.md`, `docs/DEPLOYMENT.md` and `docs/IMPLEMENTATION_STATUS.md`. The Lemo-Opuscar reference is pinned as a Git submodule at `vendor/lemo-opuscar`; run `git submodule update --init --recursive` after cloning.
 
 Status: scaffold committed; dependency install, live deployment and real MP4 end-to-end acceptance remain unverified.
