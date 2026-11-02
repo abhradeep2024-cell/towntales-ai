@@ -5,16 +5,7 @@ const canvas = document.getElementById('film');
 const g = canvas.getContext('2d');
 const W = 1920, H = 1080;
 
-await Promise.all([
-  '80px Limelight',
-  '80px Poiret',
-  '600 40px Josefin',
-  '400 40px Josefin',
-  '700 40px Josefin',
-  '80px Italiana'
-].map((font) => document.fonts.load(font)));
-
-window.DUR = 8;
+// The upstream font files are not vendored in this source checkout; Canvas uses local browser fallback fonts for this engine-primitive smoke test.\n\nwindow.DUR = 8;
 
 window.render = (t) => {
   g.setTransform(1,0,0,1,0,0);
