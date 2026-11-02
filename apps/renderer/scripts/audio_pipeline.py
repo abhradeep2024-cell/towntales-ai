@@ -79,7 +79,14 @@ def make_voice(text: str, voice: str, target: Path) -> str:
         print(f"[audio] Edge TTS unavailable; checking local espeak-ng fallback: {exc}", file=sys.stderr)
     espeak = shutil.which("espeak-ng") or shutil.which("espeak")
     if espeak:
-        run([espeak, "-v", "en-us", "-s", "155", "-w", str(target), text])
+        wav_target = target.with_suffix(".wav")
+        try:
+            run([espeak, "-v", "en-us", "-s", "155", "-w", str(wav_target), text])
+            run(["ffmpeg", "-y", "-v", "error", "-i", str(wav_target), "-c:a", "libmp3lame", "-q:a", "4", str(target)])
+            if not target.exists() or target.stat().st_size < 500:
+                raise RuntimeError("espeak-ng MP3 conversion produced no audio.")
+        finally:
+            wav_target.unlink(missing_ok=True)
         return "espeak-ng"
     raise RuntimeError("Voice requested but neither Edge TTS nor espeak-ng is available.")
 
@@ -123,7 +130,6 @@ def main() -> int:
 
     audio = spec.get("audio") or {}
     duration = float(spec["durationSeconds"])
-    tracks: list[Path] = []
     input_args = ["-i", str(video_path)]
     filters: list[str] = []
     labels: list[str] = []
