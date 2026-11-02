@@ -1,0 +1,4 @@
+[submodule "vendor/lemo-opuscar"]
+  path = vendor/lemo-opuscar
+  url = https://github.com/abhradeep2024-cell/lemo-opuscar.git
+  branch = main
