@@ -250,8 +250,6 @@ components:
         audio:
           type: object
           properties:
-            musicAssetId: { type: string }
-            voiceAssetId: { type: string }
             musicEnabled: { type: boolean, default: true }
             voiceEnabled: { type: boolean, default: true }
             voice: { type: string, default: en-US-AriaNeural }
