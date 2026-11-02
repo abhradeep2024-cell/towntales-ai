@@ -10,26 +10,55 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - name: Install Lemo renderer dependencies
+        run: |
+          npm --prefix vendor/lemo-opuscar install --no-audit --no-fund
+          node vendor/lemo-opuscar/node_modules/playwright-core/cli.js install chromium-headless-shell
+      - name: Install FFmpeg and local voice fallback
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng
+      - name: Install optional Edge TTS
+        run: python3 -m pip install --user edge-tts
       - run: npm run build
       - run: npm run typecheck
       - run: npm test
-      - name: Install FFmpeg for MP4 metadata validation
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Run audio mux self-test
+        run: |
+          python3 apps/renderer/scripts/audio_pipeline.py --spec apps/renderer/fixtures/audio-smoke.json --video /tmp/film-studio-smoke.mp4 --output /tmp/film-studio-audio-smoke.mp4 --workdir /tmp/film-studio-audio-test --self-test
       - name: Ensure Remotion browser
         working-directory: apps/renderer
         run: npx remotion browser ensure
-      - name: Render and decode a real five-second MP4
+      - name: Render landscape Remotion smoke
         run: npm run render:smoke
-      - name: Upload smoke-render artifact
+      - name: Render three-scene timeline
+        run: npm run render:smoke:multi
+      - name: Render vertical 9:16 format
+        run: npm run render:smoke:vertical
+      - name: Render Lemo-Opuscar page contract
+        run: npm run render:lemo:smoke
+      - name: Validate all MP4 outputs
+        run: |
+          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-audio-smoke.mp4; do
+            ffmpeg -v error -i "$f" -f null -
+            ffprobe -v error -show_entries format=duration,size:stream=codec_type,width,height,r_frame_rate -of json "$f"
+          done
+      - name: Upload video test artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: film-studio-smoke-mp4
-          path: /tmp/film-studio-smoke.mp4
+          name: film-studio-render-suite
+          path: |
+            /tmp/film-studio-smoke.mp4
+            /tmp/film-studio-multi-scene.mp4
+            /tmp/film-studio-vertical.mp4
+            /tmp/film-studio-lemo-smoke.mp4
+            /tmp/film-studio-audio-smoke.mp4
           if-no-files-found: error
           retention-days: 3
