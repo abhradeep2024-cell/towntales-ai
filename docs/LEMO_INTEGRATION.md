@@ -33,7 +33,7 @@ Sound, rhythm, camera grammar and performance/staging matter as much as attracti
 Audio is rendered after the picture:
 - Scene narration uses Edge TTS when reachable, with local espeak-ng fallback.
 - Original procedural pad music is generated locally (ambient, uplifting or suspense).
-- FFmpeg mixes the tracks, applies a limiter and targets -14 LUFS. Lemo page subtitles can be burned in; Remotion subtitles are part of the composition.
+- FFmpeg mixes the tracks, applies a limiter and targets -14 LUFS. Lemo project pages should render style-specific subtitles themselves. A generic SRT burn-in is opt-in with audio.burnSubtitles=true; Remotion subtitles are part of the composition.
 - The fallback voice is functional but less natural than a neural voice. The current original music generator is a restrained harmonic pad, not a full sampled-instrument score or detailed foley engine.
 
 ## Remotion fallback
