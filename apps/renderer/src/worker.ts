@@ -13,8 +13,8 @@ const execFileAsync = promisify(execFile);
 const env = (key: string) => process.env[key];
 const apiBase = (env('API_BASE_URL') ?? 'http://localhost:8080').replace(/\/$/, '');
 const workerSecret = env('RENDERER_SHARED_SECRET');
-const supabaseUrl = env('SUPABASE_URL');
-const serviceKey = env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseUrl = env('SUPABASE_URL')?.trim();
+const serviceKey = (env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY'))?.trim();
 if (!workerSecret || !supabaseUrl || !serviceKey) throw new Error('Worker secrets are not configured.');
 
 // Opaque sb_secret_* keys are API keys, not JWTs. Send them only in apikey,
