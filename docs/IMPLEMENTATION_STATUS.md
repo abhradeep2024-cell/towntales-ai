@@ -10,6 +10,7 @@
 - Supabase migrations for jobs/logs, projects/assets and bounded retries; existing private MP4 bucket reused.
 - GitHub Actions CI now tests build, types, unit tests, Remotion landscape, multi-scene, vertical, audio mux and Lemo page rendering.
 - Public-repository GitHub Actions worker uses standard hosted runners; Render free instance hosts the API only.
+- Gitleaks full-history secret scanning is included in CI; credentials are supplied only through GitHub Actions secrets or server-side environment variables.
 
 ## Verified so far
 - Earlier five-second Remotion smoke render passed, was decoded with FFmpeg, metadata checked with ffprobe, uploaded as an artifact and visually sampled.
@@ -18,7 +19,7 @@
 
 ## Pending verification after the current commits
 - Latest CI build and the new audio/multi-scene/portrait/Lemo integration suite.
-- Original Art Deco style-engine page now has its own smoke render; 65 other styles still need their own style-specific project pages and representative integration tests.
+- Original Art Deco style-engine page is included in CI. The first run exposed and fixed a fixture typo; the corrected native engine render is pending CI confirmation. The other 65 styles still need representative rendering tests.
 - Edge TTS voice network call and espeak fallback in CI.
 - Full end-to-end job through the deployed API, worker, private bucket upload, signed URL and final MP4 inspection.
 - Render API's Supabase service-role environment value and GitHub Actions deployment secrets must be configured by the owner.

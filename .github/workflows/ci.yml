@@ -12,12 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           submodules: recursive
-      - uses: actions/setup-node@v4
+      - name: Scan full repository history for leaked credentials
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Install application dependencies
         run: npm install --no-audit --no-fund
       - name: Install Lemo renderer dependencies
@@ -34,6 +41,13 @@ jobs:
         run: npm run build && npm run typecheck
       - name: Run unit tests
         run: npm test
+      - name: Verify deployed Render API and ChatGPT Action schema
+        run: |
+          curl --retry 10 --retry-delay 6 --retry-connrefused --max-time 12 -fsS https://film-studio-api.onrender.com/ | grep -q '"ok":true'
+          curl --retry 10 --retry-delay 6 --retry-connrefused --max-time 12 -fsS https://film-studio-api.onrender.com/openapi.yaml -o /tmp/film-studio-openapi.yaml
+          grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml
+          grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml
+          grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml
       - name: Ensure Remotion browser
         working-directory: apps/renderer
         run: npx remotion browser ensure

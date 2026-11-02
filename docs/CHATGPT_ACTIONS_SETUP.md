@@ -8,7 +8,7 @@ Open:
 - OpenAPI schema: https://film-studio-api.onrender.com/openapi.yaml
 - Render service: https://dashboard.render.com/web/srv-dbk6117f3r2c738pvj70
 
-The health response should have `ok: true` and `databaseConfigured: true`. A sleeping free Render service may take time to wake. Do not proceed until the schema returns valid YAML and the service reports the database configured.
+The root route should return HTTP 200. The health response should have `ok: true`, `databaseConfigured: true`, and `databaseConnected: true`. A sleeping free Render service may take time to wake. Do not proceed until the schema returns valid YAML and the service reports the database configured.
 
 ## 2. Use a dedicated API bearer key
 The API expects an `API_TOKEN` environment variable. Never put this token in GitHub files, prompts, projectFiles, or client-side code.

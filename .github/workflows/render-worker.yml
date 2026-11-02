@@ -33,14 +33,15 @@ jobs:
           if [ "$missing" -eq 1 ]; then
             echo "FILM_STUDIO_SECRETS_MISSING=true" >> "$GITHUB_ENV"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         with:
           submodules: recursive
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Install system FFmpeg and local voice fallback
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         run: sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng

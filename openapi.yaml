@@ -24,6 +24,7 @@ paths:
                   ok: { type: boolean }
                   service: { type: string }
                   databaseConfigured: { type: boolean }
+                  databaseConnected: { type: boolean }
   /openapi.yaml:
     get:
       operationId: getOpenApiSchema

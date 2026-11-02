@@ -5,7 +5,9 @@ const canvas = document.getElementById('film');
 const g = canvas.getContext('2d');
 const W = 1920, H = 1080;
 
-// The upstream font files are not vendored in this source checkout; Canvas uses local browser fallback fonts for this engine-primitive smoke test.\n\nwindow.DUR = 8;
+// The upstream font files are not vendored in this source checkout; Canvas uses local browser fallback fonts for this engine-primitive smoke test.
+
+window.DUR = 8;
 
 window.render = (t) => {
   g.setTransform(1,0,0,1,0,0);
