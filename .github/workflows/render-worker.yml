@@ -17,7 +17,7 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       RENDERER_SHARED_SECRET: ${{ secrets.RENDERER_SHARED_SECRET }}
-      SUPABASE_STORAGE_BUCKET: film-studio-private
+      SUPABASE_STORAGE_BUCKET: towntales-assets
       RENDER_ONCE: 'true'
       REMOTION_CONCURRENCY: '2'
     steps:
