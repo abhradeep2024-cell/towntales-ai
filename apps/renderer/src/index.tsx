@@ -1,3 +1,3 @@
 import {registerRoot} from 'remotion';
-import {FilmStudioRoot} from './root.js';
+import {FilmStudioRoot} from './root';
 registerRoot(FilmStudioRoot);
