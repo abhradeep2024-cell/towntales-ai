@@ -34,7 +34,7 @@ async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: st
     return 'scheduled_fallback' as const;
   }
 }
-const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'film-studio-private';
+const bucket = env('SUPABASE_STORAGE_BUCKET') ?? 'towntales-assets';
 let supabase: SupabaseClient | undefined;
 if (supabaseUrl && serviceKey) supabase = createClient(supabaseUrl, serviceKey, {auth:{persistSession:false,autoRefreshToken:false}});
 
