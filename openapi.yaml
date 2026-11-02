@@ -1,0 +1,180 @@
+openapi: 3.1.0
+info:
+  title: ChatGPT Film Studio API
+  version: 0.1.0
+  description: Authenticated interface for creating and managing video production jobs.
+servers:
+  - url: https://YOUR-RENDER-API.onrender.com
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Check API health
+      security: []
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  service: { type: string }
+                  databaseConfigured: { type: boolean }
+  /v1/jobs:
+    post:
+      operationId: createRenderJob
+      summary: Create a video production job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [production]
+              properties:
+                production:
+                  $ref: '#/components/schemas/ProductionSpec'
+      responses:
+        '202':
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400': { description: Invalid production specification }
+        '401': { description: Unauthorized }
+        '503': { description: Job creation unavailable }
+  /v1/jobs/{id}:
+    get:
+      operationId: getRenderJob
+      summary: Get job status and quality report
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+        '401': { description: Unauthorized }
+        '404': { description: Job not found }
+  /v1/jobs/{id}/cancel:
+    post:
+      operationId: cancelRenderJob
+      summary: Cancel a queued or rendering job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Cancellation recorded }
+        '401': { description: Unauthorized }
+        '404': { description: Job not found }
+        '409': { description: Job is not cancellable }
+  /v1/jobs/{id}/output:
+    get:
+      operationId: getRenderOutput
+      summary: Retrieve a short-lived signed MP4 URL after QC
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Signed output URL
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, expiresInSeconds]
+                properties:
+                  url: { type: string, format: uri }
+                  expiresInSeconds: { type: integer }
+        '401': { description: Unauthorized }
+        '404': { description: Job not found }
+        '409': { description: Output not ready }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Scene:
+      type: object
+      required: [id, title, durationSeconds, visualDirection]
+      properties:
+        id: { type: string, maxLength: 80 }
+        title: { type: string, maxLength: 160 }
+        durationSeconds: { type: number, exclusiveMinimum: 0, maximum: 90 }
+        narration: { type: string, maxLength: 5000 }
+        visualDirection: { type: string, maxLength: 4000 }
+        onScreenText:
+          type: array
+          maxItems: 20
+          items: { type: string, maxLength: 300 }
+        background: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+    ProductionSpec:
+      type: object
+      required: [schemaVersion, title, idea, styleId, durationSeconds, aspectRatio, scenes]
+      properties:
+        schemaVersion: { const: 1 }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        idea: { type: string, minLength: 1, maxLength: 8000 }
+        styleId: { type: string, minLength: 1, maxLength: 120 }
+        styleInvariants:
+          type: array
+          maxItems: 30
+          items: { type: string, maxLength: 500 }
+        durationSeconds: { type: integer, minimum: 1, maximum: 90 }
+        aspectRatio: { type: string, enum: ['16:9', '9:16', '1:1'] }
+        fps: { type: integer, enum: [24, 25, 30], default: 30 }
+        width: { type: integer, minimum: 320, maximum: 1920, default: 1280 }
+        height: { type: integer, minimum: 320, maximum: 1920, default: 720 }
+        scenes:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items: { $ref: '#/components/schemas/Scene' }
+        subtitles:
+          type: array
+          maxItems: 300
+          items:
+            type: object
+            required: [start, end, text]
+            properties:
+              start: { type: number, minimum: 0 }
+              end: { type: number, exclusiveMinimum: 0 }
+              text: { type: string, minLength: 1, maxLength: 500 }
+        audio:
+          type: object
+          properties:
+            musicAssetId: { type: string }
+            voiceAssetId: { type: string }
+            musicVolume: { type: number, minimum: 0, maximum: 1, default: 0.18 }
+    Job:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [queued, rendering, uploading, completed, failed, cancelled] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        created_at: { type: string, format: date-time }
+    JobStatus:
+      allOf:
+        - $ref: '#/components/schemas/Job'
+        - type: object
+          properties:
+            title: { type: string }
+            error: { type: string }
+            output_bytes: { type: integer }
+            qc_report: { type: object }
+            updated_at: { type: string, format: date-time }
