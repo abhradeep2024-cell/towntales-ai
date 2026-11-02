@@ -177,11 +177,10 @@ def main() -> int:
     else:
         report["subtitlesBurned"] = False
 
-    command = ["ffmpeg", "-y", "-v", "error", *input_args, *vf_args, "-map", "0:v:0", *map_audio,
+    filter_args = ["-filter_complex", ";".join(filters)] if has_audio else []
+    command = ["ffmpeg", "-y", "-v", "error", *input_args, *filter_args, *vf_args, "-map", "0:v:0", *map_audio,
                "-t", str(duration), "-c:v", "libx264", "-preset", "veryfast", "-crf", "27",
                "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output_path)]
-    if has_audio:
-        command[command.index("-t"):command.index("-t")] = ["-filter_complex", ";".join(filters)]
     run(command)
     if not output_path.exists() or output_path.stat().st_size < 1000:
         raise RuntimeError("Audio mux did not produce a valid MP4.")
