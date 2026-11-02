@@ -66,6 +66,21 @@ paths:
                 $ref: '#/components/schemas/JobStatus'
         '401': { description: Unauthorized }
         '404': { description: Job not found }
+  /v1/jobs/{id}/retry:
+    post:
+      operationId: retryRenderJob
+      summary: Requeue a failed job when retry attempts remain
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '202': { description: Retry queued }
+        '401': { description: Unauthorized }
+        '404': { description: Job not found }
+        '409': { description: Job is not retryable or retry limit reached }
+        '503': { description: Retry operation unavailable }
   /v1/jobs/{id}/cancel:
     post:
       operationId: cancelRenderJob
@@ -176,5 +191,7 @@ components:
             title: { type: string }
             error: { type: string }
             output_bytes: { type: integer }
+            attempt_count: { type: integer }
+            max_attempts: { type: integer }
             qc_report: { type: object }
             updated_at: { type: string, format: date-time }
