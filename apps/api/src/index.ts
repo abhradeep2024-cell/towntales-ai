@@ -14,7 +14,7 @@ const workerSecret = env('RENDERER_SHARED_SECRET');
 const supabaseUrl = env('SUPABASE_URL')?.trim();
 // Prefer the current opaque secret key. Supabase requires sb_secret_* keys in
 // the apikey header only; supabase-js normally mirrors its key into Authorization.
-const serviceKey = (env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY'))?.trim();
+const serviceKey = (env('SUPABASE_SERVICE_ROLE_KEY') || env('SUPABASE_SECRET_KEY'))?.trim();
 const supabaseApiKeyFetch = createSupabaseApiKeyFetch();
 const githubActionsToken = env('GITHUB_ACTIONS_TOKEN');
 
