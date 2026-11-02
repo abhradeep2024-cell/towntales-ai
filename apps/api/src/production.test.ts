@@ -36,6 +36,20 @@ describe('ProductionSpecSchema',() => {
   it('accepts a Lemo project page implementing the frame contract',() => {
     expect(ProductionSpecSchema.safeParse({...valid,projectFiles:lemoPage}).success).toBe(true);
   });
+  it('accepts the Lemo page contract when its globals live in a local module',() => {
+    const modular = {
+      'index.html':'<!doctype html><script type="module" src="./main.js"></script>',
+      'main.js':'window.DUR=5; window.render=(t)=>{}; window.READY=true;'
+    };
+    expect(ProductionSpecSchema.safeParse({...valid,projectFiles:modular}).success).toBe(true);
+  });
+  it('rejects remote scripts and remote media dependencies',() => {
+    const unsafe = {
+      'index.html':'<!doctype html><script src="https://example.com/remote.js"></script>',
+      'main.js':'window.DUR=5; window.render=(t)=>{}; window.READY=true;'
+    };
+    expect(ProductionSpecSchema.safeParse({...valid,projectFiles:unsafe}).success).toBe(false);
+  });
   it('rejects Lemo project paths that traverse outside the project directory',() => {
     expect(ProductionSpecSchema.safeParse({...valid,projectFiles:{...lemoPage,'../secret.js':'nope'}}).success).toBe(false);
   });
