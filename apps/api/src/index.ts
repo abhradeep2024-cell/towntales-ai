@@ -23,7 +23,7 @@ async function dispatchRenderer(requestLog?: { warn: (obj: unknown, message?: st
       headers: {
         authorization: `Bearer ${githubActionsToken}`,
         accept: 'application/vnd.github+json',
-        'x-github-api-version': '2026-03-10',
+        'x-github-api-version': '2022-11-28',
         'content-type': 'application/json',
         'user-agent': 'chatgpt-film-studio'
       },
