@@ -66,6 +66,11 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
         <ActorBlock position={[-0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
         <ActorBlock position={[0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
       </>}
+      {kind === 'alex' && sceneIndex === 2 && <group position={[-0.5, -0.35, 0.34]} rotation={[0.15, 0, -0.18]}>
+        <ActorBlock position={[0, 0, 0]} scale={[0.2, 0.34, 0.045]} material={black} />
+        <ActorBlock position={[0, 0.015, 0.026]} scale={[0.16, 0.27, 0.008]} material={material('#78a9c8')} />
+        <ActorBlock position={[0, -0.13, 0.032]} scale={[0.035, 0.018, 0.008]} material={white} />
+      </group>}
       <group position={[-0.47, 0.23, 0]} rotation={[armLeft, 0, -0.08]}>
         <ActorBlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
         <ActorBlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
@@ -99,6 +104,29 @@ function Town({ night = true }: { night?: boolean }) {
     </group>)}
     <ABlock position={[-3.7, 2.3, -1.4]} scale={[0.12, 4.6, 0.12]} material={material('#242a34')} />
     <mesh position={[-3.7, 4.55, -1.4]}><sphereGeometry args={[0.24, 16, 16]} /><meshBasicMaterial color="#ffd58a" /></mesh>
+    {/* A readable 9 PM street clock, placed in the town establishing-shot sightline. */}
+    <ABlock position={[3.45, 2.65, -1.55]} scale={[0.14, 3.2, 0.14]} material={material('#242a34')} />
+    <mesh position={[3.45, 3.65, -1.48]} rotation={[0, 0, 0]}>
+      <cylinderGeometry args={[0.48, 0.48, 0.12, 24]} />
+      <meshStandardMaterial color="#e8e4d8" />
+    </mesh>
+    <mesh position={[3.45, 3.65, -1.405]}>
+      <circleGeometry args={[0.4, 24]} />
+      <meshBasicMaterial color="#f4ead1" />
+    </mesh>
+    <mesh position={[3.45, 3.82, -1.38]} rotation={[0, 0, -Math.PI / 2]}>
+      <boxGeometry args={[0.3, 0.035, 0.018]} />
+      <meshBasicMaterial color="#171923" />
+    </mesh>
+    <mesh position={[3.56, 3.65, -1.375]} rotation={[0, 0, -Math.PI / 3]}>
+      <boxGeometry args={[0.23, 0.028, 0.018]} />
+      <meshBasicMaterial color="#171923" />
+    </mesh>
+    {/* Warning sign: yellow board and dark warning mark, visible from the street. */}
+    <ABlock position={[-4.1, 0.95, 1.35]} scale={[0.1, 1.9, 0.1]} material={material('#34343a')} />
+    <ABlock position={[-4.1, 1.85, 1.35]} scale={[1.05, 0.82, 0.12]} material={material('#e5b83f')} />
+    <ABlock position={[-4.1, 1.88, 1.425]} scale={[0.12, 0.43, 0.025]} material={material('#24232a')} />
+    <mesh position={[-4.1, 1.58, 1.445]}><sphereGeometry args={[0.055, 12, 12]} /><meshBasicMaterial color="#24232a" /></mesh>
   </group>;
 }
 
@@ -131,7 +159,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-3.7, 4.4, -1.4]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
-    {(sceneIndex === 1 || sceneIndex === 7) && [-2.8, 2.7].map((x, i) => <Actor key={i} frame={frame} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, 0.8]} />)}
+    {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, i === 1 ? 1.2 : 0.8]} />)}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
     {(shadowWave || sceneIndex === 4 || sceneIndex === 8) && <Actor frame={frame + (sceneIndex === 0 ? 45 : 24)} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={sceneIndex === 8 ? [2.4, 0, -2.5] : [0.95, 0, -0.1]} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[0.9, 0, -1.8]} />}
