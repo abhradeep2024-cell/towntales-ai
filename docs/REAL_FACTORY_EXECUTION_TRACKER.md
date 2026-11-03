@@ -58,7 +58,18 @@ PR: [#2](https://github.com/abhradeep2024-cell/towntales-ai/pull/2) (draft; do n
 
 - Production intake implementation started on the branch: authenticated `POST /v1/intake` accepts base64-encoded DOCX, TXT or JSON (5 MB limit), validates/extracts source content, creates a project, stores the original and extracted text in private Supabase storage, and records both as project assets. Added extraction tests and OpenAPI documentation (commits `e9dc2912`, `ed57523f`, `18eacbbf`, `2e9cbcc0`, `8a29176e`, `a0514b21`). This is an API intake foundation, not yet the complete operator intake/planning workflow; DOCX integration, API persistence and deployment remain unverified until CI and live tests pass.
 - Latest active CI run at this checkpoint: [#41701629159](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41701629159), still rendering the low-resolution Episode 01 preview; all completed steps so far passed, with Render API/database verification skipped on this PR run. Latest branch head after intake work: `a0514b212f1f2de90b37ae6c87b6f1f0065b4599`; its CI run is queued behind the active run.
-\n## What is implemented so far (not yet production accepted)
+\n## Latest Stage A execution checkpoint
+
+- The generic CI workflow has been changed so future validation runs perform engine-level smoke renders only; Episode 01-specific narration, preview, master, contact sheets and storage upload steps are no longer part of routine CI. The already-running older workflow [#41701629159](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41701629159) was started before this change and is still executing its old Episode 01 steps; its result is not the Stage B deliverable.
+- Production intake now has DOCX/TXT/JSON extraction with a 5 MB source limit, validation, original-source preservation, extracted-text storage and project asset records. API route: `POST /v1/intake`.
+- Story planning now has an OpenAI-compatible provider adapter that asks for a v2 production manifest, requires reusable character references and camera tracks, and validates the response against `ProductionSpecSchema` before job creation. API route: `POST /v1/projects/{id}/plan`. Configure `AI_MODEL` and an API key in Render; no provider key has been added to the repository.
+- A private, versioned reusable asset catalogue has been added with immutable asset identity/version/storage/checksum fields, service-role-only access, upload registration and signed retrieval. Migration: `202611040001_asset_library.sql`; API routes: `POST /v1/assets`, `GET /v1/assets`.
+- Removed Episode 01-specific dimensions/runtime validation and Alex/shadow asset metadata/creative-review text from the generic renderer worker. The production manifest and human review checklist are now derived from each production's characters and environments.
+- Added OpenAPI documentation and deployment notes for the new intake, planning and asset-library capabilities.
+- These are implementation changes, not accepted tasks yet. DOCX extraction, AI provider calls, Supabase migration, asset endpoints, API build/typecheck, security tests and end-to-end pipeline are pending CI and live-environment verification. Do not mark Tasks 1–5 or Stage A accepted until the evidence exists.
+- Latest CI head before this checkpoint: [#41705702161](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41705702161) queued on commit `ed3248c0ebbbbaee88d9b95dac7fe0727507e6cd`; later commits may replace pending runs under the branch concurrency group. Re-check the branch head and run status before treating any change as validated.
+
+## What is implemented so far (not yet production accepted)
 
 - Versioned reusable-character/actor/scene contract foundation and validation tests.
 - Data-driven declarative React Three Fiber/Remotion scene renderer foundation.
