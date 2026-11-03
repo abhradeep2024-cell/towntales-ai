@@ -323,6 +323,7 @@ async function runJob(job: any, serveUrl: string) {
     };
 
     const artifacts: Record<string, any> = {};
+    artifacts.preview = await uploadVerifiedArtifact(objectKey.slice(0,-4) + '.preview.mp4', await readFile(previewPath), 'video/mp4');
     const manifest = {
       schemaVersion: 1,
       episode: production.title,
