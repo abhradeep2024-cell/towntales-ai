@@ -42,6 +42,12 @@ export const CharacterAppearanceSchema = z.object({
   hairColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171717'),
   pantsColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171a22'),
   shoeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#f2f2f2'),
+  eyeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171717'),
+  eyeEmissiveColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#000000'),
+  eyeEmissiveIntensity: z.number().min(0).max(5).default(0),
+  mouthColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#914d43'),
+  castShadow: z.boolean().default(true),
+  receiveShadow: z.boolean().default(true),
   scale: z.number().min(0.25).max(3).default(1)
 }).default({});
 export const CharacterAssetSchema = z.object({
@@ -51,7 +57,7 @@ export const CharacterAssetSchema = z.object({
   appearance: CharacterAppearanceSchema
 });
 export const ActorActionSchema = z.object({
-  type: z.enum(['idle','walk','run','wave','point','turn','jump','recoil','gesture','move','disappear','appear']),
+  type: z.enum(['idle','walk','run','wave','point','turn','jump','recoil','gesture','expression','move','disappear','appear']),
   startSeconds: z.number().nonnegative(),
   durationSeconds: z.number().positive().max(90),
   intensity: z.number().min(0).max(2).default(1),
@@ -59,6 +65,7 @@ export const ActorActionSchema = z.object({
   targetPosition: Vector3Schema.optional(),
   targetRotationY: z.number().optional(),
   repeat: z.number().int().min(1).max(20).default(1),
+  emotion: z.enum(['neutral','fear','shock','smile','angry','sad']).optional(),
   note: z.string().max(500).optional()
 });
 export const SceneActorSchema = z.object({
