@@ -23,12 +23,19 @@ export const FilmComposition: React.FC<{ production: ProductionSpec }> = ({ prod
 
 const Subtitle: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
-  const words = text.trim().split(/\s+/);
+  const { durationInFrames, width } = useVideoConfig();
+  const scale = width / 360;
+  const words = text.trim().split(/\\s+/);
   const active = Math.min(words.length - 1, Math.floor(frame / Math.max(1, durationInFrames) * words.length));
-  return <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '11%' }}>
-    <div style={{ fontSize: 32, fontWeight: 800, textAlign: 'center', background: 'rgba(0,0,0,.76)', padding: '12px 24px', borderRadius: 12, maxWidth: '88%', textShadow: '0 2px 8px #000' }}>
-      {words.map((word, i) => <React.Fragment key={i}><span style={{ color: i === active ? '#ffe27a' : '#fff' }}>{word}</span>{i < words.length - 1 ? ' ' : ''}</React.Fragment>)}
+  // Keep captions to one or two words for phone readability.
+  const firstVisible = Math.floor(active / 2) * 2;
+  const visibleWords = words.slice(firstVisible, firstVisible + 2);
+  return <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '16%' }}>
+    <div style={{ fontSize: 34 * scale, lineHeight: 1.12, fontWeight: 900, textAlign: 'center', background: 'rgba(0,0,0,.82)', padding: `${10 * scale}px ${22 * scale}px`, borderRadius: 10 * scale, maxWidth: '88%', textShadow: '0 2px 8px #000', letterSpacing: 0.2 * scale }}>
+      {visibleWords.map((word, i) => {
+        const wordIndex = firstVisible + i;
+        return <React.Fragment key={wordIndex}><span style={{ color: wordIndex === active ? '#ff4057' : '#fff' }}>{word}</span>{i < visibleWords.length - 1 ? ' ' : ''}</React.Fragment>;
+      })}
     </div>
   </AbsoluteFill>;
 };
