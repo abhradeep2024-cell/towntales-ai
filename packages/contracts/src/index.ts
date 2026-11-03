@@ -112,6 +112,7 @@ export const SceneSchema = z.object({
   durationSeconds: z.number().positive().max(90),
   narration: z.string().max(5000).default(''),
   visualDirection: z.string().min(1).max(4000),
+  environmentId: z.string().max(100).optional(),
   onScreenText: z.array(z.string().max(300)).max(20).default([]),
   background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
   actors: z.array(SceneActorSchema).max(40).optional(),
@@ -139,6 +140,9 @@ export const EnvironmentSchema = z.object({
   timeOfDay: z.string().max(80).optional(),
   weather: z.string().max(120).optional(),
   atmosphere: z.string().max(1000).optional(),
+  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
+  groundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#454a52'),
+  props: z.array(ScenePropSchema).max(150).default([]),
   lighting: SceneLightingSchema.optional(),
   continuityNotes: z.array(z.string().max(500)).max(30).default([])
 });
@@ -296,8 +300,12 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   uniqueIds(spec.audioCues ?? [], 'audioCues');
   uniqueIds(spec.captionCues ?? [], 'captionCues');
   const sceneIds = new Set(spec.scenes.map(scene => scene.id));
+  const environmentIds = new Set((spec.environments ?? []).map(environment => environment.id));
   const characterIds = new Set((spec.characters ?? []).map(character => character.id));
   const assetIds = new Set((spec.assets ?? []).map(asset => asset.id));
+  spec.scenes.forEach((scene,index) => {
+    if (scene.environmentId && !environmentIds.has(scene.environmentId)) ctx.addIssue({code:'custom',path:['scenes',index,'environmentId'],message:'Scene environmentId must reference a declared environment.'});
+  });
   (spec.environments ?? []).forEach((environment, index) => {
     if (environment.assetId && !assetIds.has(environment.assetId)) ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference a declared asset.'});
   });
