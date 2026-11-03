@@ -532,10 +532,12 @@ app.get('/v1/jobs/:id/output', async (request, reply) => {
   const {id} = request.params as {id:string};
   try {
     const db = requireDb();
-    const {data:job,error} = await db.from('film_studio_jobs').select('status,output_key').eq('id',id).maybeSingle();
+    const {data:job,error} = await db.from('film_studio_jobs').select('status,output_key,qc_report').eq('id',id).maybeSingle();
     if (error) throw error;
     if (!job) return reply.code(404).send({error:'job_not_found'});
     if (job.status !== 'completed' || !job.output_key) return reply.code(409).send({error:'output_not_ready'});
+    const qcReport = (job.qc_report ?? {}) as Record<string,any>;
+    if (qcReport.releaseReady !== true) return reply.code(409).send({error:'creative_qa_not_approved',releaseStatus:qcReport.releaseStatus ?? 'creative_review_missing',creativeReview:qcReport.creativeReview ?? null});
     const {data,error:signError} = await db.storage.from(bucket).createSignedUrl(job.output_key,300);
     if (signError) throw signError;
     return {url:data.signedUrl,expiresInSeconds:300};
