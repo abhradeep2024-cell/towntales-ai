@@ -10,6 +10,10 @@ describe('production source intake extraction', () => {
   it('rejects malformed DOCX packages instead of storing them as extracted text', async () => {
     await expect(extractProductionInput('story.docx', Buffer.from('not-a-docx-package'))).rejects.toThrow();
   });
+  it('strips a UTF-8 BOM from text source files', async () => {
+    const result = await extractProductionInput('story.txt', Buffer.from('\uFEFFA story begins here.', 'utf8'));
+    expect(result.text).toBe('A story begins here.');
+  });
   it('parses JSON and preserves its structured data', async () => {
     const result = await extractProductionInput('brief.json', Buffer.from(JSON.stringify({title:'Test',scenes:[{id:'one'}]})));
     expect(result.format).toBe('json');
