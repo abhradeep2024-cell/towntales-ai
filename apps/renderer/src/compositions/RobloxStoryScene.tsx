@@ -211,10 +211,10 @@ function Town({ night = true, frame, fps, sceneIndex }: { night?: boolean; frame
   </group>;
 }
 
-function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number; blackout?: boolean }) {
+function Bedroom({ frame, fps, blackout = false, blackoutStart = 10.4 }: { frame: number; fps: number; blackout?: boolean; blackoutStart?: number }) {
   const seconds = frame / fps;
   const doorOpen = Math.max(0, Math.min(1, (seconds - 0.25) / 1.15));
-  const flicker = blackout && seconds > 6 ? (Math.sin(frame * 2.4) > 0.2 ? 0.05 : 0.8) : 1;
+  const flicker = blackout && seconds > blackoutStart - 2.2 ? (Math.sin(frame * 2.4) > 0.2 ? 0.05 : 0.8) : 1;
   return <group>
     <ABlock position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
     <ABlock position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
