@@ -156,12 +156,16 @@ async function runJob(job: any, serveUrl: string) {
     const video = streams.find((stream: any) => stream.codec_type === 'video');
     if (!video || video.width !== production.width || video.height !== production.height) throw new Error('Video dimensions do not match the production specification.');
     if (video.codec_name !== 'h264') throw new Error(`Expected H.264 video, received ${video.codec_name ?? 'unknown'}.`);
-    const [frameNumerator, frameDenominator] = String(video.avg_frame_rate ?? video.r_frame_rate ?? '0/1').split('/').map(Number);
+    const [frameNumerator, frameDenominator] = String(video.avg_frame_rate ?? '0/1').split('/').map(Number);
+    const [nominalNumerator, nominalDenominator] = String(video.r_frame_rate ?? '0/1').split('/').map(Number);
     const actualFps = frameDenominator ? frameNumerator / frameDenominator : 0;
-    if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Average frame rate does not match the production specification.');
+    const nominalFps = nominalDenominator ? nominalNumerator / nominalDenominator : 0;
+    if (Math.abs(actualFps - production.fps) > 0.05 || Math.abs(nominalFps - production.fps) > 0.05) {
+      throw new Error('Average or nominal frame rate does not match the production specification.');
+    }
     const expectedFrames = Math.round(production.durationSeconds * production.fps);
     const actualFrames = Number(video.nb_read_frames ?? video.nb_frames ?? 0);
-    if (actualFrames && actualFrames !== expectedFrames) throw new Error(`Expected ${expectedFrames} decoded frames, received ${actualFrames}.`);
+    if (!actualFrames || actualFrames !== expectedFrames) throw new Error(`Expected exactly ${expectedFrames} decoded frames, received ${actualFrames || 'unknown'}.`);
     if (production.styleId === 'roblox-cinematic-horror' &&
         (production.width !== 1080 || production.height !== 1920 || production.fps !== 30 || production.durationSeconds !== 60)) {
       throw new Error('TownTales Episode 01 must render at 1080x1920, 30 FPS and 60 seconds.');

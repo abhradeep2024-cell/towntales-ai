@@ -27,6 +27,16 @@ class WordAlignmentTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "zero-length"):
             normalize_word_alignments([{"text": "empty", "start": 0.5, "end": 0.5}])
 
+    def test_episode_fixture_matches_nine_scene_60_second_bible_timing(self):
+        fixture = Path(__file__).parent.parent / "fixtures" / "episode-01-roblox.json"
+        spec = __import__("json").loads(fixture.read_text(encoding="utf-8"))
+        self.assertEqual(spec["styleId"], "roblox-cinematic-horror")
+        self.assertEqual(spec["durationSeconds"], 60)
+        self.assertEqual([scene["durationSeconds"] for scene in spec["scenes"]], [5, 6, 6, 7, 7, 8, 12, 5, 4])
+        self.assertEqual(len(spec["scenes"]), 9)
+        self.assertTrue(all(scene["narration"].strip() for scene in spec["scenes"]))
+        self.assertAlmostEqual(sum(scene["durationSeconds"] for scene in spec["scenes"]), 60)
+
     def test_original_effects_render_as_stereo_24khz_audio(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "effects.wav"

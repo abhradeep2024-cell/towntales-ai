@@ -49,12 +49,17 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const waveEnvelope = wavePhase >= 0 && wavePhase <= 1 ? Math.sin(Math.PI * wavePhase) ** 2 : 0;
   const waveArm = Math.sin(wavePhase * Math.PI * 6) * 0.62 * waveEnvelope;
   const alexRaise = Math.max(0, Math.min(1, t / 0.72));
-  const armLeft = wave ? waveArm : (walking ? stride * 0.45 : 0.04);
-  const armRight = sceneIndex === 3 && kind === 'alex' ? -1.05 * alexRaise : (walking ? -stride * 0.45 : -0.04);
+  const leftArmRotation: [number, number, number] = wave
+    ? [0, 0, wavePhase >= 0 && wavePhase <= 1 ? 2.05 + waveArm : 0.04]
+    : [walking ? stride * 0.45 : 0.04, 0, -0.08];
+  const rightArmRotation: [number, number, number] = sceneIndex === 3 && kind === 'alex'
+    ? [0, 0, -2.05 * alexRaise]
+    : [walking ? -stride * 0.45 : -0.04, 0, 0.08];
   const headYaw = isShadow && sceneIndex === 3 ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72 : 0;
-  const mouthOpen = kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
-    ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
-    : 0.035;
+  const mouthOpen = kind === 'double' && sceneIndex === 6 ? 0.085
+    : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
+      ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
+      : 0.035;
   const leg = walking ? stride * (running ? 0.62 : 0.4) : 0.025;
   const torso = isVoid ? voidMat : kind === 'resident' ? material('#64845b') : hoodie;
   const trousers = isVoid ? voidMat : black;
@@ -62,7 +67,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const shoe = isVoid ? voidMat : white;
   const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || isDouble || (kind === 'alex' && sceneIndex === 7)} />;
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
-  return <group position={position} scale={scale} rotation={[0, sceneIndex === 8 ? -0.55 : 0.08, kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0]}>
+  return <group position={position} scale={scale} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : 0.08, kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
       <ActorBlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
@@ -84,11 +89,11 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
         <ActorBlock position={[0, 0.015, 0.026]} scale={[0.16, 0.27, 0.008]} material={material('#78a9c8')} />
         <ActorBlock position={[0, -0.13, 0.032]} scale={[0.035, 0.018, 0.008]} material={white} />
       </group>}
-      <group position={[-0.47, 0.23, 0]} rotation={[armLeft, 0, -0.08]}>
+      <group position={[-0.47, 0.23, 0]} rotation={leftArmRotation}>
         <ActorBlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
         <ActorBlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
       </group>
-      <group position={[0.47, 0.23, 0]} rotation={[armRight, 0, 0.08]}>
+      <group position={[0.47, 0.23, 0]} rotation={rightArmRotation}>
         <ActorBlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
         <ActorBlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
       </group>
@@ -149,7 +154,9 @@ function Town({ night = true }: { night?: boolean }) {
 }
 
 function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number; blackout?: boolean }) {
-  const flicker = blackout && frame / fps > 6 ? (Math.sin(frame * 2.4) > 0.2 ? 0.05 : 0.8) : 1;
+  const seconds = frame / fps;
+  const doorOpen = Math.max(0, Math.min(1, (seconds - 0.25) / 1.15));
+  const flicker = blackout && seconds > 6 ? (Math.sin(frame * 2.4) > 0.2 ? 0.05 : 0.8) : 1;
   return <group>
     <ABlock position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
     <ABlock position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
@@ -162,7 +169,10 @@ function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number;
     <ABlock position={[-2.45, 1.35, -3.48]} scale={[0.14, 2.7, 0.16]} material={material('#51434a')} />
     <ABlock position={[-0.95, 1.35, -3.48]} scale={[0.14, 2.7, 0.16]} material={material('#51434a')} />
     <ABlock position={[-1.7, 2.72, -3.48]} scale={[1.65, 0.14, 0.16]} material={material('#51434a')} />
-    <ABlock position={[-1.7, 1.35, -3.42]} scale={[1.25, 2.5, 0.035]} material={material('#171d2b')} shadowless />
+    <group position={[-2.45, 1.35, -3.42]} rotation={[0, -doorOpen * 1.15, 0]}>
+      <ABlock position={[0.72, 0, 0]} scale={[1.42, 2.5, 0.06]} material={material('#171d2b')} shadowless />
+      <ABlock position={[1.22, 0, 0.05]} scale={[0.055, 0.09, 0.035]} material={material('#d2b16d')} shadowless />
+    </group>
     <pointLight position={[0, 3.8, 0]} intensity={blackout ? flicker : 1.5} color="#f4d9ad" distance={9} />
   </group>;
 }
@@ -209,11 +219,11 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
   const { fps, width } = useVideoConfig();
   const scale = width / 360;
   const push = Math.min(1, frame / Math.max(1, fps * 2));
-  const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 3.5 - push * 1.1, 11 - push * 2.1]
+  const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 5.5 - push * 2.8, 11 - push * 2.1]
     : sceneIndex === 3 ? [0, 2.6, 9.5 - push * 2.1]
     : sceneIndex === 4 ? [0, 2.5, 9 - push * 1.3]
     : sceneIndex === 5 || sceneIndex === 6 ? [0, 2.2, 8.2 - push * 0.8]
-    : sceneIndex === 7 ? [0, 3.5 - Math.min(1, frame / Math.max(1, fps * 5)) * 1.45, 9.5]
+    : sceneIndex === 7 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 5)) * 1.4, 9.5]
     : sceneIndex === 8 ? [-2.2, 2.7, 6.1] : [0, 2.6, 9.5];
   const blackout = sceneIndex === 6 && frame / fps > 10.4;
   return <div style={{ position: 'absolute', inset: 0, background: blackout ? '#000' : undefined }}>
