@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import array
 import json
+import hashlib
 import math
 import shutil
 import subprocess
@@ -357,24 +358,27 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         voice_name = audio.get("voice", "en-US-AriaNeural")
         for idx, scene in enumerate(spec.get("scenes", [])):
             narration = (scene.get("narration") or "").strip()
+            scene_duration = float(scene["durationSeconds"])
             if narration:
+                if voice_cursor > scene_start + 0.12:
+                    raise RuntimeError(f"Scene {idx - 1} narration overruns the next scene by {voice_cursor - scene_start:.2f}s; keep approved narration inside its own scene.")
                 target = workdir / f"voice-{idx:02d}.mp3"
                 provider, word_events = make_voice(narration, voice_name, target)
                 providers.add(provider)
                 if require_word_alignment and (provider != "edge-tts" or not word_events):
                     raise RuntimeError(f"Production word alignment required, but scene {idx} used {provider} without real word boundaries.")
-                voice_start = max(scene_start, voice_cursor)
+                voice_start = scene_start
                 clip_duration = media_duration(target)
                 if clip_duration <= 0:
                     raise RuntimeError(f"Scene {idx} narration produced an empty audio track.")
+                if clip_duration > scene_duration + 0.12:
+                    raise RuntimeError(f"Scene {idx} narration takes {clip_duration:.2f}s but its approved scene duration is {scene_duration:.2f}s; revise timing or narration rather than letting dialogue spill into the next shot.")
                 for event in word_events:
                     aligned_words.append({**event, "sceneIndex": idx, "start": round(voice_start + float(event["start"]), 6), "end": round(voice_start + float(event["end"]), 6)})
-                voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": max(0, round(voice_start * 1000)), "volume": float(audio.get("voiceVolume", 1))})
+                voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": max(0, round(voice_start * 1000)), "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest(), "sceneIndex": idx})
                 report["voiceLines"] += 1
                 voice_cursor = voice_start + clip_duration
-                if voice_cursor > duration + 0.05:
-                    raise RuntimeError(f"Narration exceeds the {duration:.2f}s episode: scene {idx} ends at {voice_cursor:.2f}s. Shorten or re-time the approved narration; do not truncate speech.")
-            scene_start += float(scene["durationSeconds"])
+            scene_start += scene_duration
         report["voiceProvider"] = "+".join(sorted(providers)) if providers else None
 
     if aligned_words:
@@ -402,13 +406,13 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     if audio.get("musicEnabled", True):
         music_path = workdir / "music.wav"
         make_music(music_path, duration, audio.get("musicStyle", "ambient"), music_ducks)
-        tracks.append({"kind": "music", "file": music_path.name, "delayMs": 0, "volume": float(audio.get("musicVolume", 0.12))})
+        tracks.append({"kind": "music", "file": music_path.name, "delayMs": 0, "volume": float(audio.get("musicVolume", 0.12)), "bytes": music_path.stat().st_size, "sha256": hashlib.sha256(music_path.read_bytes()).hexdigest()})
         report["musicGenerated"] = True
     effects_enabled = bool(audio.get("effectsEnabled", spec.get("styleId") == "roblox-cinematic-horror"))
     if effects_enabled:
         effects_path = workdir / "effects.wav"
         make_effects(effects_path, duration, effects_ducks)
-        tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18})
+        tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18, "bytes": effects_path.stat().st_size, "sha256": hashlib.sha256(effects_path.read_bytes()).hexdigest()})
         report["effectsGenerated"] = True
     tracks.extend(voice_tracks)
     report["effectsEnabled"] = effects_enabled
