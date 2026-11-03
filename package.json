@@ -19,7 +19,8 @@
     "test:audio": "python3 apps/renderer/scripts/audio_pipeline.py --spec apps/renderer/fixtures/audio-smoke.json --video /tmp/film-studio-smoke.mp4 --output /tmp/film-studio-audio-smoke.mp4 --workdir /tmp/film-studio-audio-test",
     "render:lemo:art-deco": "node vendor/lemo-opuscar/core/render/video.mjs apps/renderer/fixtures/lemo-art-deco --fps 30 --workers 2 --out /tmp/film-studio-lemo-art-deco.mp4 --size 1280x720",
     "render:episode01:preview": "remotion render apps/renderer/src/index.tsx TownTalesEpisode01Preview /tmp/towntales-episode-01-preview.mp4 --log=error",
-    "render:episode01:production": "remotion render apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-production.mp4 --log=error"
+    "render:episode01:production": "remotion render apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-production.mp4 --log=error",
+    "render:smoke:declarative": "remotion render apps/renderer/src/index.tsx FilmStudioDeclarativeSmoke /tmp/film-studio-declarative.mp4 --log=error"
   },
   "engines": {
     "node": ">=22"
