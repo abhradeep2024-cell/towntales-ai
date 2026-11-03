@@ -75,6 +75,21 @@ async function runJob(job: any, serveUrl: string) {
   const specPath = join(workDir, 'production.json');
 
   try {
+    await writeFile(specPath, JSON.stringify(production), 'utf8');
+    const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
+    const narrationRequested = Boolean(production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0));
+    await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 4 });
+    await execFileAsync(pythonExecutable, [
+      audioScript, '--spec', specPath, '--workdir', workDir, '--prepare-only',
+      ...(narrationRequested ? ['--require-word-alignment'] : [])
+    ], { timeout: 8 * 60 * 1000, maxBuffer: 2_000_000 });
+    const audioManifestPath = join(workDir, 'audio-manifest.json');
+    const preparedAudio = JSON.parse(await readFile(audioManifestPath, 'utf8'));
+    const alignmentPath = join(workDir, 'word-alignments.json');
+    const wordAlignmentData = narrationRequested ? JSON.parse(await readFile(alignmentPath, 'utf8')) : { words: [] };
+    const wordAlignments = Array.isArray(wordAlignmentData.words) ? wordAlignmentData.words : [];
+    if (narrationRequested && !wordAlignments.length) throw new Error('Prepared narration has no word-level alignment for visual synchronization.');
+
     let renderer: 'lemo-opuscar' | 'remotion' = 'remotion';
     if (production.projectFiles) {
       renderer = 'lemo-opuscar';
@@ -91,7 +106,7 @@ async function runJob(job: any, serveUrl: string) {
       await execFileAsync('node', [lemoEntry, projectDir, '--fps', String(production.fps), '--workers', String(concurrency), '--out', silentPath, '--size', `${production.width}x${production.height}`], { timeout: 12 * 60 * 1000, maxBuffer: 2_000_000 });
       await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 82 });
     } else {
-      const compositions = await getCompositions(serveUrl, { inputProps: { production }, ...(browserExecutable ? { browserExecutable } : {}) });
+      const compositions = await getCompositions(serveUrl, { inputProps: { production, wordAlignments }, ...(browserExecutable ? { browserExecutable } : {}) });
       const composition = compositions.find((item) => item.id === 'FilmStudio');
       if (!composition) throw new Error('FilmStudio composition was not registered.');
       const actual = {
@@ -108,7 +123,7 @@ async function runJob(job: any, serveUrl: string) {
       try {
         await renderMedia({
           composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 23, x264Preset: 'veryfast',
-          inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
+          inputProps: { production, wordAlignments }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
           onProgress: ({ progress }) => {
             const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));
             progressWrites = progressWrites.then(async () => {
@@ -134,12 +149,10 @@ async function runJob(job: any, serveUrl: string) {
       await progressWrites;
     }
 
-    await writeFile(specPath, JSON.stringify(production), 'utf8');
-    const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
     await execFileAsync(pythonExecutable, [
-      audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
-      ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : []),
-      ...(production.audio.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0) ? ['--require-word-alignment'] : [])
+      audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir, '--reuse-prepared',
+      ...(production.audio?.burnSubtitles ? ['--burn-subtitles'] : []),
+      ...(narrationRequested ? ['--require-word-alignment'] : [])
     ], { timeout: 8 * 60 * 1000, maxBuffer: 2_000_000 });
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
@@ -219,7 +232,7 @@ async function runJob(job: any, serveUrl: string) {
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
       audioMode: {
         musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled,
-        burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle, effectsEnabled: production.styleId === 'roblox-cinematic-horror',
+        burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle, effectsEnabled: Boolean(preparedAudio.report?.effectsGenerated),
         captionTiming: narrationRequested ? 'edge-tts-word-boundary' : null
       },
       validatedAt: new Date().toISOString()
@@ -252,6 +265,14 @@ async function runJob(job: any, serveUrl: string) {
     };
     const manifestKey = objectKey.replace(/\.mp4$/, '.production-manifest.json');
     artifacts.productionManifest = await uploadVerifiedArtifact(manifestKey, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
+
+    const audioManifestKey = objectKey.replace(/\.mp4$/, '.audio-manifest.json');
+    artifacts.audioManifest = await uploadVerifiedArtifact(audioManifestKey, await readFile(audioManifestPath), 'application/json');
+    const captionsPath = join(workDir, 'word-captions.ass');
+    if (await stat(captionsPath).then(() => true).catch(() => false)) {
+      const captionsKey = objectKey.replace(/\.mp4$/, '.word-captions.ass');
+      artifacts.wordCaptions = await uploadVerifiedArtifact(captionsKey, await readFile(captionsPath), 'text/plain');
+    }
 
     if (narrationRequested) {
       const alignmentPath = join(workDir, 'word-alignments.json');
