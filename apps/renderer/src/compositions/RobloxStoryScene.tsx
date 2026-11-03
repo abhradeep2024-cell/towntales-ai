@@ -17,9 +17,9 @@ const eyes = new THREE.MeshBasicMaterial({ color: '#bceaff' });
 
 function Block({ position, scale, material: mat, rotation = [0, 0, 0], shadowless = false }: {
   position: [number, number, number]; scale: [number, number, number]; material: THREE.Material;
-  rotation?: [number, number, number];
+  rotation?: [number, number, number]; shadowless?: boolean;
 }) {
-  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!arguments[0]?.shadowless} receiveShadow material={mat}>
+  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!shadowless} receiveShadow material={mat}>
     <boxGeometry args={[1, 1, 1]} />
   </mesh>;
 }
