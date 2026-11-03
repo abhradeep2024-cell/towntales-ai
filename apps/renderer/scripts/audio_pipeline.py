@@ -545,7 +545,7 @@ def mux_prepared_audio(spec: dict, video_path: Path, output_path: Path, workdir:
             raise RuntimeError("Prepared word alignment changed after narration approval.")
         width, height = media_dimensions(video_path)
         ass_path = workdir / "word-captions.ass"
-        emphasis_words = {token.lower() for cue in (spec.get('captionCues') or []) if cue.get('emphasis') in ('word','phrase') for token in re.findall(r'[\\w]+(?:[\'’][\\w]+)?', str(cue.get('text','')))}
+        emphasis_words = {token.strip(".,!?;:()[]{}\'\"").lower() for cue in (spec.get("captionCues") or []) if cue.get("emphasis") in ("word", "phrase") for token in str(cue.get("text", "")).split()}
         write_word_ass(words, ass_path, width, height, emphasis_words)
         vf_args = ["-vf", f"ass={ass_path}"]
         report["subtitlesBurned"] = True
