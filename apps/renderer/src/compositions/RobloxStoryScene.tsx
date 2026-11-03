@@ -36,8 +36,8 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const isDouble = kind === 'double';
   const isVoid = isShadow;
   const residentPanics = kind === 'resident' && sceneIndex === 1 && t >= 3.4;
-  const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || sceneIndex === 7;
-  const running = sceneIndex === 4 || sceneIndex === 7 || residentPanics;
+  const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex');
+  const running = sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || residentPanics;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
   const idle = Math.sin(t * 2.1) * 0.025;
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8);
