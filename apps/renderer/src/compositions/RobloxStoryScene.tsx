@@ -105,9 +105,10 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
         ? (t >= cues.dismissStart - 1.1 && t <= cues.dismissStart ? -0.42 : t > cues.dismissStart && t < cues.dismissStart + 0.4 ? 0.18 : 0)
         : 0;
   const mouthOpen = kind === 'double' && sceneIndex === 6 ? 0.085
-    : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
-      ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
-      : 0.035;
+    : kind === 'alex' && sceneIndex === 2 && t >= cues.dismissStart - 0.6 && t <= cues.dismissStart + 0.6 ? 0.085
+      : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
+        ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
+        : 0.035;
   const leg = walking ? stride * (running ? 0.62 : 0.4) : 0.025;
   const torso = isVoid ? voidMat : kind === 'resident' ? material('#64845b') : hoodie;
   const trousers = isVoid ? voidMat : black;
@@ -311,14 +312,16 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     cameraPosition = t < cues.openingPunch ? [0, 5.5 - smooth(t / Math.max(0.5, cues.openingPunch)) * 2.8, 11 - smooth(t / Math.max(0.5, cues.openingPunch)) * 2.1] : [0.95, 2.1, 4.8];
     cameraTarget = t < cues.openingPunch ? [0, 1, 0] : [0.95, 1.2, -0.1];
   } else if (sceneIndex === 1) {
-    const reactionEnd = Math.max(cues.residentNotice + 0.8, cues.residentRun - 0.8);
+    const runShotStart = Math.max(cues.residentNotice + 0.8, cues.residentRun - 0.6);
+    const clockStart = runShotStart + 0.9;
     if (t < cues.residentNotice) { cameraPosition = [-0.5 + t * 0.12, 2.6, 9.5]; cameraTarget = [0, 1, 0.8]; }
-    else if (t < reactionEnd) { cameraPosition = [1.2, 2.1, 5.5]; cameraTarget = [1.2, 1.2, 0.8]; }
+    else if (t < runShotStart) { cameraPosition = [1.2, 2.1, 5.5]; cameraTarget = [1.2, 1.2, 0.8]; }
+    else if (t < clockStart) { cameraPosition = [2.0, 2.2, 5.2]; cameraTarget = [2.0, 1.1, 0.5]; }
     else { cameraPosition = [3.45, 3.65, 4.2]; cameraTarget = [3.45, 3.65, -1.48]; }
   } else if (sceneIndex === 2) {
     const faceStart = Math.max(2.5, cues.dismissStart - 0.9);
     if (t < faceStart) { cameraPosition = [alexX - 0.2, 2.6, 9.5]; cameraTarget = [alexX, 1.2, 0.2]; }
-    else if (t < cues.dismissStart + 0.45) { cameraPosition = [alexX, 2.1, 4.0]; cameraTarget = [alexX, 2.0, 0.2]; }
+    else if (t < cues.dismissStart + 0.2) { cameraPosition = [alexX, 2.1, 4.0]; cameraTarget = [alexX, 2.0, 0.2]; }
     else { cameraPosition = [-1.8, 2.0, 4.5]; cameraTarget = [-1.8, 1.85, 1.35]; }
   } else if (sceneIndex === 3) {
     const shadowShot = Math.max(0.6, cues.shadowWave - 0.25);
