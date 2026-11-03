@@ -44,7 +44,7 @@ export async function planProductionFromSource(
           'Preserve source chronology, causality, character continuity, scene beats and stated runtime. If runtime is absent, target 60 seconds. Use 9:16, 1080x1920, 30 FPS unless source specifies otherwise.',
           'Return schemaVersion 2, title, idea, styleId, durationSeconds, aspectRatio, fps, width, height, scenes and audio. Every scene needs id,title,durationSeconds,visualDirection,narration,onScreenText,background.',
           'Scene durations must sum to durationSeconds within one second. Keep narration concise enough to fit the scene timing.',
-          'Create a coherent shot/scene plan in visualDirection, describing camera, environment, actor blocking, action, lighting and transition. Do not use image slideshows.',
+          'Create a coherent shot/scene plan in visualDirection, describing camera, environment, actor blocking, action, lighting and transition. Do not use image slideshows. For every recurring named character, define one reusable characters entry with stable id, name and rig block-humanoid; reference it from scene actors. Include at least one camera keyframe per scene so the generic 3D renderer is selected. Put appropriate actions on actors and keep every action inside its scene duration.',
           'Use a distinct scene for each meaningful beat, up to 30 scenes. Use hex colors for backgrounds.',
           'Output valid JSON only, no Markdown.'
         ].join(' ')},
