@@ -21,7 +21,7 @@ class PreparedAudioTests(unittest.TestCase):
             "subtitles": [],
             "audio": {"musicEnabled": False, "voiceEnabled": True, "effectsEnabled": False}
         }
-        def fake_voice(text, voice, target):
+        def fake_voice(text, voice, target, rate="+0%"):
             target.write_bytes(b"voice-track-" * 60)
             return "edge-tts", [
                 {"text": "Hello", "start": 0.1, "end": 0.4},
