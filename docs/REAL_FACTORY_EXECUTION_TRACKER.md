@@ -43,6 +43,8 @@ Repository: `abhradeep2024-cell/towntales-ai`
 Branch: `work/towntales-bible-remediation`  
 PR: [#2](https://github.com/abhradeep2024-cell/towntales-ai/pull/2) (draft; do not merge before acceptance).
 
+- Production contract expanded with provider-neutral assets, environments, shots, tracks, dialogue, audio cues, captions, output profiles and QA rules; validation tests cover references and timeline bounds.
+- Added a backward-compatible schema v1/v2 contract and an additive `migrateProductionSpec` function; v1 remains readable and v2 migration tests are queued in CI (commit `d65ccd0b2f37ebacbaf75f0b3473c200bdc15c93`). Do not mark Task 2 complete until this run passes.
 - Concurrency policy fix committed as `fba4dcb7438fbdaabd6e6b8e2394ba7b5bba382d`; active jobs are not cancelled by newer commits in the same concurrency group.
 - Latest head at this snapshot: `bbb6a5b21bfe27f0363e88e4966ccdb24be9ee4c`.
 - Run [#41687473008](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41687473008) completed successfully on that head.
