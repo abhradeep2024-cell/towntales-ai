@@ -43,6 +43,7 @@ const declarativeAnimationProduction = {
     id: 'CHAR_QA_001', name: 'QA Actor', rig: 'block-humanoid' as const,
     appearance: { bodyColor: '#2563a6', skinColor: '#e8b58e', hairColor: '#171717', pantsColor: '#171a22', shoeColor: '#f2f2f2', eyeColor: '#171717', eyeEmissiveColor: '#000000', eyeEmissiveIntensity: 0, mouthColor: '#914d43', castShadow: true, receiveShadow: true, scale: 1 }
   }],
+  assets: [{id:'qa-model',type:'prop',uri:'data:model/gltf-binary;base64,Z2xURgIAAABMAgAABAIAAEpTT057ImFzc2V0Ijp7InZlcnNpb24iOiIyLjAiLCJnZW5lcmF0b3IiOiJSZWFsRmFjdG9yeVNtb2tlIn0sInNjZW5lIjowLCJzY2VuZXMiOlt7Im5vZGVzIjpbMF19XSwibm9kZXMiOlt7Im1lc2giOjB9XSwibWVzaGVzIjpbeyJwcmltaXRpdmVzIjpbeyJhdHRyaWJ1dGVzIjp7IlBPU0lUSU9OIjowfSwiaW5kaWNlcyI6MX1dfV0sImJ1ZmZlcnMiOlt7ImJ5dGVMZW5ndGgiOjQ0fV0sImJ1ZmZlclZpZXdzIjpbeyJidWZmZXIiOjAsImJ5dGVPZmZzZXQiOjAsImJ5dGVMZW5ndGgiOjM2LCJ0YXJnZXQiOjM0OTYyfSx7ImJ1ZmZlciI6MCwiYnl0ZU9mZnNldCI6MzYsImJ5dGVMZW5ndGgiOjYsInRhcmdldCI6MzQ5NjN9XSwiYWNjZXNzb3JzIjpbeyJidWZmZXJWaWV3IjowLCJjb21wb25lbnRUeXBlIjo1MTI2LCJjb3VudCI6MywidHlwZSI6IlZFQzMiLCJtaW4iOlswLDAsMF0sIm1heCI6WzEsMSwwXX0seyJidWZmZXJWaWV3IjoxLCJjb21wb25lbnRUeXBlIjo1MTIzLCJjb3VudCI6MywidHlwZSI6IlNDQUxBUiJ9XX0sAAAAQklOAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAQACAAAA',required:true}],
   scenes: [{
     id: 'declarative-scene', title: 'Actor motion contract', durationSeconds: 6,
     visualDirection: 'An actor walks into frame, turns and waves beside a prop.',
@@ -56,7 +57,7 @@ const declarativeAnimationProduction = {
         { type: 'wave' as const, startSeconds: 3, durationSeconds: 2, intensity: 1, arm: 'right' as const, repeat: 3 }
       ]
     }],
-    props: [{ id: 'qa-prop', type: 'box' as const, position: [2,0.6,0] as [number,number,number], scale: [0.8,1.2,0.8] as [number,number,number], color: '#d8a34a', rotation: [0,0,0] as [number,number,number], castShadow: true }],
+    props: [{ id: 'qa-prop', type: 'box' as const, position: [2,0.6,0] as [number,number,number], scale: [0.8,1.2,0.8] as [number,number,number], color: '#d8a34a', rotation: [0,0,0] as [number,number,number], castShadow: true }, {id:'qa-model-prop',type:'model' as const,assetId:'qa-model',position:[-2,0.5,0] as [number,number,number],scale:[1,1,1] as [number,number,number],color:'#ffffff',rotation:[0,0,0] as [number,number,number],castShadow:true}],
     camera: { keyframes: [
       { atSeconds: 0, position: [0,3,9] as [number,number,number], target: [0,1,0] as [number,number,number], fov: 40 },
       { atSeconds: 6, position: [1,2.5,6] as [number,number,number], target: [0.5,1,0] as [number,number,number], fov: 35 }
