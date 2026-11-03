@@ -210,13 +210,13 @@ class WordAlignmentTests(unittest.TestCase):
             target = Path(directory) / "cue-effects.wav"
             make_effects(target, 2.0, [{
                 "type":"sound-effect","label":"door creak","startSeconds":0.4,
-                "durationSeconds":0.8,"gainDb":-3
+                "durationSeconds":0.8,"gainDb":-3,"fadeInSeconds":0.15,"fadeOutSeconds":0.15
             }])
             with wave.open(str(target), "rb") as audio:
                 self.assertEqual(audio.getnchannels(), 2)
                 self.assertEqual(audio.getframerate(), 24000)
                 frames = audio.readframes(audio.getnframes())
-            self.assertGreater(max(abs(value) for value in __import__("array").array("h", frames)), 0)
+            samples = __import__("array").array("h", frames)\n            self.assertGreater(max(abs(value) for value in samples), 0)\n            self.assertEqual(max(abs(value) for value in samples[:int(0.35 * 24000 * 2)]), 0)\n            self.assertEqual(max(abs(value) for value in samples[int(1.25 * 24000 * 2):]), 0)
 
     def test_ass_captions_use_actual_word_timestamps_and_red_emphasis(self):
         words = [
