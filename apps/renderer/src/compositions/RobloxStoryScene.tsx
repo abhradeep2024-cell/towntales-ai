@@ -212,7 +212,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
         0,
         (i === 1 ? 1.2 : 0.8) - (residentRun ? travel * 1.2 : 0)
       ];
-      return <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={residentPosition} />;
+      return <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={sceneIndex} position={residentPosition} />;
     })}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
