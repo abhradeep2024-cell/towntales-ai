@@ -41,7 +41,7 @@ const episode01ProductionFullResolution = {
   height: 1920
 };
 
-export const FilmStudioRoot:React.FC = <>
+export const FilmStudioRoot:React.FC = () => <>
   <Composition id="FilmStudio" component={FilmComposition} durationInFrames={150} fps={30} width={1280} height={720}
     defaultProps={{production:landscapeProduction}} />
   <Composition id="FilmStudioSmoke" component={FilmStudioSmoke} durationInFrames={150} fps={30} width={1280} height={720} />
