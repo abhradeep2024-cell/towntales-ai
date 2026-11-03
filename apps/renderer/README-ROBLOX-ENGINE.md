@@ -6,8 +6,8 @@ The former text-card presentation is replaced with deterministic Three.js scenes
 
 - Reusable R6-inspired Alex and Shadow Alex procedural character rigs with persistent wardrobe and materials.
 - Scene-driven shadow choreography: delayed independent movement, three-wave gesture, head turn, chase movement, shadowless double and daylight missing-shadow reveal.
-- Animated bedroom door, double entrance, Alex recoil, blackout and brief glowing-eye reveal.
-- Final over-the-shoulder window shot with the original shadow behind the glass.
+- Animated bedroom door, bedroom-double entrance, Alex recoil, blackout and brief glowing-eye reveal; the town front door opens and slams as Alex reaches home.
+- Final over-the-shoulder window shot with the original shadow behind the glass, Bible on-screen text overlays and a hard cut to black.
 - Scene-specific camera movement, legible 9 PM clock insert, town/bedroom environments and day/night lighting.
 - Edge TTS word-boundary extraction, serialized narration scheduling and strict word-timing validation.
 - Word-synchronized, two-word kinetic captions burned from actual narration timestamps after audio assembly.
