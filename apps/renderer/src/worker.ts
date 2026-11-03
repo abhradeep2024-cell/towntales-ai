@@ -293,6 +293,7 @@ async function runJob(job: any, serveUrl: string) {
         h264Video: true, aacAudio: audioRequested ? true : null,
         audioPresent: audioRequested ? audioPresent : true,
         audioVideoDurationAligned: audioRequested ? audioVideoDurationDelta <= 1.0 : null,
+        previewRendered: true, previewTechnicalGate: true,
         blackFrameScan: true, freezeFrameScan: true,
         narrationPreparedBeforeRender: true,
         narrationWithinProductionWindow: !narrationRequested || Number(preparedAudio.report?.voiceDurationSeconds ?? Infinity) <= production.durationSeconds - 0.45,
