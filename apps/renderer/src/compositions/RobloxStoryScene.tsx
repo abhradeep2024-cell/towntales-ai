@@ -53,8 +53,9 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const isDouble = kind === 'double';
   const isVoid = isShadow;
   const residentPanics = kind === 'resident' && sceneIndex === 1 && t >= 3.4;
-  const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex');
-  const running = sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || residentPanics;
+  const alexFleesBedroom = sceneIndex === 6 && kind === 'alex' && t >= 4;
+  const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || alexFleesBedroom;
+  const running = sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || residentPanics || alexFleesBedroom;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
   const idle = Math.sin(t * 2.1) * 0.025;
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8);
@@ -78,6 +79,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const headYaw = isShadow && sceneIndex === 3
     ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72
     : kind === 'resident' && residentPanics ? -0.5
+      : kind === 'alex' && sceneIndex === 6 ? Math.max(0, Math.min(1, (t - 4) / 0.7)) * 0.85
       : kind === 'alex' && sceneIndex === 2
         ? (t >= 1.4 && t <= 2.5 ? -0.42 : t > 2.5 && t < 3.0 ? 0.18 : 0)
         : 0;
@@ -95,7 +97,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
     : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
   const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
-  return <group position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : 0.08, bodyLean]}>
+  return <group position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : sceneIndex === 6 && kind === 'alex' ? Math.max(0, Math.min(1, (t - 4) / 0.8)) * 1.15 : 0.08, bodyLean]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock shadowless={actorShadowless} position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
       <ActorBlock shadowless={actorShadowless} position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
@@ -222,6 +224,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
   const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2]
     : sceneIndex === 7 ? [-2.8 + Math.min(1, (frame / fps) / 2.2) * 2.0, 0, 0.2]
     : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.28, 0, 0.2 - (frame / fps) * 0.5]
+    : sceneIndex === 6 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 4) / 2)) * 0.65, 0, 0.2 + Math.max(0, Math.min(1, (frame / fps - 4) / 2)) * 0.3]
     : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.22, 0, 0.2]
     : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
     : [-0.8, 0, 0.2];
@@ -259,7 +262,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
   const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 5.5 - push * 2.8, 11 - push * 2.1]
     : sceneIndex === 3 ? [0, 2.6, 9.5 - push * 2.1]
     : sceneIndex === 4 ? [-0.2 - (frame / fps) * 0.12, 2.5, 9 - (frame / fps) * 0.45]
-    : sceneIndex === 5 || sceneIndex === 6 ? [0, 2.2, 8.2 - push * 0.8]
+    : sceneIndex === 5 ? [0, 2.2, 8.2 - push * 0.8]
+    : sceneIndex === 6 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 3)) * 1.0, 8.2 - push * 0.8]
     : sceneIndex === 7 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 5)) * 1.4, 9.5]
     : sceneIndex === 8 ? [-2.2, 2.7, 6.1] : [0, 2.6, 9.5];
   const blackout = sceneIndex === 6 && frame / fps > 10.4;
