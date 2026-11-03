@@ -1,58 +1,72 @@
 # Real Factory execution tracker
 
-**Goal:** A reusable automated production system that turns a supplied script or production Bible into a polished, cinematic, 60-second 3D animated reel with synchronized narration, dialogue, music, sound effects and captions.
+**Goal:** Build a reusable automated animation studio that turns a supplied story or production Bible into a polished animated reel.
 
-**Acceptance authority:** The Episode 01 Production Bible and the Real Factory End Goal & Production Standard. The Episode 01 Bible is a benchmark input, not a hardcoded renderer specification.
+**Mandatory sequence:** Finish and accept the software first. Do not produce the Episode 01 example video until the Stage A software acceptance gate passes. Episode 01 is the first post-software demonstration and creative benchmark.
 
-**Execution rule:** Work in order. A phase is complete only when its implementation, automated tests and relevant runtime evidence pass. Do not mark a successful command as proof of creative quality. Do not merge the remediation PR until acceptance gates pass.
+## Delivery stages
+
+- **Stage A — Software:** implement the complete generic production engine and operator workflow; validate using automated tests and synthetic fixtures.
+- **Stage B — Example:** after software acceptance, produce Episode 01 from its Bible through normal intake and inspect the real video against the Bible.
+- **Stage C — Generalization:** run a materially different story without story-specific renderer source changes.
 
 ## Ordered task register
 
-| # | Task | Exit evidence |
+| # | Task | Required completion evidence |
 |---:|---|---|
-| 1 | Baseline audit and CI repair | Clean build, type checks, tests, security scan and required smoke renders |
-| 2 | Universal production contract | Versioned schema validates project settings, characters, assets, scenes, shots, camera, actions, dialogue, audio, captions and QA |
-| 3 | Story/Bible intake | DOCX, TXT and JSON inputs parsed with source traceability and ambiguity reporting |
-| 4 | Story understanding and production planning | Generic structured production plan generated from arbitrary story input |
-| 5 | Reusable asset and continuity library | Versioned characters, rigs, environments, props, materials, lighting, animation and audio assets resolve consistently |
-| 6 | Character and rig system | Reusable production-ready rigs, expressive performance, locomotion and validated transitions |
-| 7 | Environment and prop system | Reusable sets, spatial continuity, lighting and interactive props |
-| 8 | Animation, choreography and camera engine | Deterministic actor tracks, overlapping actions, pathing, interaction, camera choreography and effects |
-| 9 | Narration and dialogue | Final audio generated/ingested, voice continuity and word alignment derived from final audio |
-| 10 | Music and sound design | Timed music, ambience, Foley, effects, ducking, mixing and audio defect detection |
-| 11 | Captions and graphic composition | Word-synchronized animated captions, safe areas and overlays |
-| 12 | Preview-first rendering | Review-resolution scene renders, full preview MP4, contact sheets and selective rerender |
-| 13 | Automated technical QA | Codec, resolution, FPS, duration, decode, streams, sync, black/frozen frames and integrity checks |
-| 14 | Automated creative QA | Evidence-based checks for story, continuity, performance, composition, captions and sound |
-| 15 | Repair and selective rerender | Bounded repair tasks and rerender only impacted shots, followed by repeat QA |
-| 16 | Final assembly and delivery | Approved master MP4, production report, manifest, asset versions and QA evidence |
-| 17 | Orchestration and persistence | Durable states, idempotency, retries, recovery, progress, logs and private Supabase storage |
-| 18 | End-to-end automation | Script-to-delivery pipeline runs without manual video assembly |
-| 19 | Episode 01 benchmark acceptance | Actual Episode 01 output passes technical and creative Bible review |
-| 20 | Second-story generalization | A materially different story runs without story-specific renderer code changes |
-| 21 | Reliability, security and performance | Recovery, concurrency, secret handling, private storage and resource limits tested |
-| 22 | Final acceptance | All critical tests and both story benchmarks pass; deliverables independently retrieved and decoded |
+| 1 | Repository/infrastructure baseline | Clean build, types, tests, security scan, verified API/database integration, stable CI |
+| 2 | Universal production contract | Versioned schema covers project settings, characters, assets, scenes, shots, camera, actions, dialogue, audio, captions and QA |
+| 3 | Simple production intake | Submit story/script/Bible via supported formats without hand-authoring JSON or editing code |
+| 4 | Story interpretation/planning | Generic brief, script, beats, shot plan and validated manifest with ambiguity reporting |
+| 5 | Asset/continuity library | Versioned reusable characters, rigs, environments, props, materials, lighting, animation and audio assets |
+| 6 | Character/rig engine | Production-ready reusable rigs, expression, locomotion, performance and validated transitions |
+| 7 | Environment/prop engine | Reusable sets, spatial continuity, lighting, collision and interactions |
+| 8 | Animation/choreography/camera | Deterministic actor tracks, composable actions, pathing, interactions, camera choreography and effects |
+| 9 | Narration/dialogue | Final voice audio, voice identity and word alignment from final audio |
+| 10 | Music/sound design | Timed music, ambience, Foley, effects, ducking, mixing and defect detection |
+| 11 | Captions/graphics | Word-synchronized animated captions, safe areas, overlays and readability validation |
+| 12 | Preview-first rendering/operator controls | Scene previews, contact sheets, preview MP4, selective rerender, progress/logs |
+| 13 | Technical QA | Codec, resolution, FPS, duration, full decode, streams, sync, black/frozen frames and integrity |
+| 14 | Creative QA | Evidence-based story, continuity, performance, composition, caption and sound review |
+| 15 | Repair/selective rerender | Bounded repair tasks, affected-shot rerender and repeat QA |
+| 16 | Durable orchestration/persistence | Job states, idempotency, retries, recovery, logs, private Supabase storage |
+| 17 | End-to-end operator workflow/delivery | Submit-to-report pipeline; no manual video assembly; complete output package |
+| 18 | Reliability/security/performance | Failure/recovery/concurrency tests, secrets/storage protection and resource measurements |
+| 19 | **Stage A software acceptance** | Synthetic full pipeline passes; operator can submit and retrieve a production; all critical tests pass |
+| 20 | **Stage B Episode 01 example** | Bible-driven reel produced by finished software; actual video reviewed against all Bible criteria |
+| 21 | **Stage C second-story test** | Different story runs with no story-specific renderer code changes |
+| 22 | Final acceptance/release | Both stories pass; MP4s decoded/retrieved; reports/evidence complete; no critical defects |
 
-## Current verified snapshot
+## Current verified execution snapshot
 
-As of workflow run [41676137909](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41676137909), branch `work/towntales-bible-remediation`, commit `abe450a823be1a6d97826010760f7c400904250f`:
+Repository: `abhradeep2024-cell/towntales-ai`  
+Branch: `work/towntales-bible-remediation`  
+PR: [#2](https://github.com/abhradeep2024-cell/towntales-ai/pull/2) (draft; do not merge before acceptance).
 
-- Checkout, repository secret scan, dependency installation, build/type-check, unit tests and audio alignment/caption tests: passed.
-- Render API/database integration check: skipped in this run; not evidence of live API/database success.
-- Landscape Remotion smoke, narration/music mux, three-scene timeline, declarative 3D smoke, vertical render, Lemo contract and Art Deco engine smoke: passed.
-- Episode 01 narration preparation and nine-scene low-resolution preview render/contact sheet: passed.
-- Full-resolution Episode 01 master render: in progress at the time this tracker was written.
-- MP4 validation, full-resolution frame, Supabase private upload/signed download/decode, visual contact sheet and artifact upload: pending.
+- Concurrency policy fix committed as `fba4dcb7438fbdaabd6e6b8e2394ba7b5bba382d`; active jobs are no longer cancelled by a newer commit in the same concurrency group.
+- Run [#272](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41682336797), commit `4e467f8ab9f1aa7229dcae0624e3fb1d6469931c`, remains in progress.
+- Completed successfully: checkout, secret scan, dependency setup, build/type-check, unit tests, audio alignment/caption tests, browser setup, landscape smoke, voice/music mux, three-scene timeline, declarative 3D smoke, vertical render, Lemo contract, Art Deco engine smoke and Episode 01 narration preparation.
+- The low-resolution preview step completed after the last tracker snapshot; the workflow has advanced to **full-resolution Episode 01 master render**. This is a CI validation render, not the Stage B deliverable; Stage B remains blocked until Stage A software acceptance.
+- Still pending in run #272: MP4 validation, full-resolution frame inspection artifact, Supabase private upload/signed retrieval/decode, visual contact sheet and artifact upload.
+- The Render API/database step was skipped for this pull-request run. It is not evidence that live Render integration is verified.
+- Run [#41683580560](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41683580560) for the concurrency-fix commit is queued/pending behind the active run.
 
-**Current phase:** Phase 1 baseline/CI validation is still in progress. A low-resolution preview exists as a workflow artifact candidate, but final video delivery and visual acceptance are not yet established.
+## What is implemented so far (not yet production accepted)
 
-## Non-negotiable quality rules
+- Versioned reusable-character/actor/scene contract foundation and validation tests.
+- Data-driven declarative React Three Fiber/Remotion scene renderer foundation.
+- Actor actions, props, basic lighting and camera keyframe support.
+- Audio duration retry and word-alignment/caption pipeline tests.
+- CI smoke renders and Supabase storage verification script/migration foundation.
+- PR concurrency isolation with `cancel-in-progress: false`.
 
-1. The renderer stays generic; story-specific content belongs in validated production data and reusable assets.
-2. The target is actual coherent 3D animation, not a slideshow or a sequence of static images.
-3. Narration alignment must come from the final generated audio.
-4. Scene continuity, character identity, camera intent, motion quality and sound synchronization must be reviewed.
-5. Preview and creative QA precede expensive final rendering.
-6. A failed stage cannot silently pass; retries are bounded and recorded.
-7. A production is not complete until the final MP4 is independently validated, stored and retrievable with its report.
-8. Episode 01 passing is necessary but insufficient; a different story must pass through the same engine without renderer source changes.
+These foundations do **not** yet prove production-ready rigs, detailed environments, arbitrary Bible intake, generic story planning, full creative QA, automated repair, or the complete no-code operator workflow.
+
+## Execution rules
+
+1. Work through tasks in order and update this tracker with evidence, not assumptions.
+2. Do not start the Episode 01 example production until task 19 is accepted.
+3. Keep the renderer generic; story-specific content belongs in production data and reusable assets.
+4. A successful TypeScript build or smoke render is not proof of creative quality.
+5. Do not claim a render passed until its output is available and independently validated.
+6. Do not merge PR #2 until Stage A, Episode 01, second-story generalization and final acceptance pass.
