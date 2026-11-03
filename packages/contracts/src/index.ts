@@ -353,6 +353,10 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   });
   (spec.environments ?? []).forEach((environment, index) => {
     if (environment.assetId && !assetIds.has(environment.assetId)) ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference a declared asset.'});
+    if (environment.assetId) {
+      const asset = (spec.assets ?? []).find(item => item.id === environment.assetId);
+      if (asset && asset.type !== 'environment') ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference an environment asset.'});
+    }
   });
   (spec.shots ?? []).forEach((shot, index) => {
     if (!sceneIds.has(shot.sceneId)) ctx.addIssue({code:'custom',path:['shots',index,'sceneId'],message:'Shot sceneId must reference a declared scene.'});
