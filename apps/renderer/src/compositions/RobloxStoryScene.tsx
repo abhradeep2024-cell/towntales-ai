@@ -120,15 +120,21 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   </group>;
 }
 
-function Town({ night = true }: { night?: boolean }) {
+function Town({ night = true, frame, fps, sceneIndex }: { night?: boolean; frame: number; fps: number; sceneIndex: number }) {
   const house = material(night ? '#33415b' : '#e8c9a0');
   const road = material(night ? '#202735' : '#6d747b');
+  const seconds = frame / fps;
+  const doorOpen = Math.max(0, Math.min(1, (seconds - 5.5) / 0.6));
+  const doorClose = Math.max(0, Math.min(1, (seconds - 6.4) / 0.25));
+  const alexHouseDoorAngle = sceneIndex === 4 ? -1.05 * doorOpen * (1 - doorClose) : 0;
   return <group>
     <ABlock position={[0, -0.18, 0]} scale={[18, 0.35, 10]} material={road} />
     {[-6, -3, 3, 6].map((x, i) => <group key={x} position={[x, 0, -4.1]}>
       <ABlock position={[0, 1.1, 0]} scale={[2.2, 2.2, 1.7]} material={house} />
       <ABlock position={[0, 2.55, 0]} scale={[2.5, 0.75, 1.9]} material={material(night ? '#171d2c' : '#a65e4d')} />
-      <ABlock position={[0, 0.7, 0.88]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
+      <group position={[0, 0.7, 0.88]} rotation={[0, x === -3 ? alexHouseDoorAngle : 0, 0]}>
+        <ABlock position={[0, 0, 0]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
+      </group>
       <ABlock position={[-0.62, 1.45, 0.89]} scale={[0.35, 0.45, 0.08]} material={material('#92b8d0')} />
     </group>)}
     <ABlock position={[-0.8, 2.3, 0.2]} scale={[0.12, 4.6, 0.12]} material={material('#242a34')} />
@@ -197,7 +203,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
   const shadowWave = sceneIndex === 0 || sceneIndex === 3;
   const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2]
     : sceneIndex === 7 ? [-2.8 + Math.min(1, (frame / fps) / 2.2) * 2.0, 0, 0.2]
-    : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.28, 0, 0.2]
+    : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.28, 0, 0.2 - (frame / fps) * 0.5]
     : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.22, 0, 0.2]
     : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
     : [-0.8, 0, 0.2];
@@ -207,7 +213,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <ambientLight intensity={isMorning ? 1.35 : isBlackout && frame / fps > 8 ? 0.06 : 0.72} />
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : isBlackout && frame / fps > 8 ? 0.05 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
-    {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
+    {inTown ? <Town night={night} frame={frame} fps={fps} sceneIndex={sceneIndex} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-1.2, 0, 1.2].map((x, i) => {
       const residentRun = sceneIndex === 1 && i === 2 && frame / fps > 3.4;
       const travel = Math.max(0, frame / fps - 3.4);
@@ -220,7 +226,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     })}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
-      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1] : [0.95, 0, -0.1]} />}
+      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1 - (frame / fps) * 0.52] : [0.95, 0, -0.1]} />}
     {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.45]} scale={0.5} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
     {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
@@ -234,7 +240,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
   const push = Math.min(1, frame / Math.max(1, fps * 2));
   const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 5.5 - push * 2.8, 11 - push * 2.1]
     : sceneIndex === 3 ? [0, 2.6, 9.5 - push * 2.1]
-    : sceneIndex === 4 ? [0, 2.5, 9 - push * 1.3]
+    : sceneIndex === 4 ? [-0.2 - (frame / fps) * 0.12, 2.5, 9 - (frame / fps) * 0.45]
     : sceneIndex === 5 || sceneIndex === 6 ? [0, 2.2, 8.2 - push * 0.8]
     : sceneIndex === 7 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 5)) * 1.4, 9.5]
     : sceneIndex === 8 ? [-2.2, 2.7, 6.1] : [0, 2.6, 9.5];
