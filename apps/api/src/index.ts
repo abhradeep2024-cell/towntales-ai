@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
 import { extractProductionInput } from './intake.js';
 import { parseStructuredProductionSpec, planProductionFromSource } from './planner.js';
+import { reviewProductionCreatively } from './creative-review.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -418,6 +419,30 @@ app.get('/v1/jobs/:id/artifacts', async (request, reply) => {
   } catch (error) {
     request.log.error(error);
     return reply.code(503).send({error:'artifact_retrieval_failed'});
+  }
+});
+
+app.post('/internal/jobs/:id/creative-review', async (request, reply) => {
+  if (!requireSecret(request, workerSecret)) return reply.code(401).send({error:'unauthorized'});
+  const body = request.body as {production?:unknown;frames?:Array<{sceneId:string;timeSeconds:number;imageBase64:string}>;technicalReport?:unknown};
+  if (!body || !body.production || !Array.isArray(body.frames) || body.frames.length < 1 || body.frames.length > 30) {
+    return reply.code(400).send({error:'invalid_creative_review_payload'});
+  }
+  const totalFrameBytes = body.frames.reduce((total,frame)=>total + (typeof frame?.imageBase64 === 'string' ? frame.imageBase64.length : 0),0);
+  if (totalFrameBytes > 5_000_000 || body.frames.some(frame=>!frame || typeof frame.sceneId !== 'string' || !Number.isFinite(frame.timeSeconds) || typeof frame.imageBase64 !== 'string')) {
+    return reply.code(413).send({error:'creative_review_frames_exceed_limit'});
+  }
+  const aiKey = env('AI_API_KEY') || env('OPENAI_API_KEY') || env('OPENROUTER_API_KEY');
+  const aiModel = env('CREATIVE_QA_MODEL') || env('AI_MODEL');
+  const defaultProvider = env('AI_API_KEY') || env('OPENAI_API_KEY') ? 'https://api.openai.com/v1' : 'https://openrouter.ai/api/v1';
+  const baseUrl = env('AI_BASE_URL') || defaultProvider;
+  if (!aiKey || !aiModel) return reply.code(503).send({error:'creative_qa_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['CREATIVE_QA_MODEL','AI_BASE_URL']});
+  try {
+    const review = await reviewProductionCreatively(body.production,body.frames,body.technicalReport,{apiKey:aiKey,baseUrl,model:aiModel});
+    return {jobId:(request.params as {id:string}).id,...review};
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(502).send({error:'creative_review_failed',message:error instanceof Error ? error.message : 'Unknown creative review failure'});
   }
 });
 
