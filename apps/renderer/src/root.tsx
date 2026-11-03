@@ -62,6 +62,7 @@ const declarativeAnimationProduction = {
       { atSeconds: 6, position: [1,2.5,6] as [number,number,number], target: [0.5,1,0] as [number,number,number], fov: 35 }
     ] }
   }],
+  captionCues: [{id:'declarative-label',sceneId:'declarative-scene',text:'CAMERA + PERFORMANCE TEST',startSeconds:0.5,endSeconds:2.5,kind:'label'}],
   subtitles: [], audio: { musicEnabled: false, voiceEnabled: false, burnSubtitles: false, voice: 'en-US-AriaNeural', musicVolume: 0.12, voiceVolume: 1, musicStyle: 'ambient' as const }
 };
 
