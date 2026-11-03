@@ -372,11 +372,11 @@ async function runJob(job: any, serveUrl: string) {
       const contactSheetPath = join(workDir,`creative-${scene.id.replace(/[^a-zA-Z0-9_-]/g,'_')}.jpg`);
       await execFileAsync('ffmpeg',[
         '-y','-ss',String(sceneOffsetSeconds.toFixed(3)),'-i',outputPath,
-        '-vf',`select='${selectExpression}',scale=240:-2,tile=3x1`,
-        '-frames:v','1','-q:v','9',contactSheetPath
+        '-vf',`select='${selectExpression}',scale=180:-2,tile=3x1`,
+        '-frames:v','1','-q:v','10',contactSheetPath
       ],{timeout:45_000,maxBuffer:1_000_000});
       const contactSheet = await readFile(contactSheetPath);
-      if (!contactSheet.length || contactSheet.length > 350_000) throw new Error(`Creative QA contact sheet for scene ${scene.id} is empty or exceeds 350 KB.`);
+      if (!contactSheet.length || contactSheet.length > 100_000) throw new Error(`Creative QA contact sheet for scene ${scene.id} is empty or exceeds 100 KB.`);
       creativeFrames.push({
         sceneId:scene.id,
         timeSeconds:sceneOffsetSeconds + scene.durationSeconds / 2,
