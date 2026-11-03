@@ -544,20 +544,52 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     music_ducks.append((final_silence_start, duration))
     effects_ducks.append((final_silence_start, duration))
     audio_cues = spec.get("audioCues") or []
-    effect_cues = [cue for cue in audio_cues if cue.get("type") in ("ambience", "foley", "sound-effect")]
+    effect_cues = [cue for cue in audio_cues if cue.get("type") in ("ambience", "foley", "sound-effect") and not cue.get("assetId")]
+    asset_cues = [cue for cue in audio_cues if cue.get("assetId")]
+    production_assets = {asset.get("id"):asset for asset in (spec.get("assets") or [])}
 
     tracks: list[dict] = []
-    if audio.get("musicEnabled", True):
+    has_asset_music = any(cue.get("type") == "music" for cue in asset_cues)
+    if audio.get("musicEnabled", True) and not has_asset_music:
         music_path = workdir / "music.wav"
         make_music(music_path, duration, audio.get("musicStyle", "ambient"), music_ducks)
         tracks.append({"kind": "music", "file": music_path.name, "delayMs": 0, "volume": float(audio.get("musicVolume", 0.12)), "bytes": music_path.stat().st_size, "sha256": hashlib.sha256(music_path.read_bytes()).hexdigest()})
         report["musicGenerated"] = True
-    effects_enabled = bool(audio.get("effectsEnabled", effect_cues))
+    effects_enabled = bool(audio.get("effectsEnabled", effect_cues or any(cue.get("type") in ("ambience", "foley", "sound-effect") for cue in asset_cues)))
     if effects_enabled:
         effects_path = workdir / "effects.wav"
-        make_effects(effects_path, duration, effect_cues or None, effects_ducks)
+        make_effects(effects_path, duration, effect_cues if audio_cues else None, effects_ducks)
         tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18, "bytes": effects_path.stat().st_size, "sha256": hashlib.sha256(effects_path.read_bytes()).hexdigest()})
         report["effectsGenerated"] = True
+    for cue in asset_cues:
+        asset = production_assets.get(cue.get("assetId"))
+        metadata = (asset or {}).get("metadata") or {}
+        relative_path = metadata.get("resolvedPath")
+        if not relative_path:
+            if (asset or {}).get("required", True):
+                raise RuntimeError(f"Required audio cue asset {cue.get('assetId')} was not resolved from the private asset library.")
+            continue
+        asset_path = workdir / relative_path
+        if not asset_path.is_file() or asset_path.stat().st_size < 100:
+            raise RuntimeError(f"Resolved audio cue asset is missing or empty: {cue.get('assetId')}.")
+        mime_type = str(metadata.get("resolvedMimeType", ""))
+        if not mime_type.startswith("audio/"):
+            raise RuntimeError(f"Audio cue asset {cue.get('assetId')} has unsupported MIME type {mime_type!r}.")
+        cue_duration = float(cue.get("durationSeconds") or max(0.01,media_duration(asset_path)))
+        start_seconds = float(cue.get("startSeconds",0))
+        if start_seconds + cue_duration > duration + 0.05:
+            cue_duration = max(0.01,duration-start_seconds)
+        gain_db = max(-60.0,min(12.0,float(cue.get("gainDb",0))))
+        tracks.append({
+            "kind":cue.get("type","sound-effect"),"file":str(asset_path.relative_to(workdir)),
+            "delayMs":round(start_seconds*1000),"volume":10 ** (gain_db/20),
+            "durationSeconds":cue_duration,
+            "fadeInSeconds":min(cue_duration,float(cue.get("fadeInSeconds",0))),
+            "fadeOutSeconds":min(cue_duration,float(cue.get("fadeOutSeconds",0))),
+            "bytes":asset_path.stat().st_size,
+            "sha256":hashlib.sha256(asset_path.read_bytes()).hexdigest(),
+            "assetId":cue.get("assetId"),"cueId":cue.get("id")
+        })
     tracks.extend(voice_tracks)
     report["effectsEnabled"] = effects_enabled
     report["musicDuckIntervals"] = music_ducks
@@ -592,10 +624,21 @@ def mux_prepared_audio(spec: dict, video_path: Path, output_path: Path, workdir:
         delay_ms = int(track.get("delayMs", 0))
         volume = float(track.get("volume", 1.0))
         label = f"audio{input_index}"
+        chain = f"[{input_index}:a]"
+        duration_seconds = track.get("durationSeconds")
+        if duration_seconds:
+            chain += f"atrim=duration={float(duration_seconds):.3f},asetpts=PTS-STARTPTS,"
+        fade_in = float(track.get("fadeInSeconds",0))
+        fade_out = float(track.get("fadeOutSeconds",0))
+        if fade_in > 0:
+            chain += f"afade=t=in:st=0:d={fade_in:.3f},"
+        if fade_out > 0 and duration_seconds:
+            fade_start = max(0.0,float(duration_seconds)-fade_out)
+            chain += f"afade=t=out:st={fade_start:.3f}:d={fade_out:.3f},"
         if delay_ms:
-            filters.append(f"[{input_index}:a]adelay={delay_ms}|{delay_ms},volume={volume:.3f}[{label}]")
-        else:
-            filters.append(f"[{input_index}:a]volume={volume:.3f}[{label}]")
+            chain += f"adelay={delay_ms}|{delay_ms},"
+        chain += f"volume={volume:.3f}[{label}]"
+        filters.append(chain)
         labels.append(f"[{label}]")
     has_audio = bool(labels)
     if has_audio:
