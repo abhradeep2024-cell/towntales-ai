@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { ProductionSpecSchema } from '@film-studio/contracts';
@@ -64,18 +64,57 @@ async function uploadVerifiedArtifact(objectKey: string, body: Buffer, contentTy
   return { objectKey, bytes: body.length, sha256: createHash('sha256').update(body).digest('hex'), verifiedDownload: true };
 }
 
+async function resolveProductionAssets(production: any, workDir: string) {
+  const assets = production.assets ?? [];
+  for (const asset of assets) {
+    if (!asset.libraryAssetKey || !asset.libraryVersion) continue;
+    const {data:record,error} = await supabase.from('film_studio_asset_library')
+      .select('asset_key,version,asset_type,storage_key,mime_type,byte_size,sha256,status')
+      .eq('asset_key',asset.libraryAssetKey).eq('version',asset.libraryVersion).maybeSingle();
+    if (error) throw error;
+    if (!record || record.status !== 'ready') {
+      if (asset.required !== false) throw new Error(`Required library asset ${asset.libraryAssetKey}@${asset.libraryVersion} is missing or not ready.`);
+      asset.metadata = {...(asset.metadata ?? {}),resolutionStatus:'optional-asset-unavailable'};
+      continue;
+    }
+    if (record.asset_type !== asset.type) throw new Error(`Library asset ${asset.libraryAssetKey}@${asset.libraryVersion} type mismatch: expected ${asset.type}, received ${record.asset_type}.`);
+    const {data:blob,error:downloadError} = await supabase.storage.from(bucket).download(record.storage_key);
+    if (downloadError || !blob) throw downloadError ?? new Error(`Could not download library asset ${asset.libraryAssetKey}.`);
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    const digest = createHash('sha256').update(bytes).digest('hex');
+    if (bytes.byteLength !== Number(record.byte_size) || (record.sha256 && digest !== record.sha256)) {
+      throw new Error(`Library asset ${asset.libraryAssetKey}@${asset.libraryVersion} failed byte-size or SHA-256 verification.`);
+    }
+    const extension = extname(record.storage_key).slice(0,12);
+    const safeId = String(asset.id).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,80);
+    const relativePath = `assets/${safeId}${extension}`;
+    const target = join(workDir,relativePath);
+    await mkdir(dirname(target),{recursive:true});
+    await writeFile(target,bytes);
+    asset.metadata = {
+      ...(asset.metadata ?? {}),
+      resolvedPath:relativePath,
+      resolvedMimeType:record.mime_type,
+      resolvedSha256:digest,
+      resolutionStatus:'verified'
+    };
+  }
+}
+
 async function runJob(job: any, serveUrl: string) {
   const jobId = String(job.id);
   const parsed = ProductionSpecSchema.safeParse(job.production_specification);
   if (!parsed.success) throw new Error(`Invalid stored production specification: ${parsed.error.message}`);
   const production = parsed.data;
+  const runtimeProduction = structuredClone(production);
   const workDir = await mkdtemp(join(tmpdir(), 'film-studio-'));
   const outputPath = join(workDir, 'final.mp4');
   const silentPath = join(workDir, 'picture-only.mp4');
   const specPath = join(workDir, 'production.json');
 
   try {
-    await writeFile(specPath, JSON.stringify(production), 'utf8');
+    await resolveProductionAssets(runtimeProduction,workDir);
+    await writeFile(specPath, JSON.stringify(runtimeProduction), 'utf8');
     const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
     const narrationRequested = Boolean(production.audio?.voiceEnabled && (production.scenes.some((scene) => scene.narration.trim().length > 0) || (production.dialogue?.length ?? 0) > 0));
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 4 });
@@ -93,7 +132,7 @@ async function runJob(job: any, serveUrl: string) {
     const previewScale = production.aspectRatio === '9:16'
       ? {width:360,height:640}
       : production.aspectRatio === '16:9' ? {width:640,height:360} : {width:480,height:480};
-    const previewProduction = ProductionSpecSchema.parse({...production,...previewScale,fps:24});
+    const previewProduction = ProductionSpecSchema.parse({...runtimeProduction,...previewScale,fps:24});
     const previewSilentPath = join(workDir,'preview-picture-only.mp4');
     const previewPath = join(workDir,'preview.mp4');
     await api(`/internal/jobs/${jobId}/progress`,{status:'rendering',progress:8});
@@ -158,7 +197,7 @@ async function runJob(job: any, serveUrl: string) {
       await execFileAsync('node', [lemoEntry, projectDir, '--fps', String(production.fps), '--workers', String(concurrency), '--out', silentPath, '--size', `${production.width}x${production.height}`], { timeout: 12 * 60 * 1000, maxBuffer: 2_000_000 });
       await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 82 });
     } else {
-      const compositions = await getCompositions(serveUrl, { inputProps: { production, wordAlignments }, ...(browserExecutable ? { browserExecutable } : {}) });
+      const compositions = await getCompositions(serveUrl, { inputProps: { production:runtimeProduction, wordAlignments }, ...(browserExecutable ? { browserExecutable } : {}) });
       const composition = compositions.find((item) => item.id === 'FilmStudio');
       if (!composition) throw new Error('FilmStudio composition was not registered.');
       const actual = {
@@ -175,7 +214,7 @@ async function runJob(job: any, serveUrl: string) {
       try {
         await renderMedia({
           composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 23, x264Preset: 'veryfast',
-          inputProps: { production, wordAlignments }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
+          inputProps: { production:runtimeProduction, wordAlignments }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
           onProgress: ({ progress }) => {
             const pct = Math.max(25, Math.min(82, 25 + Math.round(progress * 57)));
             progressWrites = progressWrites.then(async () => {
