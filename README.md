@@ -17,6 +17,9 @@ Optional flags: `--description "..."`, `--style <style-id>`, `--aspect-ratio 16:
 
 Story planning requires `AI_API_KEY` and `AI_MODEL`. Automated creative QA requires a vision-capable model configured as `CREATIVE_QA_MODEL` (or a vision-capable `AI_MODEL`). Set `AI_BASE_URL` when using an OpenAI-compatible provider other than the default.
 
+## Reusable asset library
+The authenticated `POST /v1/assets` endpoint registers immutable asset versions; `GET /v1/assets` searches the private catalogue and returns short-lived signed URLs. Common media types and binary glTF (`model/gltf-binary`) are supported. Production manifests reference assets by `libraryAssetKey` and `libraryVersion`; the renderer verifies downloaded byte size and SHA-256 before using them. GLB assets can be used for reusable environment/prop models and GLTF humanoid character rigs with named animation clips.
+
 ## Free-tier architecture
 - Render free web service hosts only the authenticated API.
 - Public GitHub Actions standard runners render videos and are free for public repositories. Render's free API instance sleeps after 15 minutes without inbound traffic.
