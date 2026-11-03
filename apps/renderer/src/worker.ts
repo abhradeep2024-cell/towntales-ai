@@ -239,7 +239,9 @@ async function runJob(job: any, serveUrl: string) {
       })),
       characters: production.styleId === 'roblox-cinematic-horror' ? [
         { id: 'CHAR_ALEX_001', name: 'Alex', wardrobe: ['black messy hair', 'blue hoodie', 'black trousers', 'white sneakers'], assetStatus: 'procedural R6-inspired model' },
-        { id: 'CHAR_SHADOW_ALEX_001', name: 'Shadow Alex', appearance: 'matte near-black silhouette with subtle pale eyes', controller: 'independent animation controller' }
+        { id: 'CHAR_SHADOW_ALEX_001', name: 'Shadow Alex', identityOf: 'CHAR_ALEX_001', appearance: 'matte near-black silhouette with subtle pale eyes', controller: 'independent animation controller' },
+        { id: 'CHAR_ALEX_DOUBLE_001', name: 'Alex Double', identityOf: 'CHAR_ALEX_001', wardrobe: ['black messy hair', 'blue hoodie', 'black trousers', 'white sneakers'], shadow: 'none', controller: 'independent expression and movement controller', assetStatus: 'shared Alex rig with independent scene controller' },
+        { id: 'CHAR_TOWN_RESIDENT_001', name: 'Town Resident', wardrobe: ['olive green top', 'dark trousers', 'dark shoes'], controller: 'resident walk and panic controller', assetStatus: 'procedural R6-inspired resident rig' }
       ] : [],
       environmentAssets: production.styleId === 'roblox-cinematic-horror' ? [
         'ENV_TOWN_STREET_001', 'ENV_ALEX_HOUSE_001', 'ENV_BEDROOM_001',
