@@ -222,7 +222,8 @@ function Bedroom({ frame, fps, blackout = false, blackoutStart = 10.4 }: { frame
   return <group>
     <ABlock position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
     <ABlock position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
-    <ABlock position={[-3, 2.15, -3.48]} scale={[1.35, 1.35, 0.08]} material={material('#5b83a5', 0.35)} />
+    <ABlock position={[-3, 2.15, -3.48]} scale={[1.35, 1.35, 0.08]} material={material('#111827')} />
+    <ABlock position={[-3, 2.15, -3.42]} scale={[1.16, 1.16, 0.035]} material={new THREE.MeshStandardMaterial({ color: '#6e8da8', roughness: 0.28, transparent: true, opacity: 0.32 })} shadowless />
     {[-3.58, -3, -2.42].map((x) => <ABlock key={x} position={[x, 2.15, -3.35]} scale={[0.055, 1.28, 0.06]} material={material('#d2c4aa')} />)}
     {[1.57, 2.15, 2.73].map((y) => <ABlock key={y} position={[-3, y, -3.35]} scale={[1.22, 0.055, 0.06]} material={material('#d2c4aa')} />)}
     <ABlock position={[2.3, 0.18, -1.8]} scale={[3.3, 0.45, 2.2]} material={material('#725f66')} />
