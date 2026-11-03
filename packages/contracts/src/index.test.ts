@@ -121,4 +121,37 @@ describe('declarative animation production contract', () => {
     invalid.scenes[0].camera.keyframes.reverse();
     expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
   });
+
+  it('accepts reusable environment sets with stable scene references and props', () => {
+    const production = structuredClone(base);
+    production.scenes[0].environmentId = 'bedroom';
+    Object.assign(production, {
+      environments: [{
+        id:'bedroom',name:'Bedroom',locationDescription:'A compact bedroom at night',
+        background:'#111827',groundColor:'#30343b',groundSize:120,
+        fog:{color:'#111827',near:10,far:90},
+        props:[{id:'bed',type:'box',position:[0,0.3,-1],scale:[2,0.6,1],color:'#343b50'}],
+        continuityNotes:['Window remains on the left wall.']
+      }]
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects scenes that reference undeclared environments', () => {
+    const invalid = structuredClone(base);
+    invalid.scenes[0].environmentId = 'missing-environment';
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it('rejects invalid environment fog ranges and ground scales', () => {
+    const invalid = structuredClone(base);
+    Object.assign(invalid, {
+      environments:[{
+        id:'bad-set',name:'Invalid set',groundSize:5,
+        fog:{color:'#111827',near:90,far:10}
+      }]
+    });
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
 });
