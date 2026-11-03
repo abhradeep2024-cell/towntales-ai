@@ -72,7 +72,7 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const disappear = actions.filter(a => a.type === 'disappear' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const opacity = disappear ? 1 - smooth((time-disappear.startSeconds)/disappear.durationSeconds) : appear ? smooth((time-appear.startSeconds)/appear.durationSeconds) : 1;
   const stride = movement ? Math.sin(walkPhase) * (movement.type === 'run' ? .62 : .38) * movement.intensity : 0;
-  const waveRotation = waveActive ? Math.sin(waveP * Math.PI * 2 * wave.repeat) * .55 * Math.sin(Math.PI * waveP) : 0;
+  const waveRotation = wave && waveActive ? Math.sin(waveP * Math.PI * 2 * wave.repeat) * .55 * Math.sin(Math.PI * waveP) : 0;
   const armAngle = waveActive ? -1.9 + waveRotation : point ? -1.4 * gestureP : 0;
   const armSide = wave?.arm ?? point?.arm ?? 'right';
   useFrame(() => {
