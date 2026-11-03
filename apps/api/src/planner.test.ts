@@ -22,7 +22,7 @@ describe('AI production planner', () => {
     expect(cfg.fetchImpl).toHaveBeenCalledOnce();
   });
   it('accepts a JSON code fence but parses only the JSON payload', async () => {
-    const result=await planProductionFromSource('Story',config('```json\\n'+JSON.stringify(validPlan)+'\\n```'));
+    const result=await planProductionFromSource('Story',config('```json\n'+JSON.stringify(validPlan)+'\n```'));
     expect(result.title).toBe('Test Story');
   });
   it('rejects malformed model output', async () => {
