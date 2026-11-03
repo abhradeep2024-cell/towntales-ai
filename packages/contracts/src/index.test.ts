@@ -222,4 +222,23 @@ describe('declarative animation production contract', () => {
     expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
   });
 
+
+  it('rejects dialogue that falls outside its referenced scene window', () => {
+    const production = structuredClone(base);
+    production.scenes = [
+      {...production.scenes[0],id:'scene-1',durationSeconds:3,actors:[],camera:{keyframes:[{atSeconds:0,position:[0,3,9],target:[0,1,0]}]}},
+      {...production.scenes[0],id:'scene-2',durationSeconds:3,actors:[],camera:{keyframes:[{atSeconds:0,position:[0,3,9],target:[0,1,0]}]}}
+    ];
+    Object.assign(production,{voiceProfiles:[{id:'narrator',name:'Narrator',provider:'edge-tts',voice:'en-US-AriaNeural'}],dialogue:[{id:'line-1',sceneId:'scene-2',speaker:'Narrator',text:'Hello there.',startSeconds:1,endSeconds:2,voiceProfileId:'narrator'}]});
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+  it('rejects actor actions that exceed scene duration or omit required targets', () => {
+    const production = structuredClone(base);
+    production.scenes[0].actors[0].actions = [{type:'move',startSeconds:0,durationSeconds:2}];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+    production.scenes[0].actors[0].actions = [{type:'wave',startSeconds:5,durationSeconds:2}];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
 });
