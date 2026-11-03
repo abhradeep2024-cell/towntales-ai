@@ -1,6 +1,12 @@
 name: Film Studio Renderer
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/renderer/src/**'
+      - 'packages/contracts/src/**'
+      - '.github/workflows/render-worker.yml'
   schedule:
     - cron: '*/5 * * * *'
 concurrency:
@@ -38,6 +44,11 @@ jobs:
           if [ "$missing" -eq 1 ]; then
             echo "FILM_STUDIO_SECRETS_MISSING=true" >> "$GITHUB_ENV"
           fi
+      - name: Verify deployed API health and Supabase connection
+        if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
+        run: |
+          response="$(curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors "$API_BASE_URL/health")"
+          printf '%s\\n' "$response"
       - uses: actions/checkout@v7
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         with:

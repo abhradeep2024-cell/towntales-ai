@@ -5,16 +5,23 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { ProductionSpecSchema } from '@film-studio/contracts';
 
 const execFileAsync = promisify(execFile);
 const env = (key: string) => process.env[key];
+const rendererDir = dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = resolve(rendererDir, '../../..');
+const configuredPython = env('PYTHON_EXECUTABLE');
+const pythonExecutable = configuredPython
+  ? (isAbsolute(configuredPython) ? configuredPython : resolve(repositoryRoot, configuredPython))
+  : 'python3';
 const apiBase = (env('API_BASE_URL') ?? 'http://localhost:8080').replace(/\/$/, '');
 const workerSecret = env('RENDERER_SHARED_SECRET');
 const supabaseUrl = env('SUPABASE_URL')?.trim();
-const serviceKey = (env('SUPABASE_SERVICE_ROLE_KEY') || env('SUPABASE_SECRET_KEY'))?.trim();
+const serviceKey = (env('SUPABASE_SECRET_KEY') || env('SUPABASE_SERVICE_ROLE_KEY'))?.trim();
 if (!workerSecret || !supabaseUrl || !serviceKey) throw new Error('Worker secrets are not configured.');
 
 // Opaque sb_secret_* keys are API keys, not JWTs. Send them only in apikey,
@@ -64,7 +71,7 @@ async function runJob(job: any, serveUrl: string) {
         await mkdir(join(target, '..'), { recursive: true });
         await writeFile(target, contents, 'utf8');
       }
-      const lemoEntry = join(process.cwd(), 'vendor', 'lemo-opuscar', 'core', 'render', 'video.mjs');
+      const lemoEntry = join(repositoryRoot, 'vendor', 'lemo-opuscar', 'core', 'render', 'video.mjs');
       try { await stat(lemoEntry); } catch { throw new Error('The pinned Lemo-Opuscar submodule is missing. Check out the repository with submodules and install vendor/lemo-opuscar dependencies.'); }
       await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 8 });
       await execFileAsync('node', [lemoEntry, projectDir, '--fps', String(production.fps), '--workers', String(concurrency), '--out', silentPath, '--size', `${production.width}x${production.height}`], { timeout: 12 * 60 * 1000, maxBuffer: 2_000_000 });
@@ -82,26 +89,40 @@ async function runJob(job: any, serveUrl: string) {
       };
       let lastSync = 0;
       let lastProgress = -1;
-      await renderMedia({
-        composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 28, x264Preset: 'veryfast',
-        inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
-        onProgress: async ({ progress }) => {
-          const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));
-          const now = Date.now();
-          if (pct === lastProgress && now - lastSync < 2500) return;
-          const { data: current, error } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
-          if (error) throw error;
-          if (current.status === 'cancelled') throw new Error('JOB_CANCELLED');
-          if (pct !== lastProgress) await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: pct });
-          lastProgress = pct;
-          lastSync = now;
-        }
-      });
+      let renderingActive = true;
+      let progressWrites: Promise<void> = Promise.resolve();
+      try {
+        await renderMedia({
+          composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 28, x264Preset: 'veryfast',
+          inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
+          onProgress: ({ progress }) => {
+            const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));
+            progressWrites = progressWrites.then(async () => {
+              if (!renderingActive) return;
+              const now = Date.now();
+              if (pct === lastProgress || now - lastSync < 1000) return;
+              const { data: current, error } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
+              if (error) throw error;
+              if (current.status === 'cancelled') throw new Error('JOB_CANCELLED');
+              await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: pct });
+              lastProgress = pct;
+              lastSync = Date.now();
+            });
+            return progressWrites;
+          }
+        });
+      } catch (renderError) {
+        renderingActive = false;
+        await progressWrites.catch(() => undefined);
+        throw renderError;
+      }
+      renderingActive = false;
+      await progressWrites;
     }
 
     await writeFile(specPath, JSON.stringify(production), 'utf8');
-    const audioScript = join(process.cwd(), 'apps', 'renderer', 'scripts', 'audio_pipeline.py');
-    await execFileAsync(env('PYTHON_EXECUTABLE') ?? 'python3', [
+    const audioScript = join(rendererDir, 'scripts', 'audio_pipeline.py');
+    await execFileAsync(pythonExecutable, [
       audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
       ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : [])
     ], { timeout: 4 * 60 * 1000, maxBuffer: 2_000_000 });
@@ -150,7 +171,7 @@ async function runJob(job: any, serveUrl: string) {
 
 async function main() {
   await mkdir(outputDir, { recursive: true });
-  const entry = new URL('./index.tsx', import.meta.url).pathname;
+  const entry = join(rendererDir, 'index.tsx');
   const serveUrl = await bundle({ entryPoint: entry, onProgress: (progress) => console.log(`Bundle ${Math.round(progress * 100)}%`) });
   const processOnce = env('RENDER_ONCE') === 'true';
   console.log(`Film Studio renderer ready. concurrency=${concurrency}`);
@@ -171,6 +192,7 @@ async function main() {
             console.error('Could not persist failure status', updateError);
           }
         }
+        if (processOnce) throw error;
       }
       if (processOnce) return;
     } catch (error) {
