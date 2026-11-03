@@ -173,9 +173,9 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
     for wave_index in range(3):
         add_event(shadow_wave_start + 0.15 + wave_index * 0.6, 0.26, "boom", 52, 0.12)
     add_event(shadow_wave_start + 1.95, 1.1, "breath", 72, 0.06)
-    for index in range(14):
-        add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
-    for breath in (26.4, 28.1, 29.7):
+    for index in range(12):
+        add_event(28.25 + index * 0.22, 0.14, "step", 72 if index % 2 == 0 else 88, 0.12)
+    for breath in (28.65, 29.4, 30.1):
         add_event(breath, 0.65, "breath", 105, 0.06)
     add_event(30.75, 0.32, "boom", 60, 0.18)
     add_event(31.35, 1.25, "creak", 310, 0.10)
@@ -187,7 +187,7 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
     add_event(43.0, 0.9, "breath", 145, 0.065)
     for flicker_time in (blackout_start - 2.0, blackout_start - 1.15, blackout_start - 0.45):
         add_event(flicker_time, 0.22, "buzz", 54, 0.07)
-    for chirp in (51.25, 52.05, 53.1, 54.0, 55.0):
+    for chirp in (48.25, 49.05, 50.1, 51.0, 52.0):
         add_event(chirp, 0.32, "bird", 1850, 0.045)
     add_event(57.35, 1.15, "breath", 110, 0.085)
     add_event(59.15, 0.4, "boom", 42, 0.22)
