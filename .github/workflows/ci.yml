@@ -148,6 +148,13 @@ jobs:
           npx remotion still apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-master-frame.png --frame=900 --log=error
           dimensions=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 /tmp/towntales-episode-01-master-frame.png)
           test "$dimensions" = "1080x1920"
+      - name: Verify private Supabase upload, signed download and MP4 decode
+        working-directory: apps/renderer
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_STORAGE_BUCKET: ${{ secrets.SUPABASE_STORAGE_BUCKET }}
+        run: node scripts/verify-storage-upload.mjs /tmp/towntales-episode-01.mp4
       - name: Generate Episode 01 visual contact sheet
         run: |
           ffmpeg -y -v error -i /tmp/towntales-episode-01.mp4 \
