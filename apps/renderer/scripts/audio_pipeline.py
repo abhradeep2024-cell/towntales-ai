@@ -362,7 +362,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
             narration = (scene.get("narration") or "").strip()
             scene_duration = float(scene["durationSeconds"])
             if narration:
-                if voice_cursor > scene_start + 0.12:
+                if voice_cursor > scene_start + 0.03:
                     raise RuntimeError(f"Scene {idx - 1} narration overruns the next scene by {voice_cursor - scene_start:.2f}s; keep approved narration inside its own scene.")
                 target = workdir / f"voice-{idx:02d}.mp3"
                 provider, word_events = make_voice(narration, voice_name, target)
@@ -373,7 +373,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
                 clip_duration = media_duration(target)
                 if clip_duration <= 0:
                     raise RuntimeError(f"Scene {idx} narration produced an empty audio track.")
-                if clip_duration > scene_duration + 0.12:
+                if clip_duration > scene_duration + 0.03:
                     raise RuntimeError(f"Scene {idx} narration takes {clip_duration:.2f}s but its approved scene duration is {scene_duration:.2f}s; revise timing or narration rather than letting dialogue spill into the next shot.")
                 for event in word_events:
                     aligned_words.append({**event, "sceneIndex": idx, "start": round(voice_start + float(event["start"]), 6), "end": round(voice_start + float(event["end"]), 6)})
