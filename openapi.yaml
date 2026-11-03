@@ -360,7 +360,257 @@ components:
           type: array
           maxItems: 20
           items: { type: string, maxLength: 300 }
-        background: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+        background: { type: string, pattern: '^#[0-9a-fA-F]{6}      type: object
+      required: [id, type]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [character, rig, environment, prop, material, texture, animation, music, voice, sound-effect, font, image, video, other] }
+        uri: { type: string }
+        version: { type: string }
+        libraryAssetKey: { type: string }
+        libraryVersion: { type: integer, minimum: 1 }
+        required: { type: boolean }
+        metadata: { type: object }
+    VoiceProfile:
+      type: object
+      required: [id, name, provider, voice]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        provider: { type: string, enum: [edge-tts] }
+        voice: { type: string }
+        language: { type: string }
+        rate: { type: string }
+        pitch: { type: string }
+        volume: { type: string }
+    Character:
+      type: object
+      required: [id, name, rig]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        rig: { type: string, enum: [block-humanoid, gltf-humanoid] }
+        assetId: { type: string }
+        animationMap: { type: object, additionalProperties: { type: string } }
+        appearance: { type: object }
+    Environment:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        assetId: { type: string }
+        locationDescription: { type: string }
+        timeOfDay: { type: string }
+        weather: { type: string }
+        atmosphere: { type: string }
+        background: { type: string }
+        groundColor: { type: string }
+        groundSize: { type: number, minimum: 10, maximum: 500 }
+        props: { type: array, items: { $ref: '#/components/schemas/SceneProp' } }
+        fog:
+          type: object
+          required: [color, near, far]
+          properties:
+            color: { type: string }
+            near: { type: number, minimum: 0 }
+            far: { type: number, exclusiveMinimum: 0, maximum: 1000 }
+        continuityNotes: { type: array, items: { type: string } }
+    ProductionSpec:
+      type: object
+      required: [schemaVersion, title, idea, styleId, durationSeconds, aspectRatio, scenes]
+      properties:
+        schemaVersion: { type: integer, enum: [1, 2] }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        idea: { type: string, minLength: 1, maxLength: 8000 }
+        styleId: { type: string, minLength: 1, maxLength: 120 }
+        styleInvariants:
+          type: array
+          maxItems: 30
+          items: { type: string, maxLength: 500 }
+        durationSeconds: { type: integer, minimum: 1, maximum: 90 }
+        aspectRatio: { type: string, enum: ['16:9', '9:16', '1:1'] }
+        fps: { type: integer, enum: [24, 25, 30], default: 30 }
+        width: { type: integer, minimum: 320, maximum: 1920, description: 'Optional. If omitted, derived from aspectRatio; defaults to 1280 for 16:9, 720 for 9:16, and 1080 for 1:1.' }
+        height: { type: integer, minimum: 320, maximum: 1920, description: 'Optional. If omitted, derived from aspectRatio; defaults to 720 for 16:9, 1280 for 9:16, and 1080 for 1:1.' }
+        projectFiles:
+          type: object
+          description: >-
+            Optional complete Lemo-Opuscar film page, generated specifically for this production.
+            Must contain index.html implementing window.DUR, window.render(t), and window.READY.
+            Use only local text files; keep the total below 1.8 MB. No remote scripts or assets.
+          additionalProperties: { type: string }
+        assets:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/AssetReference' }
+        shots:
+          type: array
+          maxItems: 300
+          items: { type: object, required: [id, sceneId, startSeconds, durationSeconds], properties: { id: { type: string }, sceneId: { type: string }, startSeconds: { type: number }, durationSeconds: { type: number }, assetIds: { type: array, items: { type: string } } } }
+        tracks:
+          type: array
+          maxItems: 500
+          items: { type: object }
+        voiceProfiles:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/VoiceProfile' }
+        dialogue:
+          type: array
+          maxItems: 1000
+          items: { type: object, required: [id, sceneId, speaker, text, startSeconds, endSeconds], properties: { id: { type: string }, sceneId: { type: string }, characterId: { type: string }, voiceProfileId: { type: string }, speaker: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
+        audioCues:
+          type: array
+          maxItems: 1000
+          items: { type: object, required: [id, sceneId, type, label, startSeconds], properties: { id: { type: string }, sceneId: { type: string }, type: { type: string }, label: { type: string }, startSeconds: { type: number }, durationSeconds: { type: number } } }
+        captionCues:
+          type: array
+          maxItems: 2000
+          items: { type: object, required: [id, sceneId, text, startSeconds, endSeconds], properties: { id: { type: string }, sceneId: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
+        outputProfiles:
+          type: array
+          maxItems: 20
+          items: { type: object, required: [id, width, height, fps], properties: { id: { type: string }, width: { type: integer }, height: { type: integer }, fps: { type: integer }, codec: { type: string }, container: { type: string }, quality: { type: string } } }
+        qaRules:
+          type: array
+          maxItems: 200
+          items: { type: object, required: [id, category, description], properties: { id: { type: string }, category: { type: string }, severity: { type: string }, description: { type: string }, enabled: { type: boolean } } }
+        projectMetadata:
+          type: object
+          properties:
+            projectId: { type: string }
+            episodeId: { type: string }
+            language: { type: string }
+            locale: { type: string }
+            targetPlatform: { type: string }
+            notes: { type: array, items: { type: string } }
+        environments:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/Environment' }
+        characters:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/Character' }
+        scenes:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items: { $ref: '#/components/schemas/Scene' }
+        subtitles:
+          type: array
+          maxItems: 300
+          items:
+            type: object
+            required: [start, end, text]
+            properties:
+              start: { type: number, minimum: 0 }
+              end: { type: number, exclusiveMinimum: 0 }
+              text: { type: string, minLength: 1, maxLength: 500 }
+        audio:
+          type: object
+          properties:
+            musicEnabled: { type: boolean, default: true }
+            voiceEnabled: { type: boolean, default: true }
+            burnSubtitles: { type: boolean, default: false }
+            voice: { type: string, default: en-US-AriaNeural }
+            musicStyle: { type: string, enum: [ambient, uplifting, suspense], default: ambient }
+            musicVolume: { type: number, minimum: 0, maximum: 0.5, default: 0.12 }
+            voiceVolume: { type: number, minimum: 0, maximum: 2, default: 1 }
+    Job:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [queued, rendering, uploading, completed, failed, cancelled] }
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        created_at: { type: string, format: date-time }
+        renderDispatch: { type: string, enum: [dispatched, scheduled_fallback] }
+    JobStatus:
+      allOf:
+        - $ref: '#/components/schemas/Job'
+        - type: object
+          properties:
+            title: { type: string }
+            error: { type: string }
+            output_bytes: { type: integer }
+            attempt_count: { type: integer }
+            max_attempts: { type: integer }
+            qc_report: { type: object }
+            updated_at: { type: string, format: date-time }
+ }
+        actors:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/SceneActor' }
+        props:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/SceneProp' }
+        camera: { $ref: '#/components/schemas/SceneCamera' }
+        lighting: { $ref: '#/components/schemas/SceneLighting' }
+    SceneActor:
+      type: object
+      required: [characterId]
+      properties:
+        characterId: { type: string }
+        position: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+        rotationY: { type: number }
+        actions:
+          type: array
+          maxItems: 80
+          items: { $ref: '#/components/schemas/ActorAction' }
+    ActorAction:
+      type: object
+      required: [type, startSeconds, durationSeconds]
+      properties:
+        type: { type: string, enum: [idle, walk, run, wave, point, turn, jump, recoil, gesture, expression, move, disappear, appear, crouch, fall, clap, dance, talk, look-at] }
+        startSeconds: { type: number, minimum: 0 }
+        durationSeconds: { type: number, exclusiveMinimum: 0, maximum: 90 }
+        intensity: { type: number, minimum: 0, maximum: 2 }
+        arm: { type: string, enum: [left, right, both] }
+        targetPosition: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+        targetRotationY: { type: number }
+        repeat: { type: integer, minimum: 1, maximum: 20 }
+        emotion: { type: string, enum: [neutral, fear, shock, smile, angry, sad] }
+        note: { type: string, maxLength: 500 }
+    SceneProp:
+      type: object
+      required: [id, type, position]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [box, sphere, cylinder, plane, model] }
+        assetId: { type: string }
+        position: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+        scale: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+        color: { type: string }
+        rotation: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+        castShadow: { type: boolean }
+    SceneCamera:
+      type: object
+      required: [keyframes]
+      properties:
+        keyframes:
+          type: array
+          minItems: 1
+          maxItems: 30
+          items:
+            type: object
+            required: [atSeconds, position, target]
+            properties:
+              atSeconds: { type: number, minimum: 0 }
+              position: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+              target: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+              fov: { type: number, minimum: 15, maximum: 100 }
+    SceneLighting:
+      type: object
+      properties:
+        ambientColor: { type: string }
+        ambientIntensity: { type: number, minimum: 0, maximum: 5 }
+        keyColor: { type: string }
+        keyIntensity: { type: number, minimum: 0, maximum: 10 }
+        keyPosition: { type: array, minItems: 3, maxItems: 3, items: { type: number } }
+        background: { type: string }
     AssetReference:
       type: object
       required: [id, type]
