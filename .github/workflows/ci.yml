@@ -141,19 +141,31 @@ jobs:
           done
           python - <<'PY'
           import json, subprocess
+          def probe(path):
+              raw = subprocess.check_output([
+                  "ffprobe", "-v", "error", "-count_frames", "-show_entries",
+                  "format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames",
+                  "-of", "json", path
+              ], text=True)
+              data = json.loads(raw)
+              streams = data.get("streams", [])
+              video = [s for s in streams if s.get("codec_type") == "video"]
+              audio = [s for s in streams if s.get("codec_type") == "audio"]
+              assert len(video) == 1, f"{path}: expected exactly one video stream"
+              assert len(audio) >= 1, f"{path}: missing audio stream"
+              return data, video[0], audio[0]
+          preview_path = "/tmp/towntales-episode-01-preview.mp4"
+          preview_data, preview_video, preview_audio = probe(preview_path)
+          assert preview_video.get("codec_name") == "h264", "Preview must be H.264"
+          assert preview_audio.get("codec_name") == "aac", "Preview audio must be AAC"
+          assert (preview_video.get("width"), preview_video.get("height")) == (360, 640), "Preview must be 360x640"
+          assert preview_video.get("r_frame_rate") == "30/1", "Preview must be 30 FPS"
+          assert abs(float(preview_data["format"]["duration"]) - 60.0) <= 0.15, "Preview must be 60 seconds"
+          assert int(preview_video.get("nb_read_frames", "0")) == 1800, "Preview must contain 1800 frames"
+          print("Episode 01 low-resolution preview contract passed.")
           path = "/tmp/towntales-episode-01.mp4"
-          raw = subprocess.check_output([
-              "ffprobe", "-v", "error", "-count_frames", "-show_entries",
-              "format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames",
-              "-of", "json", path
-          ], text=True)
-          data = json.loads(raw)
-          streams = data.get("streams", [])
-          video = [s for s in streams if s.get("codec_type") == "video"]
-          audio = [s for s in streams if s.get("codec_type") == "audio"]
-          assert len(video) == 1, f"Expected exactly one video stream, got {len(video)}"
-          assert len(audio) >= 1, "Missing audio stream"
-          v = video[0]
+          data, v, a = probe(path)
+          audio = [a]
           assert v.get("codec_name") == "h264", f"Expected H.264, got {v.get('codec_name')}"
           assert audio[0].get("codec_name") == "aac", f"Expected AAC, got {audio[0].get('codec_name')}"
           assert (v.get("width"), v.get("height")) == (1080, 1920), f"Unexpected master dimensions: {v.get('width')}x{v.get('height')}"
