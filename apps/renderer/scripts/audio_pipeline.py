@@ -205,12 +205,12 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
         wav.writeframes(stereo.tobytes())
 
 
-async def make_edge_voice(text: str, voice: str, target: Path) -> list[dict]:
+async def make_edge_voice(text: str, voice: str, target: Path, rate: str = "+0%") -> list[dict]:
     """Stream Edge TTS audio and retain its genuine word-boundary timestamps."""
     import edge_tts
 
     words: list[dict] = []
-    communicate = edge_tts.Communicate(text, voice=voice, rate="+0%", volume="+0%", pitch="+0Hz", boundary="WordBoundary")
+    communicate = edge_tts.Communicate(text, voice=voice, rate=rate, volume="+0%", pitch="+0Hz", boundary="WordBoundary")
     with target.open("wb") as audio_file:
         async for chunk in communicate.stream():
             if chunk.get("type") == "audio":
@@ -228,9 +228,9 @@ async def make_edge_voice(text: str, voice: str, target: Path) -> list[dict]:
     return words
 
 
-def make_voice(text: str, voice: str, target: Path) -> tuple[str, list[dict]]:
+def make_voice(text: str, voice: str, target: Path, rate: str = "+0%") -> tuple[str, list[dict]]:
     try:
-        words = asyncio.run(make_edge_voice(text, voice, target))
+        words = asyncio.run(make_edge_voice(text, voice, target, rate))
         if target.exists() and target.stat().st_size > 500 and words:
             return "edge-tts", words
         raise RuntimeError("Edge TTS returned audio without usable word-boundary events.")
@@ -376,14 +376,14 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         # One continuous narration master preserves natural pacing across the Bible's fixed scene boundaries.
         voice_text = "\n\n".join(narration_lines)
         target = workdir / "voice-master.mp3"
-        provider, word_events = make_voice(voice_text, voice_name, target)
+        provider, word_events = make_voice(voice_text, voice_name, target, rate="+5%")
         if require_word_alignment and (provider != "edge-tts" or not word_events):
             raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
         clip_duration = media_duration(target)
         if clip_duration <= 0:
             raise RuntimeError("Continuous narration master produced an empty audio track.")
-        if clip_duration > duration + 0.03:
-            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s but the Bible allows {duration:.2f}s. Adjust the narration delivery without changing the approved scene timecodes.")
+        if clip_duration > duration - 0.45:
+            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s; it must finish by {duration - 0.45:.2f}s to preserve the Bible's final impact and silence. Adjust delivery without changing the approved scene timecodes.")
         for event in word_events:
             word_start = float(event["start"])
             scene_index = next((idx for idx, start, end in scene_boundaries if start <= word_start < end), None)
@@ -395,6 +395,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         report["voiceLines"] = 1
         report["voiceSegments"] = len(narration_lines)
         report["voiceDurationSeconds"] = round(clip_duration, 3)
+        report["voiceRate"] = "+5%"
         voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": 0, "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
     elif require_word_alignment:
         raise RuntimeError("Production word alignment required, but the specification contains no narration.")
