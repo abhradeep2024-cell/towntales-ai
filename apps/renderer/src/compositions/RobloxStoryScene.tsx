@@ -178,7 +178,8 @@ function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number;
     <ABlock position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
     <ABlock position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
     <ABlock position={[-3, 2.15, -3.48]} scale={[1.35, 1.35, 0.08]} material={material('#5b83a5', 0.35)} />
-    <ABlock position={[-3, 2.15, -3.4]} scale={[0.08, 1.4, 0.12]} material={material('#111827')} />
+    {[-3.58, -3, -2.42].map((x) => <ABlock key={x} position={[x, 2.15, -3.35]} scale={[0.055, 1.28, 0.06]} material={material('#d2c4aa')} />)}
+    {[1.57, 2.15, 2.73].map((y) => <ABlock key={y} position={[-3, y, -3.35]} scale={[1.22, 0.055, 0.06]} material={material('#d2c4aa')} />)}
     <ABlock position={[2.3, 0.18, -1.8]} scale={[3.3, 0.45, 2.2]} material={material('#725f66')} />
     <ABlock position={[2.3, 0.48, -1.8]} scale={[3.25, 0.25, 2.1]} material={material('#a8b3c7')} />
     <ABlock position={[1.5, 0.7, -2.35]} scale={[0.95, 0.28, 0.5]} material={material('#e4d9c7')} />
