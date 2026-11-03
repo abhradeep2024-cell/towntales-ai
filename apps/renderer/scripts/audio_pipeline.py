@@ -555,7 +555,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         make_music(music_path, duration, audio.get("musicStyle", "ambient"), music_ducks)
         tracks.append({"kind": "music", "file": music_path.name, "delayMs": 0, "volume": float(audio.get("musicVolume", 0.12)), "bytes": music_path.stat().st_size, "sha256": hashlib.sha256(music_path.read_bytes()).hexdigest()})
         report["musicGenerated"] = True
-    effects_enabled = bool(audio.get("effectsEnabled", effect_cues or any(cue.get("type") in ("ambience", "foley", "sound-effect") for cue in asset_cues)))
+    effects_enabled = bool(audio.get("effectsEnabled", effect_cues))
     if effects_enabled:
         effects_path = workdir / "effects.wav"
         make_effects(effects_path, duration, effect_cues if audio_cues else None, effects_ducks)
