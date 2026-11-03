@@ -25,6 +25,22 @@ describe('AI production planner', () => {
     const result=await planProductionFromSource('Story',config('```json\n'+JSON.stringify(validPlan)+'\n```'));
     expect(result.title).toBe('Test Story');
   });
+
+  it('passes selected project style and aspect ratio into the planning prompt', async () => {
+    let requestBody: any;
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      requestBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(validPlan)}}]}),{status:200});
+    });
+    await planProductionFromSource('A short story.',{
+      apiKey:'test-key',baseUrl:'https://api.example.test/v1',model:'test-model',
+      defaults:{styleId:'roblox-cinematic-horror',aspectRatio:'16:9'},
+      fetchImpl:fetchImpl as typeof fetch
+    });
+    const prompt = requestBody.messages.map((message:any)=>message.content).join(' ');
+    expect(prompt).toContain('styleId: roblox-cinematic-horror');
+    expect(prompt).toContain('aspectRatio: 16:9');
+  });
   it('rejects malformed model output', async () => {
     await expect(planProductionFromSource('Story',config('{not json'))).rejects.toThrow('malformed JSON');
   });
