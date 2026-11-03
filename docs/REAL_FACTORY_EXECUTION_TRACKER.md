@@ -43,13 +43,16 @@ Repository: `abhradeep2024-cell/towntales-ai`
 Branch: `work/towntales-bible-remediation`  
 PR: [#2](https://github.com/abhradeep2024-cell/towntales-ai/pull/2) (draft; do not merge before acceptance).
 
-- Concurrency policy fix committed as `fba4dcb7438fbdaabd6e6b8e2394ba7b5bba382d`; active jobs are no longer cancelled by a newer commit in the same concurrency group.
-- Run [#272](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41682336797), commit `4e467f8ab9f1aa7229dcae0624e3fb1d6469931c`, remains in progress.
-- Completed successfully: checkout, secret scan, dependency setup, build/type-check, unit tests, audio alignment/caption tests, browser setup, landscape smoke, voice/music mux, three-scene timeline, declarative 3D smoke, vertical render, Lemo contract, Art Deco engine smoke and Episode 01 narration preparation.
-- The low-resolution preview step completed after the last tracker snapshot; the workflow has advanced to **full-resolution Episode 01 master render**. This is a CI validation render, not the Stage B deliverable; Stage B remains blocked until Stage A software acceptance.
-- Still pending in run #272: MP4 validation, full-resolution frame inspection artifact, Supabase private upload/signed retrieval/decode, visual contact sheet and artifact upload.
-- The Render API/database step was skipped for this pull-request run. It is not evidence that live Render integration is verified.
-- Run [#41683580560](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41683580560) for the concurrency-fix commit is queued/pending behind the active run.
+- Concurrency policy fix committed as `fba4dcb7438fbdaabd6e6b8e2394ba7b5bba382d`; active jobs are not cancelled by newer commits in the same concurrency group.
+- Latest head at this snapshot: `bbb6a5b21bfe27f0363e88e4966ccdb24be9ee4c`.
+- Run [#41687473008](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41687473008) completed successfully on that head.
+- Its uploaded logs confirm build/type-check, unit tests, audio/caption tests, landscape and vertical smoke renders, declarative 3D, multi-scene, Lemo and Art Deco smoke renders, Episode 01 low-resolution preview, and full-resolution Episode 01 CI render all completed.
+- MP4 validation passed: 60 seconds, 1080x1920, 30 FPS, H.264 + AAC, 1,800 frames; file size 5,529,907 bytes.
+- Private Supabase MP4/JSON upload, signed downloads, byte integrity and MP4 decode passed. Artifact [film-studio-render-suite](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41687473008/artifacts/13261399627) was uploaded.
+- Earlier run [#41682336797](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41682336797) failed at the Supabase upload/retrieval verification step; the subsequent head run passed that step. Treat this as a resolved run-level failure, not proof that transient storage reliability has been fully tested.
+- Audio preparation reported 152 aligned words against 153 expected (99.35%). This discrepancy is unresolved; inspect the missing token and enforce a defined alignment-coverage gate before accepting audio/captions.
+- The Render API/database live health step is skipped on pull-request runs. Live Render/Supabase API health is therefore not verified by this successful run.
+- CI's Episode 01 output is a validation artifact, **not** the Stage B example-video deliverable. Stage B remains blocked until Stage A software acceptance.
 
 ## What is implemented so far (not yet production accepted)
 
