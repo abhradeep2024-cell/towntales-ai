@@ -172,9 +172,9 @@ export const VoiceProfileSchema = z.object({
   provider: z.enum(['edge-tts','espeak-ng']),
   voice: z.string().min(1).max(120),
   language: z.string().max(35).default('en'),
-  rate: z.string().regex(/^[+-]\\d{1,3}%$/).default('+0%'),
-  pitch: z.string().regex(/^[+-]\\d{1,3}Hz$/).default('+0Hz'),
-  volume: z.string().regex(/^[+-]\\d{1,3}%$/).default('+0%')
+  rate: z.enum(['-30%','-25%','-20%','-15%','-10%','+0%','+10%','+15%','+20%','+25%','+30%']).default('+0%'),
+  pitch: z.enum(['-20Hz','-10Hz','+0Hz','+10Hz','+20Hz']).default('+0Hz'),
+  volume: z.enum(['-50%','-25%','+0%','+25%','+50%']).default('+0%')
 });
 export const DialogueLineSchema = z.object({
   id: z.string().min(1).max(100),
