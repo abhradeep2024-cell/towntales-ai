@@ -327,12 +327,12 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     const faceStart = Math.max(2.5, cues.dismissStart - 0.9);
     if (t < faceStart) { cameraPosition = [alexX - 0.2, 2.6, 9.5]; cameraTarget = [alexX, 1.2, 0.2]; }
     else if (t < cues.dismissStart + 0.2) { cameraPosition = [alexX, 2.1, 4.0]; cameraTarget = [alexX, 2.0, 0.2]; }
-    else { cameraPosition = [-1.8, 2.0, 4.5]; cameraTarget = [-1.8, 1.85, 1.35]; }
+    else { cameraPosition = [-4.1, 2.0, 5.0]; cameraTarget = [-4.1, 1.85, 1.35]; }
   } else if (sceneIndex === 3) {
     const shadowShot = Math.max(0.6, cues.shadowWave - 0.25);
     const reactionShot = cues.shadowWave + 1.8;
     const wideShot = reactionShot + 0.55;
-    if (t < shadowShot) { cameraPosition = [-0.8, 2.0, 4.5]; cameraTarget = [-0.8, 1.65, 0.2]; }
+    if (t < shadowShot) { cameraPosition = [-0.33, 2.4, 4.5]; cameraTarget = [-0.33, 2.1, 0.2]; }
     else if (t < reactionShot) { cameraPosition = [0.95, 2.2, 4.4]; cameraTarget = [0.95, 1.3, -0.1]; }
     else if (t < wideShot) { cameraPosition = [-0.8, 2.2, 4.0]; cameraTarget = [-0.8, 2.0, 0.2]; }
     else { cameraPosition = [0, 2.6, 9.5]; cameraTarget = [0, 1, 0]; }
