@@ -166,6 +166,16 @@ export const ShotSchema = z.object({
   transitionOut: z.enum(['cut','dissolve','fade','wipe','match-cut']).default('cut'),
   assetIds: z.array(z.string().min(1).max(100)).max(100).default([])
 });
+export const VoiceProfileSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(120),
+  provider: z.enum(['edge-tts','espeak-ng']),
+  voice: z.string().min(1).max(120),
+  language: z.string().max(35).default('en'),
+  rate: z.string().regex(/^[+-]\\d{1,3}%$/).default('+0%'),
+  pitch: z.string().regex(/^[+-]\\d{1,3}Hz$/).default('+0Hz'),
+  volume: z.string().regex(/^[+-]\\d{1,3}%$/).default('+0%')
+});
 export const DialogueLineSchema = z.object({
   id: z.string().min(1).max(100),
   sceneId: z.string().min(1).max(80),
@@ -264,6 +274,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   shots: z.array(ShotSchema).max(300).optional(),
   tracks: z.array(TimelineTrackSchema).max(500).optional(),
   dialogue: z.array(DialogueLineSchema).max(1000).optional(),
+  voiceProfiles: z.array(VoiceProfileSchema).max(100).optional(),
   audioCues: z.array(AudioCueSchema).max(1000).optional(),
   captionCues: z.array(CaptionCueSchema).max(2000).optional(),
   outputProfiles: z.array(OutputProfileSchema).max(20).optional(),
@@ -305,11 +316,13 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   uniqueIds(spec.shots ?? [], 'shots');
   uniqueIds(spec.tracks ?? [], 'tracks');
   uniqueIds(spec.dialogue ?? [], 'dialogue');
+  uniqueIds(spec.voiceProfiles ?? [], 'voiceProfiles');
   uniqueIds(spec.audioCues ?? [], 'audioCues');
   uniqueIds(spec.captionCues ?? [], 'captionCues');
   const sceneIds = new Set(spec.scenes.map(scene => scene.id));
   const environmentIds = new Set((spec.environments ?? []).map(environment => environment.id));
   const characterIds = new Set((spec.characters ?? []).map(character => character.id));
+  const voiceProfileIds = new Set((spec.voiceProfiles ?? []).map(profile => profile.id));
   const assetIds = new Set((spec.assets ?? []).map(asset => asset.id));
   spec.scenes.forEach((scene,index) => {
     if (scene.environmentId && !environmentIds.has(scene.environmentId)) ctx.addIssue({code:'custom',path:['scenes',index,'environmentId'],message:'Scene environmentId must reference a declared environment.'});
@@ -326,6 +339,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   });
   (spec.dialogue ?? []).forEach((line, index) => {
     if (!sceneIds.has(line.sceneId)) ctx.addIssue({code:'custom',path:['dialogue',index,'sceneId'],message:'Dialogue sceneId must reference a declared scene.'});
+    if (line.voiceProfileId && !voiceProfileIds.has(line.voiceProfileId)) ctx.addIssue({code:'custom',path:['dialogue',index,'voiceProfileId'],message:'Dialogue voiceProfileId must reference a declared voice profile.'});
     if ((line.startSeconds === undefined) !== (line.endSeconds === undefined)) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing requires both startSeconds and endSeconds.'});
     if (line.startSeconds !== undefined && line.endSeconds !== undefined && (line.endSeconds <= line.startSeconds || line.endSeconds > spec.durationSeconds + 0.001)) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing must be ordered and within the production timeline.'});
   });
