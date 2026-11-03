@@ -62,7 +62,7 @@ export const CharacterAssetSchema = z.object({
   appearance: CharacterAppearanceSchema
 });
 export const ActorActionSchema = z.object({
-  type: z.enum(['idle','walk','run','wave','point','turn','jump','recoil','gesture','expression','move','disappear','appear']),
+  type: z.enum(['idle','walk','run','wave','point','turn','jump','recoil','gesture','expression','move','disappear','appear','crouch','fall','clap','dance','talk','look-at']),
   startSeconds: z.number().nonnegative(),
   durationSeconds: z.number().positive().max(90),
   intensity: z.number().min(0).max(2).default(1),
@@ -356,6 +356,9 @@ export const ProductionSpecSchema = z.preprocess((input) => {
         }
         if (action.type === 'move' && !action.targetPosition) {
           ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Move actions require a targetPosition.'});
+        }
+        if (action.type === 'look-at' && !action.targetPosition) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Look-at actions require a targetPosition.'});
         }
         if (action.type === 'turn' && action.targetRotationY === undefined) {
           ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetRotationY'],message:'Turn actions require targetRotationY.'});
