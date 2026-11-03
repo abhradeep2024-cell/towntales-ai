@@ -4,7 +4,7 @@ import { CreateJobSchema } from '@film-studio/contracts';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { extractProductionInput } from './intake.js';
 import { planProductionFromSource } from './planner.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
@@ -179,6 +179,73 @@ app.get('/v1/styles/:slug/engine', async (request, reply) => {
   }
 });
 
+
+
+const libraryAssetTypes = ['character','rig','environment','prop','material','texture','animation','music','voice','sound-effect','font','image','video','other'] as const;
+
+app.post('/v1/assets', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const body = request.body as {assetKey?:string;version?:number;assetType?:string;displayName?:string;filename?:string;mimeType?:string;contentBase64?:string;metadata?:Record<string,unknown>;provenance?:Record<string,unknown>};
+  if (!body || typeof body.assetKey !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(body.assetKey) ||
+      !Number.isSafeInteger(body.version) || (body.version ?? 0) < 1 ||
+      !libraryAssetTypes.includes(body.assetType as typeof libraryAssetTypes[number]) ||
+      typeof body.displayName !== 'string' || !body.displayName.trim() || body.displayName.length > 160 ||
+      typeof body.filename !== 'string' || typeof body.mimeType !== 'string' || typeof body.contentBase64 !== 'string') {
+    return reply.code(400).send({error:'invalid_asset_metadata'});
+  }
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.contentBase64)) return reply.code(400).send({error:'invalid_base64_content'});
+  const bytes = Buffer.from(body.contentBase64,'base64');
+  if (!bytes.length || bytes.toString('base64') !== body.contentBase64 || bytes.byteLength > 5 * 1024 * 1024) return reply.code(413).send({error:'invalid_or_oversized_asset'});
+  const filename = body.filename.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
+  if (!filename || filename.includes('..')) return reply.code(400).send({error:'invalid_asset_filename'});
+  const storageKey = `library/${body.assetKey}/v${body.version}/${filename}`;
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const db = requireDb();
+  try {
+    const {error:uploadError} = await db.storage.from(bucket).upload(storageKey,bytes,{contentType:body.mimeType,upsert:false});
+    if (uploadError) throw uploadError;
+    const {data,error} = await db.from('film_studio_asset_library').insert({
+      asset_key:body.assetKey,version:body.version,asset_type:body.assetType,display_name:body.displayName.trim(),
+      storage_key:storageKey,mime_type:body.mimeType,byte_size:bytes.byteLength,sha256,
+      metadata:body.metadata ?? {},provenance:body.provenance ?? {},status:'ready'
+    }).select('id,asset_key,version,asset_type,display_name,mime_type,byte_size,sha256,status,created_at').single();
+    if (error) {
+      try { await db.storage.from(bucket).remove([storageKey]); } catch { /* best-effort rollback */ }
+      throw error;
+    }
+    return reply.code(201).send(data);
+  } catch (error) {
+    request.log.error(error,'Reusable asset registration failed');
+    return reply.code(503).send({error:'asset_registration_failed'});
+  }
+});
+
+app.get('/v1/assets', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const query = request.query as {type?:string;q?:string;limit?:string};
+  const limit = Math.min(100,Math.max(1,Number.parseInt(query.limit ?? '50',10) || 50));
+  if (query.type && !libraryAssetTypes.includes(query.type as typeof libraryAssetTypes[number])) return reply.code(400).send({error:'invalid_asset_type'});
+  try {
+    const db = requireDb();
+    let select = db.from('film_studio_asset_library')
+      .select('id,asset_key,version,asset_type,display_name,storage_key,mime_type,byte_size,sha256,metadata,status,created_at')
+      .eq('status','ready').order('display_name').limit(limit);
+    if (query.type) select = select.eq('asset_type',query.type);
+    if (query.q?.trim()) select = select.ilike('display_name',`%${query.q.trim().slice(0,80)}%`);
+    const {data,error} = await select;
+    if (error) throw error;
+    const assets = await Promise.all((data ?? []).map(async (asset:any) => {
+      const {data:signed,error:signError} = await db.storage.from(bucket).createSignedUrl(asset.storage_key,300);
+      if (signError || !signed?.signedUrl) throw signError ?? new Error(`Could not sign asset ${asset.asset_key}.`);
+      const {storage_key,...publicMetadata} = asset;
+      return {...publicMetadata,url:signed.signedUrl,expiresInSeconds:300};
+    }));
+    return {count:assets.length,assets};
+  } catch (error) {
+    request.log.error(error,'Reusable asset lookup failed');
+    return reply.code(503).send({error:'asset_lookup_failed'});
+  }
+});
 
 app.post('/v1/intake', async (request, reply) => {
   if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
