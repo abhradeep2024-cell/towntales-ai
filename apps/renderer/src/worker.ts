@@ -373,7 +373,7 @@ async function runJob(job: any, serveUrl: string) {
       const contactSheetPath = join(workDir,`creative-${scene.id.replace(/[^a-zA-Z0-9_-]/g,'_')}.jpg`);
       await execFileAsync('ffmpeg',[
         '-y','-ss',String(sceneOffsetSeconds.toFixed(3)),'-i',outputPath,
-        '-vf',`select='${selectExpression}',scale=180:-2,tile=3x1`,
+        '-vf',`select='${selectExpression}',scale=180:-2,tile=${selectedFrames.length}x1`,
         '-frames:v','1','-q:v','10',contactSheetPath
       ],{timeout:45_000,maxBuffer:1_000_000});
       const contactSheet = await readFile(contactSheetPath);
