@@ -41,6 +41,28 @@ class PreparedAudioTests(unittest.TestCase):
             self.assertEqual([word["sceneIndex"] for word in json.loads((Path(directory) / "word-alignments.json").read_text())["words"]], [0, 0, 1, 1])
             self.assertTrue(all(track["sha256"] and track["bytes"] > 100 for track in manifest["tracks"]))
 
+    def test_episode_narration_retries_at_faster_rates_until_it_fits(self):
+        spec = {
+            "durationSeconds": 60,
+            "styleId": "test",
+            "scenes": [{"durationSeconds": 60, "narration": "Hello town"}],
+            "subtitles": [],
+            "audio": {"musicEnabled": False, "voiceEnabled": True, "effectsEnabled": False}
+        }
+        def fake_voice(text, voice, target, rate="+0%"):
+            target.write_bytes(b"voice-track-" * 60)
+            return "edge-tts", [
+                {"text": "Hello", "start": 0.1, "end": 0.3},
+                {"text": "town", "start": 0.5, "end": 0.7}
+            ]
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("audio_pipeline.make_voice", side_effect=fake_voice) as voice_mock, \
+                 patch("audio_pipeline.media_duration", side_effect=[64.9, 58.2]):
+                manifest = prepare_audio(spec, Path(directory), require_word_alignment=True)
+            self.assertEqual([call.kwargs["rate"] for call in voice_mock.call_args_list], ["+10%", "+15%"])
+            self.assertEqual(manifest["report"]["voiceRate"], "+15%")
+            self.assertEqual(manifest["report"]["voiceDurationSeconds"], 58.2)
+
     def test_narration_that_spills_past_its_scene_is_rejected(self):
         spec = {
             "durationSeconds": 2,
