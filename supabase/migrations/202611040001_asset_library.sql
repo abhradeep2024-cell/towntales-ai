@@ -21,7 +21,7 @@ create index if not exists film_studio_asset_library_type_status_idx
 create index if not exists film_studio_asset_library_key_version_idx
   on public.film_studio_asset_library(asset_key, version desc);
 alter table public.film_studio_asset_library enable row level security;
-revoke all on public.film_studio_asset_library from anon, authenticated;
+revoke all on public.film_studio_asset_library from public, anon, authenticated;
 grant all on public.film_studio_asset_library to service_role;
 
 -- Prevent an asset version from being silently replaced after approval.
