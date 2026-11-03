@@ -506,6 +506,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
                 report["voiceProvider"] = provider
             report["voiceLines"] = int(report.get("voiceLines",0)) + 1
             report["voiceSegments"] = int(report.get("voiceSegments",0)) + 1
+            report["voiceDurationSeconds"] = round(max(float(report.get("voiceDurationSeconds",0)),line_start + clip_duration),3)
             report["dialogueVoiceProfiles"] = report.get("dialogueVoiceProfiles",[]) + [{"lineId":line.get("id"),"speaker":line.get("speaker"),"voiceProfileId":line.get("voiceProfileId"),"provider":provider,"voice":voice_name,"rate":final_rate}]
             report["expectedWordCount"] = int(report.get("expectedWordCount",0)) + audit["expectedWordCount"]
         if alignment_audits:
