@@ -119,7 +119,7 @@ def make_effects(path: Path, duration: float, cues: list[dict] | None = None, du
     frame_count = max(1, int(duration * sr))
     mono = array.array("h", [0]) * frame_count
 
-    def add_event(start: float, seconds: float, kind: str, frequency: float, amplitude: float) -> None:
+    def add_event(start: float, seconds: float, kind: str, frequency: float, amplitude: float, fade_in: float = 0.0, fade_out: float = 0.0) -> None:
         first = max(0, int(start * sr))
         count = min(int(seconds * sr), frame_count - first)
         if count <= 0:
@@ -162,6 +162,9 @@ def make_effects(path: Path, duration: float, cues: list[dict] | None = None, du
             else:
                 envelope = 0.7 + 0.3 * math.sin(2 * math.pi * 0.11 * t)
                 wave_value = noise_state * 1.8 + 0.18 * math.sin(2 * math.pi * frequency * t)
+            fade_in_gain = min(1.0, t / fade_in) if fade_in > 0 else 1.0
+            fade_out_gain = min(1.0, (seconds - t) / fade_out) if fade_out > 0 else 1.0
+            envelope *= max(0.0, min(fade_in_gain, fade_out_gain))
             global_time = start + t
             duck_gain = 0.0 if duck_intervals and any(left <= global_time <= right for left, right in duck_intervals) else 1.0
             index = first + offset
@@ -188,7 +191,9 @@ def make_effects(path: Path, duration: float, cues: list[dict] | None = None, du
         seconds = min(float(cue.get("durationSeconds") or 0.35), max(0.0, duration - start))
         gain_db = max(-48.0, min(12.0, float(cue.get("gainDb", -6))))
         amplitude = 0.075 * (10 ** (gain_db / 20.0))
-        add_event(start, seconds, kind, frequency, amplitude)
+        fade_in = min(seconds, max(0.0, float(cue.get('fadeInSeconds', 0))))
+        fade_out = min(seconds, max(0.0, float(cue.get('fadeOutSeconds', 0))))
+        add_event(start, seconds, kind, frequency, amplitude, fade_in, fade_out)
 
     stereo = array.array("h")
     for sample in mono:
