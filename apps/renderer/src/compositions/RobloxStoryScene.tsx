@@ -6,6 +6,7 @@ import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
 type WordAlignmentCue = { text: string; start: number; end: number; sceneIndex: number; source?: string };
+type SceneCues = { openingPunch: number; residentNotice: number; residentRun: number; dismissStart: number; alexRaise: number; shadowWave: number; alexRun: number; doubleReveal: number; blackout: number; morningReveal: number; windowReveal: number; windowWave: number };
 type ActorKind = 'alex' | 'shadow' | 'resident' | 'double';
 export const CHARACTER_IDS = {
   alex: 'CHAR_ALEX_001',
@@ -64,40 +65,41 @@ function CameraRig({ position, target }: {
   return null;
 }
 
-function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }: {
-  frame: number; fps: number; kind: ActorKind; sceneIndex: number; position?: [number, number, number]; scale?: number;
+function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, cues }: {
+  frame: number; fps: number; kind: ActorKind; sceneIndex: number; position?: [number, number, number]; scale?: number; cues: SceneCues;
 }) {
   const t = frame / fps;
   const isShadow = kind === 'shadow';
   const isDouble = kind === 'double';
   const isVoid = isShadow;
-  const residentPanics = kind === 'resident' && sceneIndex === 1 && t >= 3.4;
+  const residentWitness = kind === 'resident' && sceneIndex === 1 && position[0] > 0.5;
+  const residentNotices = residentWitness && t >= cues.residentNotice && t < cues.residentRun;
+  const residentPanics = residentWitness && t >= cues.residentRun;
   const alexFleesBedroom = sceneIndex === 6 && kind === 'alex' && t >= 4;
-  const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || alexFleesBedroom;
+  const walking = (sceneIndex === 1 && (!residentWitness || (!residentNotices && !residentPanics))) || sceneIndex === 2 || sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || alexFleesBedroom;
   const running = sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || residentPanics || alexFleesBedroom;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
   const idle = Math.sin(t * 2.1) * 0.025;
-  const wave = isShadow && (sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8);
-  // In the incident, Alex raises his right arm first. Shadow Alex waits, then
-  // performs three complete left-arm waves and finally turns toward him.
-  const waveStart = sceneIndex === 3 ? 1.15 : 0.35;
+  const wave = isShadow && (sceneIndex === 0 || sceneIndex === 1 || sceneIndex === 3 || sceneIndex === 8);
+  // Word-aligned cues make the hand raise, independent wave and head turn land on the final narration.
+  const waveStart = sceneIndex === 3 ? cues.shadowWave : sceneIndex === 8 ? cues.windowWave : 0.35;
   const waveDuration = 1.8;
   const wavePhase = (t - waveStart) / waveDuration;
   const waveEnvelope = wavePhase >= 0 && wavePhase <= 1 ? Math.sin(Math.PI * wavePhase) ** 2 : 0;
   const waveArm = Math.sin(wavePhase * Math.PI * 6) * 0.62 * waveEnvelope;
-  const alexRaise = Math.max(0, Math.min(1, t / 0.72));
+  const alexRaise = Math.max(0, Math.min(1, (t - cues.alexRaise) / 0.45));
   const leftArmRotation: [number, number, number] = wave
     ? [0, 0, wavePhase >= 0 && wavePhase <= 1 ? 2.05 + waveArm : 0.04]
     : [walking ? stride * 0.45 : 0.04, 0, -0.08];
-  const dismissGesture = Math.max(0, Math.min(1, (t - 2.15) / 0.35)) * (1 - Math.max(0, Math.min(1, (t - 2.85) / 0.35)));
+  const dismissGesture = Math.max(0, Math.min(1, (t - cues.dismissStart) / 0.35)) * (1 - Math.max(0, Math.min(1, (t - cues.dismissStart - 0.7) / 0.35)));
   const rightArmRotation: [number, number, number] = sceneIndex === 3 && kind === 'alex'
     ? [0, 0, -2.05 * alexRaise]
     : kind === 'alex' && sceneIndex === 2
       ? [0, 0, -0.72 * dismissGesture]
       : [walking ? -stride * 0.45 : -0.04, 0, 0.08];
   const headYaw = isShadow && sceneIndex === 3
-    ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72
-    : kind === 'resident' && residentPanics ? -0.5
+    ? Math.max(0, Math.min(1, (t - (waveStart + waveDuration)) / 0.55)) * 0.72
+    : kind === 'resident' && (residentNotices || residentPanics) ? -0.5
       : kind === 'alex' && sceneIndex === 6 ? Math.max(0, Math.min(1, (t - 4) / 0.7)) * 0.85
       : kind === 'alex' && sceneIndex === 2
         ? (t >= 1.4 && t <= 2.5 ? -0.42 : t > 2.5 && t < 3.0 ? 0.18 : 0)
@@ -112,7 +114,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const face = isVoid ? voidMat : skin;
   const shoe = isVoid ? voidMat : white;
   const actorShadowless = isVoid || isDouble || (kind === 'alex' && sceneIndex === 7);
-  const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
+  const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : residentNotices ? 0.22 : 0;
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
     : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
   const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
@@ -233,7 +235,7 @@ function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number;
   </group>;
 }
 
-function World({ scene, sceneIndex, frame, fps, wordAlignments, sceneStartSeconds }: { scene: Scene; sceneIndex: number; frame: number; fps: number; wordAlignments: WordAlignmentCue[]; sceneStartSeconds: number }) {
+function World({ scene, sceneIndex, frame, fps, wordAlignments, sceneStartSeconds, cues }: { scene: Scene; sceneIndex: number; frame: number; fps: number; wordAlignments: WordAlignmentCue[]; sceneStartSeconds: number; cues: SceneCues }) {
   const isMorning = sceneIndex === 7;
   const isBedroom = sceneIndex === 5 || sceneIndex === 6;
   const isBlackout = sceneIndex === 6;
