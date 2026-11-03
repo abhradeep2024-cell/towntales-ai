@@ -326,7 +326,7 @@ def compare_word_alignment_coverage(text: str, events: list[dict]) -> dict:
     }
 
 
-def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> None:
+def write_word_ass(words: list[dict], path: Path, width: int, height: int, emphasis_words: set[str] | None = None) -> None:
     # Keep two-word context on screen while the currently spoken word turns red.
     font_size = max(36, round(width * 0.075))
     y = round(height * 0.79)
@@ -346,7 +346,6 @@ def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> No
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
     ]
     rows = []
-    key_words = {"never", "shadow", "alone", "waved", "replace", "take", "9", "pm", "ran", "inside", "same", "face", "no", "except", "window", "waving", "again"}
     for index, item in enumerate(words):
         start = float(item["start"])
         end = float(item["end"])
@@ -359,7 +358,7 @@ def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> No
         current_text = str(item["text"])
         current = ass_escape(current_text)
         normalized = re.sub(r"[^a-z0-9]+", "", current_text.lower())
-        current_colour = "&H000040FF&" if normalized in key_words else "&H00FFFFFF&"
+        current_colour = "&H000040FF&" if normalized in (emphasis_words or set()) else "&H00FFFFFF&"
         if index and words[index - 1].get("sceneIndex") == item.get("sceneIndex"):
             previous = ass_escape(str(words[index - 1]["text"]))
             caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H00FFFFFF&}}{previous} {{\\1c{current_colour}}}{current}"
@@ -546,7 +545,8 @@ def mux_prepared_audio(spec: dict, video_path: Path, output_path: Path, workdir:
             raise RuntimeError("Prepared word alignment changed after narration approval.")
         width, height = media_dimensions(video_path)
         ass_path = workdir / "word-captions.ass"
-        write_word_ass(words, ass_path, width, height)
+        emphasis_words = {token.lower() for cue in (spec.get('captionCues') or []) if cue.get('emphasis') in ('word','phrase') for token in re.findall(r'[\\w]+(?:[\'’][\\w]+)?', str(cue.get('text','')))}
+        write_word_ass(words, ass_path, width, height, emphasis_words)
         vf_args = ["-vf", f"ass={ass_path}"]
         report["subtitlesBurned"] = True
         report["subtitleTiming"] = "edge-tts-word-boundary"
