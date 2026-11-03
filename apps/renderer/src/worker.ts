@@ -240,6 +240,10 @@ async function runJob(job: any, serveUrl: string) {
       audioMode: {
         musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled,
         burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle, effectsEnabled: Boolean(preparedAudio.report?.effectsGenerated),
+        narrationTracks: preparedAudio.report?.voiceLines ?? 0,
+        narrationSegments: preparedAudio.report?.voiceSegments ?? 0,
+        narrationDurationSeconds: preparedAudio.report?.voiceDurationSeconds ?? 0,
+        narrationRate: preparedAudio.report?.voiceRate ?? null,
         captionTiming: narrationRequested ? 'edge-tts-word-boundary' : null
       },
       validatedAt: new Date().toISOString()
