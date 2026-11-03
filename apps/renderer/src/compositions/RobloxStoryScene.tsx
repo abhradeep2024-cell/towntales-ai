@@ -15,7 +15,7 @@ const hair = material('#101116');
 const voidMat = material('#05060a');
 const eyes = new THREE.MeshBasicMaterial({ color: '#bceaff' });
 
-function Block({ position, scale, material: mat, rotation = [0, 0, 0] }: {
+function Block({ position, scale, material: mat, rotation = [0, 0, 0], shadowless = false }: {
   position: [number, number, number]; scale: [number, number, number]; material: THREE.Material;
   rotation?: [number, number, number];
 }) {
