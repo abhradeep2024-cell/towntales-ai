@@ -233,7 +233,9 @@ export const ProductionSpecSchema = z.preprocess((input) => {
 
   return {...spec, width, height};
 }, z.object({
-  schemaVersion: z.literal(1),
+  // Version 2 adds the provider-neutral production-manifest fields below.
+  // Version 1 remains readable for queued jobs and existing API clients.
+  schemaVersion: z.union([z.literal(1), z.literal(2)]),
   title: z.string().min(1).max(160),
   idea: z.string().min(1).max(8000),
   styleId: z.string().min(1).max(120),
@@ -364,4 +366,14 @@ export const ProductionSpecSchema = z.preprocess((input) => {
 
 export const CreateJobSchema = z.object({production: ProductionSpecSchema});
 export type ProductionSpec = z.infer<typeof ProductionSpecSchema>;
+
+/** Upgrade a validated v1 production to the current manifest version.
+ * The migration is additive: existing scene and audio data are preserved,
+ * and all newly introduced manifest collections retain their schema defaults.
+ */
+export function migrateProductionSpec(input: unknown): ProductionSpec {
+  const parsed = ProductionSpecSchema.parse(input);
+  if (parsed.schemaVersion === 2) return parsed;
+  return ProductionSpecSchema.parse({...parsed, schemaVersion: 2});
+}
 export type JobStatus = z.infer<typeof JobStatusSchema>;
