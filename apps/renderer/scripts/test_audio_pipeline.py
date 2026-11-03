@@ -205,6 +205,32 @@ class WordAlignmentTests(unittest.TestCase):
                 self.assertGreater(max(abs(value) for value in audio.readframes(1000)), 0)
 
 
+    def test_versioned_library_audio_cue_is_scheduled_on_the_production_timeline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workdir = Path(directory)
+            asset_dir = workdir / "assets"
+            asset_dir.mkdir()
+            audio_path = asset_dir / "door.wav"
+            with wave.open(str(audio_path), "wb") as output:
+                output.setnchannels(1)
+                output.setsampwidth(2)
+                output.setframerate(24000)
+                output.writeframes((__import__("array").array("h",[1200,-1200]) * 12000).tobytes())
+            spec = {
+                "durationSeconds":4,
+                "scenes":[{"id":"scene-1","durationSeconds":4,"narration":""}],
+                "assets":[{"id":"door-sfx","type":"sound-effect","required":True,"metadata":{"resolvedPath":"assets/door.wav","resolvedMimeType":"audio/wav"}}],
+                "audioCues":[{"id":"door-cue","sceneId":"scene-1","type":"sound-effect","assetId":"door-sfx","label":"Door creak","startSeconds":1.5,"durationSeconds":0.8,"gainDb":-6,"fadeInSeconds":0.1,"fadeOutSeconds":0.2}],
+                "audio":{"musicEnabled":False,"voiceEnabled":False,"burnSubtitles":False,"voiceVolume":1}
+            }
+            manifest = prepare_audio(spec,workdir,require_word_alignment=False)
+            track = next(item for item in manifest["tracks"] if item.get("assetId") == "door-sfx")
+            self.assertEqual(track["delayMs"],1500)
+            self.assertEqual(track["durationSeconds"],0.8)
+            self.assertEqual(track["fadeInSeconds"],0.1)
+            self.assertEqual(track["fadeOutSeconds"],0.2)
+            self.assertEqual(track["kind"],"sound-effect")
+
     def test_effects_follow_generic_production_cues(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "cue-effects.wav"
