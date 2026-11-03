@@ -1,7 +1,8 @@
 import React, { useMemo, useRef } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
@@ -130,9 +131,47 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   </group>;
 }
 
-function SceneProps({ props }: { props: NonNullable<Scene['props']> }) {
+type SceneProp = NonNullable<Scene['props']>[number];
+type LibraryAsset = NonNullable<ProductionSpec['assets']>[number];
+
+function ModelAsset({asset,position,scale,rotation,castShadow=true}:{
+  asset:LibraryAsset;
+  position:[number,number,number];
+  scale:[number,number,number];
+  rotation:[number,number,number];
+  castShadow?:boolean;
+}) {
+  if (!asset.uri) return null;
+  return <LoadedModel uri={asset.uri} position={position} scale={scale} rotation={rotation} castShadow={castShadow}/>;
+}
+
+function LoadedModel({uri,position,scale,rotation,castShadow}:{
+  uri:string;position:[number,number,number];scale:[number,number,number];rotation:[number,number,number];castShadow:boolean;
+}) {
+  const gltf = useLoader(GLTFLoader,uri);
+  const model = useMemo(()=>{
+    const clone = gltf.scene.clone(true);
+    clone.traverse(node=>{
+      if (node instanceof THREE.Mesh) {
+        node.castShadow = castShadow;
+        node.receiveShadow = true;
+      }
+    });
+    return clone;
+  },[gltf.scene,castShadow]);
+  return <primitive object={model} position={position} scale={scale} rotation={rotation}/>;
+}
+
+function SceneProps({props,assets}:{
+  props:NonNullable<Scene['props']>;
+  assets:LibraryAsset[];
+}) {
   return <group>{props.map(prop => {
     const common = { position: prop.position as [number,number,number], scale: prop.scale as [number,number,number], rotation: prop.rotation as [number,number,number] };
+    if (prop.type === 'model') {
+      const asset = assets.find(item=>item.id===prop.assetId);
+      return asset ? <ModelAsset key={prop.id} asset={asset} {...common} castShadow={prop.castShadow}/> : null;
+    }
     if (prop.type === 'sphere') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><sphereGeometry args={[.5,24,16]}/><meshStandardMaterial color={prop.color}/></mesh>;
     if (prop.type === 'cylinder') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><cylinderGeometry args={[.5,.5,1,20]}/><meshStandardMaterial color={prop.color}/></mesh>;
     if (prop.type === 'plane') return <mesh key={prop.id} {...common} receiveShadow><planeGeometry args={[1,1]}/><meshStandardMaterial color={prop.color}/></mesh>;
@@ -151,6 +190,8 @@ export const DeclarativeScene: React.FC<{ scene: Scene; production: ProductionSp
   const groundSize = environment?.groundSize ?? 80;
   const fog = environment?.fog;
   const props = [...(environment?.props ?? []), ...(scene.props ?? [])];
+  const libraryAssets = production.assets ?? [];
+  const environmentModel = environment?.assetId ? libraryAssets.find(asset=>asset.id===environment.assetId) : undefined;
   return <div style={{position:'absolute',inset:0,background}}>
     <Canvas shadows dpr={1} camera={{position:[0,3,9],fov:40}} gl={{antialias:true,alpha:false,powerPreference:'high-performance'}}>
       <color attach="background" args={[background]}/>
@@ -159,7 +200,8 @@ export const DeclarativeScene: React.FC<{ scene: Scene; production: ProductionSp
       <directionalLight color={lighting?.keyColor ?? '#ffffff'} intensity={lighting?.keyIntensity ?? 2} position={lighting?.keyPosition ?? [4,8,5]} castShadow/>
       <CameraTrack scene={scene} time={time}/>
       <mesh rotation={[-Math.PI/2,0,0]} position={[0,-.06,0]} receiveShadow><planeGeometry args={[groundSize,groundSize]}/><meshStandardMaterial color={groundColor}/></mesh>
-      <SceneProps props={props}/>
+      {environmentModel ? <ModelAsset asset={environmentModel} position={[0,0,0]} scale={[1,1,1]} rotation={[0,0,0]}/> : null}
+      <SceneProps props={props} assets={libraryAssets}/>
       {(scene.actors ?? []).map((actor,index)=><AnimatedActor key={actor.characterId+index} actor={actor} character={characters.get(actor.characterId)} time={time}/>)}
     </Canvas>
     {scene.onScreenText.map((line,index)=><div key={index} style={{position:'absolute',top:`${14+index*6}%`,left:'50%',transform:'translateX(-50%)',maxWidth:'88%',color:'#fff',fontSize:36,fontWeight:900,textAlign:'center',textShadow:'0 3px 12px #000',fontFamily:'Arial'}}>{line}</div>)}
