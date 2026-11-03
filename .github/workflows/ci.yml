@@ -16,6 +16,9 @@ jobs:
         with:
           fetch-depth: 0
           submodules: recursive
+      - name: Fetch pull request base history for secret scan
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}" --depth=2
       - name: Scan full repository history for leaked credentials
         uses: gitleaks/gitleaks-action@v3
         env:
