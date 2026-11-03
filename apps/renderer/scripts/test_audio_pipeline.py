@@ -216,7 +216,10 @@ class WordAlignmentTests(unittest.TestCase):
                 self.assertEqual(audio.getnchannels(), 2)
                 self.assertEqual(audio.getframerate(), 24000)
                 frames = audio.readframes(audio.getnframes())
-            samples = __import__("array").array("h", frames)\n            self.assertGreater(max(abs(value) for value in samples), 0)\n            self.assertEqual(max(abs(value) for value in samples[:int(0.35 * 24000 * 2)]), 0)\n            self.assertEqual(max(abs(value) for value in samples[int(1.25 * 24000 * 2):]), 0)
+            samples = __import__("array").array("h", frames)
+            self.assertGreater(max(abs(value) for value in samples), 0)
+            self.assertEqual(max(abs(value) for value in samples[:int(0.35 * 24000 * 2)]), 0)
+            self.assertEqual(max(abs(value) for value in samples[int(1.25 * 24000 * 2):]), 0)
 
     def test_ass_captions_use_actual_word_timestamps_and_red_emphasis(self):
         words = [
