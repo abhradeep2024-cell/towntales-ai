@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
-type Character = ProductionSpec['characters'][number];
-type Actor = Scene['actors'][number];
+type Character = NonNullable<ProductionSpec['characters']>[number];
+type Actor = NonNullable<Scene['actors']>[number];
 
 const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
 const smooth = (v: number) => { const p = clamp(v); return p * p * (3 - 2 * p); };
