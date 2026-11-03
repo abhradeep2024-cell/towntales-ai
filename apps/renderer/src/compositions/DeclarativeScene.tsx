@@ -55,7 +55,7 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const point = active.find(a => a.type === 'point' || a.type === 'gesture');
   const jump = active.find(a => a.type === 'jump');
   const recoil = active.find(a => a.type === 'recoil');
-  const turn = active.find(a => a.type === 'turn');
+  const turn = [...actions].filter(a => a.type === 'turn' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const expression = active.find(a => a.type === 'expression');
   const move = [...actions].filter(a => a.type === 'move' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const moveP = move ? smooth((time-move.startSeconds)/move.durationSeconds) : 0;
@@ -108,8 +108,8 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
       <mesh position={[.14,.02,.28]}><boxGeometry args={[.055,.07,.02]}/><meshStandardMaterial color={eyeColor} emissive={eyeEmissiveColor} emissiveIntensity={eyeEmissiveIntensity}/></mesh>
     </group>
     <group ref={leftArm} position={[-.48,1.68,0]}><mesh position={[0,-.35,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.24,.72,.27]}/><meshStandardMaterial color={body}/></mesh></group>
-    <group ref={rightArm} position={[.48,1.68,0]}><mesh position={[0,-.35,0]} castShadow><boxGeometry args={[.24,.72,.27]}/><meshStandardMaterial color={body}/></mesh></group>
-    <group ref={leftLeg} position={[-.19,.92,0]}><mesh position={[0,-.42,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.29,.82,.32]}/><meshStandardMaterial color={pants}/></mesh><mesh position={[0,-.84,.08]}><boxGeometry args={[.32,.18,.48]}/><meshStandardMaterial color={shoes}/></mesh></group>
+    <group ref={rightArm} position={[.48,1.68,0]}><mesh position={[0,-.35,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.24,.72,.27]}/><meshStandardMaterial color={body}/></mesh></group>
+    <group ref={leftLeg} position={[-.19,.92,0]}><mesh position={[0,-.42,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.29,.82,.32]}/><meshStandardMaterial color={pants}/></mesh><mesh position={[0,-.84,.08]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.32,.18,.48]}/><meshStandardMaterial color={shoes}/></mesh></group>
     <group ref={rightLeg} position={[.19,.92,0]}><mesh position={[0,-.42,0]} castShadow><boxGeometry args={[.29,.82,.32]}/><meshStandardMaterial color={pants}/></mesh><mesh position={[0,-.84,.08]}><boxGeometry args={[.32,.18,.48]}/><meshStandardMaterial color={shoes}/></mesh></group>
   </group>;
 }
