@@ -129,6 +129,57 @@ def srt_time(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
+def ass_time(seconds: float) -> str:
+    total = max(0, round(seconds * 100))
+    hours, total = divmod(total, 360000)
+    minutes, total = divmod(total, 6000)
+    secs, centis = divmod(total, 100)
+    return f"{hours}:{minutes:02d}:{secs:02d}.{centis:02d}"
+
+
+def ass_escape(value: str) -> str:
+    return value.replace("\\", "／").replace("{", "｛").replace("}", "｝").replace("\\n", " ")
+
+
+def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> None:
+    # Keep two-word context on screen while the currently spoken word turns red.
+    font_size = max(36, round(width * 0.075))
+    y = round(height * 0.79)
+    header = [
+        "[Script Info]",
+        "ScriptType: v4.00+",
+        f"PlayResX: {width}",
+        f"PlayResY: {height}",
+        "WrapStyle: 2",
+        "ScaledBorderAndShadow: yes",
+        "",
+        "[V4+ Styles]",
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
+        f"Style: Default,Arial,{font_size},&H00FFFFFF,&H000040FF,&H00000000,&H99000000,-1,0,0,0,100,100,0,0,1,5,2,5,70,70,0,1",
+        "",
+        "[Events]",
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+    ]
+    rows = []
+    for index, item in enumerate(words):
+        start = float(item["start"])
+        end = float(item["end"])
+        if index + 1 < len(words):
+            next_start = float(words[index + 1]["start"])
+            if next_start > start:
+                end = min(end, next_start)
+        if end <= start:
+            continue
+        current = ass_escape(str(item["text"]))
+        if index:
+            previous = ass_escape(str(words[index - 1]["text"]))
+            caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H00FFFFFF&}}{previous} {{\\1c&H000040FF&}}{current}"
+        else:
+            caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H000040FF&}}{current}"
+        rows.append(f"Dialogue: 0,{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{caption}")
+    path.write_text("\\n".join(header + rows) + "\\n", encoding="utf-8")
+
+
 def write_srt(subtitles: list[dict], path: Path) -> None:
     rows = []
     for index, item in enumerate(subtitles, 1):
@@ -255,11 +306,22 @@ def main() -> int:
 
     subtitles = spec.get("subtitles") or []
     vf_args: list[str] = []
-    if args.burn_subtitles and subtitles:
+    if args.require_word_alignment:
+        if not aligned_words:
+            raise RuntimeError("Word-synchronized captions cannot be generated without actual narration alignment.")
+        width = int(spec.get("width", 360))
+        height = int(spec.get("height", 640))
+        ass_path = workdir / "word-captions.ass"
+        write_word_ass(aligned_words, ass_path, width, height)
+        vf_args = ["-vf", f"ass={ass_path}"]
+        report["subtitlesBurned"] = True
+        report["subtitleTiming"] = "edge-tts-word-boundary"
+    elif args.burn_subtitles and subtitles:
         srt_path = workdir / "subtitles.srt"
         write_srt(subtitles, srt_path)
         vf_args = ["-vf", f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=24,Outline=2,Shadow=1,MarginV=60'"]
         report["subtitlesBurned"] = True
+        report["subtitleTiming"] = "sentence-cue"
     else:
         report["subtitlesBurned"] = False
 
