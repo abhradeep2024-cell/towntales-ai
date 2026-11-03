@@ -6,7 +6,16 @@ import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
 type ActorKind = 'alex' | 'shadow' | 'resident' | 'double';
-const material = (color: string, roughness = 0.86) => new THREE.MeshStandardMaterial({ color, roughness });
+const materialCache = new Map<string, THREE.MeshStandardMaterial>();
+const material = (color: string, roughness = 0.86) => {
+  const key = `${color}:${roughness}`;
+  const cached = materialCache.get(key);
+  if (cached) return cached;
+  const created = new THREE.MeshStandardMaterial({ color, roughness });
+  materialCache.set(key, created);
+  return created;
+};
+const windowGlass = new THREE.MeshStandardMaterial({ color: '#6e8da8', roughness: 0.28, transparent: true, opacity: 0.32 });
 const hoodie = material('#2369a8');
 const black = material('#11151e');
 const skin = material('#e9b58d');
@@ -19,7 +28,7 @@ function Block({ position, scale, material: mat, rotation = [0, 0, 0], shadowles
   position: [number, number, number]; scale: [number, number, number]; material: THREE.Material;
   rotation?: [number, number, number]; shadowless?: boolean;
 }) {
-  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!shadowless} receiveShadow material={mat}>
+  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!shadowless} receiveShadow material={mat} dispose={null}>
     <boxGeometry args={[1, 1, 1]} />
   </mesh>;
 }
@@ -164,7 +173,7 @@ function Town({ night = true, frame, fps, sceneIndex }: { night?: boolean; frame
     <mesh position={[-1.8, 1.58, 1.445]}><sphereGeometry args={[0.055, 12, 12]} /><meshBasicMaterial color="#24232a" /></mesh>
     {/* Upstairs window: a fixed landmark for the final shadow reveal. */}
     <ABlock position={[-3, 2.15, -3.18]} scale={[1.35, 1.35, 0.1]} material={material('#111827')} />
-    <ABlock position={[-3, 2.15, -3.105]} scale={[1.16, 1.16, 0.035]} material={new THREE.MeshStandardMaterial({ color: '#6e8da8', roughness: 0.28, transparent: true, opacity: 0.32 })} shadowless />
+    <ABlock position={[-3, 2.15, -3.105]} scale={[1.16, 1.16, 0.035]} material={windowGlass} shadowless />
     {[-3.58, -3, -2.42].map((x) => <ABlock key={x} position={[x, 2.15, -3.06]} scale={[0.055, 1.28, 0.06]} material={material('#d2c4aa')} />)}
     {[1.57, 2.15, 2.73].map((y) => <ABlock key={y} position={[-3, y, -3.06]} scale={[1.22, 0.055, 0.06]} material={material('#d2c4aa')} />)}
   </group>;
