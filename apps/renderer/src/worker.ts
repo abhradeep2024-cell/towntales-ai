@@ -183,11 +183,29 @@ async function runJob(job: any, serveUrl: string) {
     const expectedFrames = Math.round(production.durationSeconds * production.fps);
     const actualFrames = Number(video.nb_read_frames ?? video.nb_frames ?? 0);
     if (!actualFrames || actualFrames !== expectedFrames) throw new Error(`Expected exactly ${expectedFrames} decoded frames, received ${actualFrames || 'unknown'}.`);
+    const visualScan = await execFileAsync('ffmpeg', [
+      '-hide_banner','-i',outputPath,'-vf','blackdetect=d=1:pix_th=0.10,freezedetect=n=-50dB:d=2',
+      '-an','-f','null','-'
+    ],{timeout:120_000,maxBuffer:1_000_000}).catch(error => {
+      const stderr = String((error as any)?.stderr ?? '');
+      if ((error as any)?.code === 0) return {stdout:'',stderr};
+      throw error;
+    });
+    const blackSegments = [...visualScan.stderr.matchAll(/black_start:([0-9.]+) black_end:([0-9.]+) black_duration:([0-9.]+)/g)]
+      .map(match => ({start:Number(match[1]),end:Number(match[2]),duration:Number(match[3])}));
+    const frozenSegments = [...visualScan.stderr.matchAll(/freeze_start:([0-9.]+) freeze_duration:([0-9.]+)/g)]
+      .map(match => ({start:Number(match[1]),duration:Number(match[2])}));
     const audioStream = streams.find((stream: any) => stream.codec_type === 'audio');
     const audioPresent = Boolean(audioStream);
     const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)));
     if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was found in the final MP4.');
     if (audioRequested && audioStream.codec_name !== 'aac') throw new Error(`Expected AAC audio, received ${audioStream.codec_name ?? 'unknown'}.`);
+    const videoStreamDuration = Number(video.duration ?? duration);
+    const audioStreamDuration = Number(audioStream?.duration ?? duration);
+    const audioVideoDurationDelta = audioRequested ? Math.abs(videoStreamDuration - audioStreamDuration) : 0;
+    if (audioRequested && Number.isFinite(audioVideoDurationDelta) && audioVideoDurationDelta > 1.0) {
+      throw new Error(`Audio/video stream duration mismatch: ${audioVideoDurationDelta.toFixed(3)} seconds.`);
+    }
 
     const { data: latest, error: latestError } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
     if (latestError) throw latestError;
@@ -222,8 +240,10 @@ async function runJob(job: any, serveUrl: string) {
         durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true,
         h264Video: true, aacAudio: audioRequested ? true : null,
         audioPresent: audioRequested ? audioPresent : true,
+        audioVideoDurationAligned: audioRequested ? audioVideoDurationDelta <= 1.0 : null,
+        blackFrameScan: true, freezeFrameScan: true,
         narrationPreparedBeforeRender: true,
-        narrationWithinBibleWindow: !narrationRequested || Number(preparedAudio.report?.voiceDurationSeconds ?? Infinity) <= production.durationSeconds - 0.45,
+        narrationWithinProductionWindow: !narrationRequested || Number(preparedAudio.report?.voiceDurationSeconds ?? Infinity) <= production.durationSeconds - 0.45,
         wordAlignment: narrationRequested ? wordAlignments.length > 0 : null,
         wordAlignmentCoverage: narrationRequested ? Number(preparedAudio.report?.alignedWordCoverage ?? 0) >= 0.98 : null,
         wordSynchronizedCaptions: narrationRequested ? wordCaptionsReady : null,
@@ -234,6 +254,8 @@ async function runJob(job: any, serveUrl: string) {
       decodedFrames: actualFrames || expectedFrames, bytes,
       sha256: createHash('sha256').update(file).digest('hex'),
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
+      visualSignalAnalysis: {blackSegments, frozenSegments, warningCount:blackSegments.length + frozenSegments.length},
+      audioVideoDurationDeltaSeconds: audioRequested ? audioVideoDurationDelta : null,
       audioMode: {
         musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled,
         burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle, effectsEnabled: Boolean(preparedAudio.report?.effectsGenerated),
