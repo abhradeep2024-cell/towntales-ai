@@ -60,9 +60,10 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
       : [walking ? -stride * 0.45 : -0.04, 0, 0.08];
   const headYaw = isShadow && sceneIndex === 3
     ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72
-    : kind === 'alex' && sceneIndex === 2
-      ? (t >= 1.4 && t <= 2.5 ? -0.42 : t > 2.5 && t < 3.0 ? 0.18 : 0)
-      : 0;
+    : kind === 'resident' && residentPanics ? -0.5
+      : kind === 'alex' && sceneIndex === 2
+        ? (t >= 1.4 && t <= 2.5 ? -0.42 : t > 2.5 && t < 3.0 ? 0.18 : 0)
+        : 0;
   const mouthOpen = kind === 'double' && sceneIndex === 6 ? 0.085
     : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
       ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
@@ -74,7 +75,10 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const shoe = isVoid ? voidMat : white;
   const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || isDouble || (kind === 'alex' && sceneIndex === 7)} />;
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
-  return <group position={position} scale={scale} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : 0.08, kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0]}>
+  const bodyLean = kind === 'resident' && residentPanics ? 0.16
+    : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
+  const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
+  return <group position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : 0.08, bodyLean]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
       <ActorBlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
@@ -167,8 +171,8 @@ function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number;
   return <group>
     <ABlock position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
     <ABlock position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
-    <ABlock position={[-3.4, 1.3, -3.48]} scale={[2.3, 2.1, 0.08]} material={material('#5b83a5', 0.35)} />
-    <ABlock position={[-3.4, 1.3, -3.4]} scale={[0.08, 2.2, 0.12]} material={material('#111827')} />
+    <ABlock position={[-3, 2.15, -3.48]} scale={[1.35, 1.35, 0.08]} material={material('#5b83a5', 0.35)} />
+    <ABlock position={[-3, 2.15, -3.4]} scale={[0.08, 1.4, 0.12]} material={material('#111827')} />
     <ABlock position={[2.3, 0.18, -1.8]} scale={[3.3, 0.45, 2.2]} material={material('#725f66')} />
     <ABlock position={[2.3, 0.48, -1.8]} scale={[3.25, 0.25, 2.1]} material={material('#a8b3c7')} />
     <ABlock position={[1.5, 0.7, -2.35]} scale={[0.95, 0.28, 0.5]} material={material('#e4d9c7')} />
@@ -201,7 +205,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <color attach="background" args={[scene.background]} />
     <fog attach="fog" args={[scene.background, 9, 22]} />
     <ambientLight intensity={isMorning ? 1.35 : isBlackout && frame / fps > 8 ? 0.06 : 0.72} />
-    <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
+    <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : isBlackout && frame / fps > 8 ? 0.05 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-1.2, 0, 1.2].map((x, i) => {

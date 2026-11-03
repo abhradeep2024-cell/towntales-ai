@@ -130,6 +130,7 @@ def make_effects(path: Path, duration: float) -> None:
     add_event(21.0, 1.1, "breath", 72, 0.06)
     for index in range(14):
         add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
+    add_event(30.75, 0.32, "boom", 60, 0.18)
     add_event(31.35, 1.25, "creak", 310, 0.10)
     for beat in range(5):
         add_event(33.0 + beat * 0.92, 0.20, "boom", 58, 0.09)
