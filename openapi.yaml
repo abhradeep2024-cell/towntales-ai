@@ -123,6 +123,91 @@ paths:
                   sourceCommit: { type: string }
         '401': { description: Unauthorized }
         '404': { description: Style not found }
+  /v1/intake:
+    post:
+      operationId: submitProductionSource
+      summary: Upload and extract a DOCX, TXT or JSON production brief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename, contentBase64]
+              properties:
+                filename: { type: string, maxLength: 180 }
+                contentBase64: { type: string, contentEncoding: base64 }
+                title: { type: string, maxLength: 160 }
+                description: { type: string, maxLength: 4000 }
+                styleId: { type: string, maxLength: 100 }
+                aspectRatio: { type: string, enum: ['16:9', '9:16', '1:1'] }
+      responses:
+        '201': { description: Source extracted and project created }
+        '400': { description: Invalid or unsupported source file }
+        '401': { description: Unauthorized }
+        '413': { description: Source exceeds size limit }
+        '503': { description: Source could not be persisted }
+  /v1/projects/{id}/plan:
+    post:
+      operationId: planProjectProduction
+      summary: Interpret an uploaded story and create a validated render job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '202': { description: Validated production plan and render job queued }
+        '401': { description: Unauthorized }
+        '404': { description: Project or extracted source not found }
+        '422': { description: Generated plan failed contract validation }
+        '502': { description: AI provider or planning response failed }
+        '503': { description: Planner configuration or persistence unavailable }
+  /v1/assets:
+    get:
+      operationId: listReusableAssets
+      summary: Search the private versioned asset library
+      parameters:
+        - in: query
+          name: type
+          schema: { type: string }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100 }
+      responses:
+        '200': { description: Matching ready assets with expiring signed URLs }
+        '400': { description: Invalid asset filter }
+        '401': { description: Unauthorized }
+        '503': { description: Asset library unavailable }
+    post:
+      operationId: registerReusableAsset
+      summary: Upload and register a versioned reusable production asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assetKey, version, assetType, displayName, filename, mimeType, contentBase64]
+              properties:
+                assetKey: { type: string, maxLength: 120 }
+                version: { type: integer, minimum: 1 }
+                assetType: { type: string, enum: [character, rig, environment, prop, material, texture, animation, music, voice, sound-effect, font, image, video, other] }
+                displayName: { type: string, maxLength: 160 }
+                filename: { type: string, maxLength: 120 }
+                mimeType: { type: string }
+                contentBase64: { type: string, contentEncoding: base64 }
+                metadata: { type: object }
+                provenance: { type: object }
+      responses:
+        '201': { description: Asset stored and registered }
+        '400': { description: Invalid asset metadata }
+        '401': { description: Unauthorized }
+        '413': { description: Asset exceeds 5 MB }
+        '503': { description: Asset registration failed }
   /v1/jobs:
     post:
       operationId: createRenderJob
