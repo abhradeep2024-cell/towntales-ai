@@ -6,7 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
 import { extractProductionInput } from './intake.js';
-import { planProductionFromSource } from './planner.js';
+import { parseStructuredProductionSpec, planProductionFromSource } from './planner.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -340,7 +340,8 @@ app.post('/v1/projects/:id/plan', async (request, reply) => {
     const {data:sourceBlob,error:downloadError} = await db.storage.from(bucket).download(sourceAsset.storage_key);
     if (downloadError || !sourceBlob) throw downloadError ?? new Error('Could not download extracted production source.');
     const sourceText = await sourceBlob.text();
-    const production = await planProductionFromSource(sourceText,{apiKey:aiKey,baseUrl:aiBaseUrl,model:aiModel,defaults:{styleId:project.default_style_id,aspectRatio:project.default_aspect_ratio}});
+    const structuredProduction = parseStructuredProductionSpec(sourceText);
+    const production = structuredProduction ?? await planProductionFromSource(sourceText,{apiKey:aiKey,baseUrl:aiBaseUrl,model:aiModel,defaults:{styleId:project.default_style_id,aspectRatio:project.default_aspect_ratio}});
     const validated = CreateJobSchema.safeParse({production:{
       ...production,
       projectMetadata:{...(production.projectMetadata ?? {}),projectId:id}
