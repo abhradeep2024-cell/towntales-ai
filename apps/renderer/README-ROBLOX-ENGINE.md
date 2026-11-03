@@ -19,7 +19,7 @@ The former text-card presentation is replaced with deterministic Three.js scenes
 ## Remaining production gates
 
 - Characters are still procedural R6-inspired placeholders; approved custom character assets and final facial/rig polish remain outstanding.
-- The GitHub Actions episode render is a low-resolution preview. A single 1080 × 1920 master frame is checked separately; the complete 1080 × 1920, 60-second worker render must still pass the production job and 50 MB storage limit.
+- GitHub Actions is configured to render the complete 1080 × 1920, 60-second master, validate all 1,800 frames and enforce the 50 MB private-storage limit. The production worker applies the same checks before upload.
 - The CI contact sheet enables visual review, but final playback and listening review are still required to certify continuity, animation, sound design and story comprehension.
 
 All scene animation remains frame-driven and deterministic. A successful render alone is not a release approval.
