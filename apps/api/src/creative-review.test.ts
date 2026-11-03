@@ -20,7 +20,8 @@ function providerResponse(payload:unknown,status=200) {
 
 describe('multimodal creative QA',()=>{
   it('returns a passing review when the evidence meets the release threshold',async()=>{
-    const fetchImpl=vi.fn(async()=>providerResponse(validReview));
+    let capturedBody='';
+    const fetchImpl=vi.fn(async (_input:RequestInfo|URL,init?:RequestInit)=>{capturedBody=String(init?.body);return providerResponse(validReview);});
     const review=await reviewProductionCreatively(
       {title:'Test story',scenes:[{id:'scene-1',durationSeconds:4}]},
       [{sceneId:'scene-1',timeSeconds:2,imageBase64:'aGVsbG8='}],
@@ -30,7 +31,7 @@ describe('multimodal creative QA',()=>{
     expect(review.status).toBe('pass');
     expect(review.releaseApproved).toBe(true);
     expect(review.limitations.length).toBe(2);
-    const requestBody=JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body));
+    const requestBody=JSON.parse(capturedBody);
     expect(requestBody.messages[0].content.some((item:any)=>item.type==='image_url')).toBe(true);
   });
 
