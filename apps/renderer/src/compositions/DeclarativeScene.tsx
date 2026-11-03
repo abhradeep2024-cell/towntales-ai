@@ -3,6 +3,7 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
@@ -58,7 +59,7 @@ function GltfAnimatedActor({actor,character,asset,time}:{
 }) {
   const gltf = useLoader(GLTFLoader,asset.uri!);
   const model = useMemo(()=>{
-    const clone = gltf.scene.clone(true);
+    const clone = cloneSkeleton(gltf.scene);
     clone.traverse(node=>{
       if (node instanceof THREE.Mesh) {
         node.castShadow = character.appearance.castShadow;
