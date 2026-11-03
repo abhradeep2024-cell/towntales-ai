@@ -1,11 +1,19 @@
-# ChatGPT Film Studio
+# Real Factory
 
-Free-tier-first, ChatGPT-directed film production. ChatGPT is the creative director; Lemo-Opuscar provides the 66-style directing library and frame-renderer contract; Remotion renders structured scenes; FFmpeg performs audio/video mastering; Supabase stores jobs and private MP4s.
+Real Factory is an automated animation production pipeline, not a SaaS product. It accepts a story/script/production Bible, plans scenes and assets, renders previews and masters, performs technical QA, and stores outputs privately. ChatGPT is the creative director; Lemo-Opuscar provides the 66-style directing library and frame-renderer contract; Remotion renders structured scenes; FFmpeg performs audio/video mastering; Supabase stores jobs and private MP4s.
 
 ## Production modes
 - **Lemo project page:** submit projectFiles containing index.html and local JS/CSS/JSON/SVG assets. The page must expose window.DUR, deterministic window.render(t), and window.READY. The Lemo-Opuscar headless renderer renders it against the pinned Lemo library, including shared core helpers and the styles tree.
 - **Remotion scene fallback:** omit projectFiles and submit a validated multi-scene script. Supports title/scene animation, subtitles, landscape, portrait and square dimensions.
 - **Audio:** optional Edge TTS narration per scene, local espeak-ng fallback, original procedural ambient music, FFmpeg mixing and loudness normalization. The Edge voice service requires network access; espeak-ng is local.
+
+## Submit a production
+From the repository root, set your API token and submit a DOCX, TXT or JSON brief:
+```bash
+cd apps/api
+API_TOKEN="YOUR_API_TOKEN" npm run submit -- ../../path/to/story.docx --title "My story" --aspect-ratio 9:16 --style roblox-cinematic
+```
+Optional flags: `--description "..." `, `--style <style-id>`, and `--aspect-ratio 16:9|9:16|1:1`. The command uploads the source, extracts it, asks the configured AI planner for a validated production manifest, and queues a render job. Set `API_BASE_URL` if the API is not hosted at the default Render URL. Keep `API_TOKEN` private; never put it in source control.
 
 ## Free-tier architecture
 - Render free web service hosts only the authenticated API.
