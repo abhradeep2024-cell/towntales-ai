@@ -11,7 +11,7 @@ Real Factory is an automated animation production pipeline, not a SaaS product. 
 From the repository root, set your API token and submit a DOCX, TXT or JSON brief:
 ```bash
 cd apps/api
-API_TOKEN="YOUR_API_TOKEN" npm run submit -- ../../path/to/story.docx --title "My story" --aspect-ratio 9:16 --style roblox-cinematic
+API_TOKEN="YOUR_API_TOKEN" npm run submit -- ../path/to/story.docx --title "My story" --aspect-ratio 9:16 --style roblox-cinematic
 ```
 Optional flags: `--description "..." `, `--style <style-id>`, and `--aspect-ratio 16:9|9:16|1:1`. The command uploads the source, extracts it, asks the configured AI planner for a validated production manifest, and queues a render job. Set `API_BASE_URL` if the API is not hosted at the default Render URL. Keep `API_TOKEN` private; never put it in source control.
 
