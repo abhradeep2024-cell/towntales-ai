@@ -251,4 +251,18 @@ describe('declarative animation production contract', () => {
     expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
   });
 
+
+  it('accepts model props backed by reusable prop assets', () => {
+    const production: any = structuredClone(base);
+    production.assets = [{id:'tree-model',type:'prop',libraryAssetKey:'tree-model',libraryVersion:1,required:true}];
+    production.scenes[0].props = [{id:'tree',type:'model',assetId:'tree-model',position:[0,0,0],scale:[1,1,1],color:'#ffffff',rotation:[0,0,0],castShadow:true}];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects model props without a reusable asset reference', () => {
+    const production: any = structuredClone(base);
+    production.scenes[0].props = [{id:'tree',type:'model',position:[0,0,0],scale:[1,1,1],color:'#ffffff',rotation:[0,0,0],castShadow:true}];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
 });
