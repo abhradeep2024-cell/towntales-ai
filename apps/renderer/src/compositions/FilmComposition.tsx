@@ -15,7 +15,7 @@ export const FilmComposition: React.FC<{ production: ProductionSpec; wordAlignme
       const length = Math.round(scene.durationSeconds * fps);
       cursor += length;
       return <Sequence key={scene.id} from={start} durationInFrames={length}>
-        {scene.actors.length > 0 || scene.props.length > 0 || scene.camera ? <DeclarativeScene scene={scene} production={production} /> : <RobloxStoryScene scene={scene} sceneIndex={index} sceneStartSeconds={start / fps} wordAlignments={wordAlignments} />}
+        {(scene.actors?.length ?? 0) > 0 || (scene.props?.length ?? 0) > 0 || scene.camera ? <DeclarativeScene scene={scene} production={production} /> : <RobloxStoryScene scene={scene} sceneIndex={index} sceneStartSeconds={start / fps} wordAlignments={wordAlignments} />}
       </Sequence>;
     })}
   </AbsoluteFill>;
