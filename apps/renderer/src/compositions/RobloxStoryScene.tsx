@@ -28,8 +28,9 @@ function Block({ position, scale, material: mat, rotation = [0, 0, 0], shadowles
   position: [number, number, number]; scale: [number, number, number]; material: THREE.Material;
   rotation?: [number, number, number]; shadowless?: boolean;
 }) {
-  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!shadowless} receiveShadow material={mat} dispose={null}>
+  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!shadowless} receiveShadow>
     <boxGeometry args={[1, 1, 1]} />
+    <primitive object={mat} attach="material" dispose={null} />
   </mesh>;
 }
 
