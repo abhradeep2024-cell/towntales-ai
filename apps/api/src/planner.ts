@@ -8,7 +8,11 @@ export interface PlannerConfig {
 }
 
 function stripJsonFence(value: string): string {
-  return value.trim().replace(/^\`\`\`(?:json)?\\s*/i,'').replace(/\\s*\`\`\`$/,'').trim();
+  let result = value.trim();
+  if (result.startsWith("```json")) result = result.slice(7);
+  else if (result.startsWith("```")) result = result.slice(3);
+  if (result.trimEnd().endsWith("```")) result = result.trimEnd().slice(0,-3);
+  return result.trim();
 }
 
 export async function planProductionFromSource(
@@ -20,7 +24,7 @@ export async function planProductionFromSource(
   if (source.length > 60_000) throw new Error('The extracted source exceeds the 60,000-character planning limit.');
   if (!config.apiKey || !config.model || !config.baseUrl) throw new Error('AI planner is not configured. Set AI_API_KEY, AI_MODEL and optionally AI_BASE_URL.');
   const fetchImpl = config.fetchImpl ?? fetch;
-  const baseUrl = config.baseUrl.replace(/\\/$/,'');
+  const baseUrl = config.baseUrl.endsWith('/') ? config.baseUrl.slice(0,-1) : config.baseUrl;
   const response = await fetchImpl(`${baseUrl}/chat/completions`, {
     method:'POST',
     headers:{
