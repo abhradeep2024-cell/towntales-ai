@@ -33,6 +33,44 @@ const base = {
 };
 
 describe('declarative animation production contract', () => {
+
+  it('accepts a complete provider-neutral manifest with assets, shots, dialogue, audio and captions', () => {
+    const rich = structuredClone(base);
+    Object.assign(rich, {
+      assets: [{ id: 'bedroom-set', type: 'environment', uri: 'supabase://assets/bedroom.glb', version: '1', required: true }],
+      environments: [{ id: 'bedroom', name: 'Alex bedroom', assetId: 'bedroom-set', locationDescription: 'A small bedroom at dawn' }],
+      shots: [{ id: 'shot-1', sceneId: 'scene-1', title: 'Wide reveal', startSeconds: 0, durationSeconds: 6, assetIds: ['bedroom-set'], transitionIn: 'cut', transitionOut: 'fade' }],
+      tracks: [{ id: 'camera-main', name: 'Main camera', kind: 'camera', targetId: 'scene-1' }],
+      dialogue: [{ id: 'line-1', sceneId: 'scene-1', characterId: 'ALEX', speaker: 'Alex', text: 'Did you see that?', startSeconds: 1, endSeconds: 2.5, voiceProfileId: 'alex-en' }],
+      audioCues: [{ id: 'cue-1', sceneId: 'scene-1', type: 'sound-effect', assetId: 'bedroom-set', label: 'Door creak', startSeconds: 2, durationSeconds: 1, fadeInSeconds: 0.1, fadeOutSeconds: 0.2 }],
+      captionCues: [{ id: 'caption-1', sceneId: 'scene-1', text: 'Did you see that?', startSeconds: 1, endSeconds: 2.5, kind: 'dialogue', speaker: 'Alex' }],
+      outputProfiles: [{ id: 'vertical-master', width: 1280, height: 720, fps: 30, codec: 'h264', container: 'mp4', quality: 'master' }],
+      qaRules: [{ id: 'caption-safe-area', category: 'caption', severity: 'blocking', description: 'Captions must remain inside mobile safe areas.' }],
+      projectMetadata: { language: 'en', targetPlatform: 'instagram-reels' }
+    });
+    expect(ProductionSpecSchema.safeParse(rich).success).toBe(true);
+  });
+
+  it('rejects dangling asset, shot, dialogue and audio references', () => {
+    const invalid = structuredClone(base);
+    Object.assign(invalid, {
+      assets: [],
+      shots: [{ id: 'shot-1', sceneId: 'missing-scene', startSeconds: 0, durationSeconds: 6, assetIds: ['missing-asset'] }],
+      dialogue: [{ id: 'line-1', sceneId: 'missing-scene', speaker: 'Narrator', text: 'Hello' }],
+      audioCues: [{ id: 'cue-1', sceneId: 'scene-1', type: 'music', assetId: 'missing-audio', label: 'Score', startSeconds: 0, durationSeconds: 6 }]
+    });
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it('rejects caption and dialogue timings outside the production timeline', () => {
+    const invalid = structuredClone(base);
+    Object.assign(invalid, {
+      dialogue: [{ id: 'line-1', sceneId: 'scene-1', speaker: 'Narrator', text: 'Late line', startSeconds: 5, endSeconds: 7 }],
+      captionCues: [{ id: 'caption-1', sceneId: 'scene-1', text: 'Late caption', startSeconds: 5, endSeconds: 7 }]
+    });
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
   it('accepts reusable character assets and independently timed actors', () => {
     const result = ProductionSpecSchema.safeParse(base);
     expect(result.success).toBe(true);
