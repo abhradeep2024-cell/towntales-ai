@@ -382,6 +382,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         validate_word_alignment_bounds(aligned_words, duration)
         alignment_path = workdir / "word-alignments.json"
         alignment_path.write_text(json.dumps({"schemaVersion": 1, "timebase": "seconds-from-video-start", "provider": "edge-tts-word-boundary", "words": aligned_words}, indent=2), encoding="utf-8")
+        report["wordAlignmentSha256"] = hashlib.sha256(alignment_path.read_bytes()).hexdigest()
         report["wordAlignmentProvider"] = "edge-tts-word-boundary"
         report["alignedWordCount"] = len(aligned_words)
         report["wordAlignmentFile"] = alignment_path.name
@@ -437,6 +438,11 @@ def mux_prepared_audio(spec: dict, video_path: Path, output_path: Path, workdir:
         audio_path = workdir / track["file"]
         if not audio_path.exists() or audio_path.stat().st_size < 100:
             raise RuntimeError(f"Prepared audio track is missing or empty: {track['file']}")
+        if int(track.get("bytes", audio_path.stat().st_size)) != audio_path.stat().st_size:
+            raise RuntimeError(f"Prepared audio track size changed after narration approval: {track['file']}")
+        expected_hash = track.get("sha256")
+        if expected_hash and hashlib.sha256(audio_path.read_bytes()).hexdigest() != expected_hash:
+            raise RuntimeError(f"Prepared audio track hash changed after narration approval: {track['file']}")
         input_args += ["-i", str(audio_path)]
         delay_ms = int(track.get("delayMs", 0))
         volume = float(track.get("volume", 1.0))
@@ -464,6 +470,9 @@ def mux_prepared_audio(spec: dict, video_path: Path, output_path: Path, workdir:
         words = alignment_data.get("words", [])
         if not words:
             raise RuntimeError("Prepared word alignment is empty.")
+        expected_alignment_hash = manifest.get("report", {}).get("wordAlignmentSha256")
+        if expected_alignment_hash and hashlib.sha256(alignment_path.read_bytes()).hexdigest() != expected_alignment_hash:
+            raise RuntimeError("Prepared word alignment changed after narration approval.")
         width, height = media_dimensions(video_path)
         ass_path = workdir / "word-captions.ass"
         write_word_ass(words, ass_path, width, height)
