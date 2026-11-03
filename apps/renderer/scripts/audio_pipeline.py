@@ -175,9 +175,9 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
     for wave_index in range(3):
         add_event(shadow_wave_start + 0.15 + wave_index * 0.6, 0.26, "boom", 52, 0.12)
     add_event(shadow_wave_start + 1.95, 1.1, "breath", 72, 0.06)
-    for index in range(12):
-        add_event(28.25 + index * 0.22, 0.14, "step", 72 if index % 2 == 0 else 88, 0.12)
-    for breath in (28.65, 29.4, 30.1):
+    for index in range(14):
+        add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
+    for breath in (26.4, 28.1, 29.7):
         add_event(breath, 0.65, "breath", 105, 0.06)
     add_event(30.75, 0.32, "boom", 60, 0.18)
     add_event(31.35, 1.25, "creak", 310, 0.10)
