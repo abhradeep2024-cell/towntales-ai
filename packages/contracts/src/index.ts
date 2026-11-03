@@ -161,7 +161,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
     ctx.addIssue({code:'custom',path:['characters'],message:'Character IDs must be unique within a production.'});
   }
   spec.scenes.forEach((scene, sceneIndex) => {
-    scene.actors.forEach((actor, actorIndex) => {
+    (scene.actors ?? []).forEach((actor, actorIndex) => {
       if (!characterIds.has(actor.characterId)) {
         ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'characterId'],message:'Every scene actor must reference a declared reusable character asset.'});
       }
