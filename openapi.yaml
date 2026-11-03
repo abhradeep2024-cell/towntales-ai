@@ -379,7 +379,7 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        provider: { type: string, enum: [edge-tts, espeak-ng] }
+        provider: { type: string, enum: [edge-tts] }
         voice: { type: string }
         language: { type: string }
         rate: { type: string }
@@ -459,7 +459,7 @@ components:
         dialogue:
           type: array
           maxItems: 1000
-          items: { type: object, required: [id, sceneId, speaker, text], properties: { id: { type: string }, sceneId: { type: string }, characterId: { type: string }, voiceProfileId: { type: string }, speaker: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
+          items: { type: object, required: [id, sceneId, speaker, text, startSeconds, endSeconds], properties: { id: { type: string }, sceneId: { type: string }, characterId: { type: string }, voiceProfileId: { type: string }, speaker: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
         audioCues:
           type: array
           maxItems: 1000
