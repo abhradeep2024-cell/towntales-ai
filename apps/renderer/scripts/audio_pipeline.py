@@ -65,18 +65,37 @@ def make_music(path: Path, duration: float, mood: str) -> None:
         wav.writeframes(samples.tobytes())
 
 
-async def make_edge_voice(text: str, voice: str, target: Path) -> None:
+async def make_edge_voice(text: str, voice: str, target: Path) -> list[dict]:
+    """Stream Edge TTS audio and retain its genuine word-boundary timestamps."""
     import edge_tts
-    await edge_tts.Communicate(text, voice=voice, rate="+0%", volume="+0%", pitch="+0Hz").save(str(target))
+
+    words: list[dict] = []
+    communicate = edge_tts.Communicate(text, voice=voice, rate="+0%", volume="+0%", pitch="+0Hz")
+    with target.open("wb") as audio_file:
+        async for chunk in communicate.stream():
+            if chunk.get("type") == "audio":
+                audio_file.write(chunk["data"])
+            elif chunk.get("type") == "WordBoundary":
+                # Edge TTS offsets/durations are expressed in 100-nanosecond ticks.
+                offset = int(chunk["offset"])
+                duration = int(chunk["duration"])
+                words.append({
+                    "text": str(chunk["text"]),
+                    "start": offset / 10_000_000,
+                    "end": (offset + duration) / 10_000_000,
+                    "source": "edge-tts-word-boundary",
+                })
+    return words
 
 
-def make_voice(text: str, voice: str, target: Path) -> str:
+def make_voice(text: str, voice: str, target: Path) -> tuple[str, list[dict]]:
     try:
-        asyncio.run(make_edge_voice(text, voice, target))
-        if target.exists() and target.stat().st_size > 500:
-            return "edge-tts"
+        words = asyncio.run(make_edge_voice(text, voice, target))
+        if target.exists() and target.stat().st_size > 500 and words:
+            return "edge-tts", words
+        raise RuntimeError("Edge TTS returned audio without usable word-boundary events.")
     except Exception as exc:
-        print(f"[audio] Edge TTS unavailable; checking local espeak-ng fallback: {exc}", file=sys.stderr)
+        print(f"[audio] Edge TTS alignment unavailable; checking local espeak-ng fallback: {exc}", file=sys.stderr)
     espeak = shutil.which("espeak-ng") or shutil.which("espeak")
     if espeak:
         wav_target = target.with_suffix(".wav")
@@ -87,7 +106,8 @@ def make_voice(text: str, voice: str, target: Path) -> str:
                 raise RuntimeError("espeak-ng MP3 conversion produced no audio.")
         finally:
             wav_target.unlink(missing_ok=True)
-        return "espeak-ng"
+        # espeak-ng does not expose reliable word boundaries; never label it aligned.
+        return "espeak-ng", []
     raise RuntimeError("Voice requested but neither Edge TTS nor espeak-ng is available.")
 
 
@@ -114,6 +134,7 @@ def main() -> int:
     parser.add_argument("--workdir", required=True)
     parser.add_argument("--burn-subtitles", action="store_true")
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--require-word-alignment", action="store_true", help="Fail unless every narration line has genuine Edge TTS word boundaries.")
     args = parser.parse_args()
 
     spec_path, video_path, output_path, workdir = map(Path, (args.spec, args.video, args.output, args.workdir))
@@ -134,7 +155,8 @@ def main() -> int:
     filters: list[str] = []
     labels: list[str] = []
     next_input = 1
-    report: dict = {"voiceProvider": None, "voiceLines": 0, "musicGenerated": False}
+    report: dict = {"voiceProvider": None, "voiceLines": 0, "musicGenerated": False, "wordAlignmentProvider": None, "alignedWordCount": 0}
+    aligned_words: list[dict] = []
 
     if audio.get("musicEnabled", True):
         music = workdir / "music.wav"
@@ -153,8 +175,12 @@ def main() -> int:
             narration = (scene.get("narration") or "").strip()
             if narration:
                 target = workdir / f"voice-{idx:02d}.mp3"
-                provider = make_voice(narration, voice_name, target)
+                provider, word_events = make_voice(narration, voice_name, target)
                 providers.add(provider)
+                if args.require_word_alignment and (provider != "edge-tts" or not word_events):
+                    raise RuntimeError(f"Production word alignment required, but scene {idx} used {provider} without real word boundaries.")
+                for event in word_events:
+                    aligned_words.append({**event, "sceneIndex": idx, "start": round(scene_start + event["start"], 6), "end": round(scene_start + event["end"], 6)})
                 input_args += ["-i", str(target)]
                 delay_ms = max(0, round(scene_start * 1000))
                 label = f"voice{idx}"
@@ -164,6 +190,20 @@ def main() -> int:
                 report["voiceLines"] += 1
             scene_start += float(scene["durationSeconds"])
         report["voiceProvider"] = "+".join(sorted(providers)) if providers else None
+        if aligned_words:
+            aligned_words.sort(key=lambda item: (item["start"], item["end"]))
+            previous_end = -1.0
+            for item in aligned_words:
+                if item["start"] < previous_end or item["end"] <= item["start"]:
+                    raise RuntimeError(f"Invalid or overlapping word alignment near {item['text']!r}.")
+                previous_end = item["end"]
+            alignment_path = workdir / "word-alignments.json"
+            alignment_path.write_text(json.dumps({"schemaVersion": 1, "timebase": "seconds-from-video-start", "provider": "edge-tts-word-boundary", "words": aligned_words}, indent=2), encoding="utf-8")
+            report["wordAlignmentProvider"] = "edge-tts-word-boundary"
+            report["alignedWordCount"] = len(aligned_words)
+            report["wordAlignmentFile"] = str(alignment_path)
+        elif args.require_word_alignment:
+            raise RuntimeError("Production word alignment required, but no word-boundary events were captured.")
 
     has_audio = bool(labels)
     if has_audio:
