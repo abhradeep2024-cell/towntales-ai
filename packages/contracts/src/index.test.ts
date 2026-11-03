@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ProductionSpecSchema } from './index.js';
+import { migrateProductionSpec, ProductionSpecSchema } from './index.js';
 
 const base = {
   schemaVersion: 1,
@@ -96,6 +96,24 @@ describe('declarative animation production contract', () => {
     const invalid = structuredClone(base);
     invalid.scenes[0].actors[1].actions = [{ type: 'move', startSeconds: 1, durationSeconds: 2 }];
     expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it('migrates a v1 production to v2 without losing scene content', () => {
+    const migrated = migrateProductionSpec(base);
+    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.title).toBe(base.title);
+    expect(migrated.scenes).toEqual(ProductionSpecSchema.parse(base).scenes);
+    expect(migrated.projectMetadata?.targetPlatform).toBe('instagram-reels');
+  });
+
+  it('accepts v2 manifests and keeps migration idempotent', () => {
+    const v2 = {...base, schemaVersion: 2 as const};
+    expect(ProductionSpecSchema.safeParse(v2).success).toBe(true);
+    expect(migrateProductionSpec(migrateProductionSpec(v2))).toEqual(migrateProductionSpec(v2));
+  });
+
+  it('rejects unsupported future manifest versions', () => {
+    expect(ProductionSpecSchema.safeParse({...base, schemaVersion: 3}).success).toBe(false);
   });
 
   it('rejects unordered camera keyframes', () => {
