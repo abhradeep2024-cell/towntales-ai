@@ -45,4 +45,11 @@ describe('Real Factory API authentication boundary', () => {
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({error:'unauthorized'});
   });
+
+  it('rejects unauthenticated creative-review requests from renderer workers', async () => {
+    const response = await app!.inject({method:'POST',url:'/internal/jobs/00000000-0000-4000-8000-000000000001/creative-review',payload:{}});
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({error:'unauthorized'});
+  });
+
 });
