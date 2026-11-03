@@ -78,12 +78,8 @@ def make_music(path: Path, duration: float, mood: str, duck_intervals: list[tupl
             amp = (0.020 if voice == 0 else 0.014) * (1.0 if voice < 2 else 0.78)
             value += amp * (math.sin(2 * math.pi * hz * t) + 0.18 * math.sin(4 * math.pi * hz * t))
         if mood == "suspense":
-            if 17 <= t < 19.8:
+            if 17 <= t < 24:
                 section_gain = 1.08
-            elif 19.8 <= t < 22.2:
-                section_gain = 0.02
-            elif 22.2 <= t < 24:
-                section_gain = 0.92
             elif 24 <= t < 31:
                 section_gain = 1.16
             elif 31 <= t < 39:
@@ -113,7 +109,7 @@ def make_music(path: Path, duration: float, mood: str, duck_intervals: list[tupl
         wav.writeframes(samples.tobytes())
 
 
-def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, float]] | None = None) -> None:
+def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, float]] | None = None, shadow_wave_start: float = 20.0) -> None:
     """Create a deterministic, original suspense SFX bed aligned to Episode 01 story beats."""
     sr = 24000
     frame_count = max(1, int(duration * sr))
@@ -171,8 +167,8 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
         add_event(tick, 0.075, "click", 1750, 0.10)
     add_event(8.7, 0.8, "breath", 180, 0.04)
     for wave_index in range(3):
-        add_event(20.0 + wave_index * 0.92, 0.26, "boom", 52, 0.12)
-    add_event(22.9, 1.1, "breath", 72, 0.06)
+        add_event(shadow_wave_start + 0.15 + wave_index * 0.6, 0.26, "boom", 52, 0.12)
+    add_event(shadow_wave_start + 1.95, 1.1, "breath", 72, 0.06)
     for index in range(14):
         add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
     for breath in (26.4, 28.1, 29.7):
@@ -392,7 +388,11 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     elif require_word_alignment:
         raise RuntimeError("Production word alignment required, but no word-boundary events were captured.")
 
-    music_ducks: list[tuple[float, float]] = [(19.8, 22.2)] if spec.get("styleId") == "roblox-cinematic-horror" else []
+    waved_word = next((item for item in aligned_words if item.get("sceneIndex") == 3 and str(item["text"]).strip(".,!?;:").lower() == "waved"), None)
+    shadow_wave_start = max(0.0, float(waved_word["start"]) - 0.25) if waved_word else 20.0
+    music_ducks: list[tuple[float, float]] = []
+    if spec.get("styleId") == "roblox-cinematic-horror":
+        music_ducks.append((max(0.0, shadow_wave_start - 0.08), shadow_wave_start + 1.8))
     effects_ducks: list[tuple[float, float]] = []
     except_word = next((item for item in aligned_words if item.get("sceneIndex") == 7 and str(item["text"]).strip(".,!?;:").lower() == "except"), None)
     if except_word:
@@ -411,13 +411,14 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     effects_enabled = bool(audio.get("effectsEnabled", spec.get("styleId") == "roblox-cinematic-horror"))
     if effects_enabled:
         effects_path = workdir / "effects.wav"
-        make_effects(effects_path, duration, effects_ducks)
+        make_effects(effects_path, duration, effects_ducks, shadow_wave_start)
         tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18, "bytes": effects_path.stat().st_size, "sha256": hashlib.sha256(effects_path.read_bytes()).hexdigest()})
         report["effectsGenerated"] = True
     tracks.extend(voice_tracks)
     report["effectsEnabled"] = effects_enabled
     report["musicDuckIntervals"] = music_ducks
     report["effectsDuckIntervals"] = effects_ducks
+    report["shadowWaveStart"] = shadow_wave_start
     report["subtitleTiming"] = "edge-tts-word-boundary" if aligned_words else None
     report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
     manifest_path = workdir / "audio-manifest.json"
