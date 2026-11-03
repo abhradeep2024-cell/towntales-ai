@@ -25,6 +25,16 @@ def run(command: list[str]) -> None:
         raise RuntimeError(f"Command failed ({completed.returncode}): {' '.join(command[:5])}\n{detail}")
 
 
+def media_duration(path: Path) -> float:
+    completed = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
+        text=True, capture_output=True
+    )
+    if completed.returncode:
+        raise RuntimeError(f"Could not read audio duration for {path}: {completed.stderr[-1000:]}")
+    return float(completed.stdout.strip())
+
+
 def midi_hz(note: int) -> float:
     return 440.0 * (2.0 ** ((note - 69) / 12.0))
 
@@ -170,6 +180,7 @@ def main() -> int:
     if audio.get("voiceEnabled", True):
         voice_name = audio.get("voice", "en-US-AriaNeural")
         scene_start = 0.0
+        voice_cursor = 0.0
         providers = set()
         for idx, scene in enumerate(spec.get("scenes", [])):
             narration = (scene.get("narration") or "").strip()
@@ -179,23 +190,52 @@ def main() -> int:
                 providers.add(provider)
                 if args.require_word_alignment and (provider != "edge-tts" or not word_events):
                     raise RuntimeError(f"Production word alignment required, but scene {idx} used {provider} without real word boundaries.")
+
+                # Narration must not overlap the next narration line. If a line runs
+                # beyond its storyboard beat, the next line follows its actual audio end.
+                voice_start = max(scene_start, voice_cursor)
+                clip_duration = media_duration(target)
+                if clip_duration <= 0:
+                    raise RuntimeError(f"Scene {idx} narration produced an empty audio track.")
                 for event in word_events:
-                    aligned_words.append({**event, "sceneIndex": idx, "start": round(scene_start + event["start"], 6), "end": round(scene_start + event["end"], 6)})
+                    aligned_words.append({
+                        **event,
+                        "sceneIndex": idx,
+                        "start": round(voice_start + float(event["start"]), 6),
+                        "end": round(voice_start + float(event["end"]), 6)
+                    })
                 input_args += ["-i", str(target)]
-                delay_ms = max(0, round(scene_start * 1000))
+                delay_ms = max(0, round(voice_start * 1000))
                 label = f"voice{idx}"
                 filters.append(f"[{next_input}:a]adelay={delay_ms}|{delay_ms},volume={float(audio.get('voiceVolume', 1)):.3f}[{label}]")
                 labels.append(f"[{label}]")
                 next_input += 1
                 report["voiceLines"] += 1
+                voice_cursor = voice_start + clip_duration
+                if voice_cursor > duration + 0.05:
+                    raise RuntimeError(
+                        f"Narration exceeds the {duration:.2f}s episode: scene {idx} ends at {voice_cursor:.2f}s. "
+                        "Shorten or re-time the approved narration; do not truncate speech."
+                    )
             scene_start += float(scene["durationSeconds"])
         report["voiceProvider"] = "+".join(sorted(providers)) if providers else None
         if aligned_words:
             aligned_words.sort(key=lambda item: (item["start"], item["end"]))
             previous_end = -1.0
             for item in aligned_words:
-                if item["start"] < previous_end or item["end"] <= item["start"]:
-                    raise RuntimeError(f"Invalid or overlapping word alignment near {item['text']!r}.")
+                if item["end"] <= item["start"]:
+                    raise RuntimeError(f"Invalid zero-length word alignment near {item['text']!r}.")
+                overlap = previous_end - item["start"]
+                if overlap > 0:
+                    # Correct only tiny boundary jitter; a larger overlap is a real defect.
+                    if overlap > 0.08:
+                        raise RuntimeError(
+                            f"Word alignment overlaps by {overlap:.3f}s near {item['text']!r}; "
+                            "check narration scheduling and Edge TTS boundary data."
+                        )
+                    item["start"] = round(previous_end, 6)
+                    if item["end"] <= item["start"]:
+                        raise RuntimeError(f"Word alignment collapsed while correcting boundary near {item['text']!r}.")
                 previous_end = item["end"]
             alignment_path = workdir / "word-alignments.json"
             alignment_path.write_text(json.dumps({"schemaVersion": 1, "timebase": "seconds-from-video-start", "provider": "edge-tts-word-boundary", "words": aligned_words}, indent=2), encoding="utf-8")
