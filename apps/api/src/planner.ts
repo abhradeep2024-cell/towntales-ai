@@ -5,6 +5,7 @@ export interface PlannerConfig {
   baseUrl: string;
   model: string;
   fetchImpl?: typeof fetch;
+  defaults?: {styleId?:string | null;aspectRatio?:'16:9'|'9:16'|'1:1'};
 }
 
 function stripJsonFence(value: string): string {
@@ -41,7 +42,7 @@ export async function planProductionFromSource(
           'You are the production planner for Real Factory, a generic animated-film production pipeline.',
           'Convert the supplied story/script/production Bible into one complete JSON ProductionSpec.',
           'Do not invent essential plot facts, character identities, dialogue, locations or story outcomes absent from the source. Mark material ambiguity in projectMetadata.notes.',
-          'Preserve source chronology, causality, character continuity, scene beats and stated runtime. If runtime is absent, target 60 seconds. Use 9:16, 1080x1920, 30 FPS unless source specifies otherwise.',
+          'Preserve source chronology, causality, character continuity, scene beats and stated runtime. If runtime is absent, target 60 seconds. Use requested project style and aspect-ratio defaults when supplied; otherwise use 9:16, 1080x1920, 30 FPS unless source specifies otherwise.',
           'Return schemaVersion 2, title, idea, styleId, durationSeconds, aspectRatio, fps, width, height, characters, environments, scenes and audio. Character entries need id,name,rig:block-humanoid and appearance. Environment entries need id,name,locationDescription,background,groundColor,props and continuityNotes. Every scene needs id,title,durationSeconds,visualDirection,narration,onScreenText,background,environmentId,actors,props,camera and lighting. Actor entries need characterId,position,rotationY,actions. Camera needs keyframes with atSeconds,position,target and fov. Use only supported actor action types and include targetPosition for move/look-at and targetRotationY for turn.',
           'Scene durations must sum to durationSeconds within one second. Keep narration concise enough to fit the scene timing.',
           'Create a coherent shot/scene plan in visualDirection, describing camera, environment, actor blocking, action, lighting and transition. Do not use image slideshows. For every recurring named character, define one reusable characters entry with stable id, name and rig block-humanoid; reference it from scene actors. Include at least one camera keyframe per scene so the generic 3D renderer is selected. Put appropriate actions on actors and keep every action inside its scene duration.',
@@ -49,7 +50,7 @@ export async function planProductionFromSource(
           'Use a distinct scene for each meaningful beat, up to 30 scenes. Use hex colors for backgrounds.',
           'Output valid JSON only, no Markdown.'
         ].join(' ')},
-        {role:'user',content:`SOURCE PRODUCTION BIBLE / STORY:\\n\\n${source}\\n\\nReturn a valid ProductionSpec JSON object.`}
+        {role:'user',content:`PROJECT DEFAULTS (honor unless the source explicitly overrides them):\\nstyleId: ${config.defaults?.styleId || 'choose an appropriate generic cinematic style'}\\naspectRatio: ${config.defaults?.aspectRatio || '9:16'}\\n\\nSOURCE PRODUCTION BIBLE / STORY:\\n\\n${source}\\n\\nReturn a valid ProductionSpec JSON object.`}
       ]
     }),
     signal:AbortSignal.timeout(90_000)
