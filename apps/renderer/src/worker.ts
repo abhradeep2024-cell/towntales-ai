@@ -361,6 +361,41 @@ async function runJob(job: any, serveUrl: string) {
       validatedAt: new Date().toISOString()
     };
 
+    const creativeFrames: Array<{sceneId:string;timeSeconds:number;imageBase64:string}> = [];
+    let sceneOffsetSeconds = 0;
+    for (const scene of production.scenes) {
+      const sceneFrameCount = Math.max(1,Math.round(scene.durationSeconds * production.fps));
+      const middleFrame = Math.floor((sceneFrameCount - 1) / 2);
+      const finalFrame = Math.max(0,sceneFrameCount - 1);
+      const selectedFrames = [...new Set([0,middleFrame,finalFrame])];
+      const selectExpression = selectedFrames.map(frame=>`eq(n\\,${frame})`).join('+');
+      const contactSheetPath = join(workDir,`creative-${scene.id.replace(/[^a-zA-Z0-9_-]/g,'_')}.jpg`);
+      await execFileAsync('ffmpeg',[
+        '-y','-ss',String(sceneOffsetSeconds.toFixed(3)),'-i',outputPath,
+        '-vf',`select='${selectExpression}',scale=240:-2,tile=3x1`,
+        '-frames:v','1','-q:v','9',contactSheetPath
+      ],{timeout:45_000,maxBuffer:1_000_000});
+      const contactSheet = await readFile(contactSheetPath);
+      if (!contactSheet.length || contactSheet.length > 350_000) throw new Error(`Creative QA contact sheet for scene ${scene.id} is empty or exceeds 350 KB.`);
+      creativeFrames.push({
+        sceneId:scene.id,
+        timeSeconds:sceneOffsetSeconds + scene.durationSeconds / 2,
+        imageBase64:contactSheet.toString('base64')
+      });
+      sceneOffsetSeconds += scene.durationSeconds;
+    }
+    const creativeReview = await api(`/internal/jobs/${jobId}/creative-review`,{
+      production,frames:creativeFrames,
+      technicalReport:{
+        passed:qcReport.passed,checks:qcReport.checks,
+        visualSignalAnalysis:qcReport.visualSignalAnalysis,
+        audioMode:qcReport.audioMode,
+        wordAlignmentCoverage:qcReport.checks.wordAlignmentCoverage
+      }
+    });
+    qcReport.creativeReview = creativeReview;
+    qcReport.releaseReady = creativeReview.releaseApproved === true;
+    qcReport.releaseStatus = creativeReview.status;
     const artifacts: Record<string, any> = {};
     artifacts.preview = await uploadVerifiedArtifact(objectKey.slice(0,-4) + '.preview.mp4', await readFile(previewPath), 'video/mp4');
     const manifest = {
@@ -419,19 +454,6 @@ async function runJob(job: any, serveUrl: string) {
       artifacts.wordAlignments = await uploadVerifiedArtifact(alignmentKey, alignmentBytes, 'application/json');
     }
 
-    const creativeReview = {
-      status: 'pending-human-review',
-      releaseApproved: false,
-      requiredReview: [
-        'Watch every scene in sequence and confirm the story is understandable and causally coherent.',
-        'Verify every recurring character retains the approved identity, appearance, wardrobe and proportions.',
-        'Check that actor actions, interactions, spatial continuity and camera movement match the production plan.',
-        'Inspect environments, props, lighting, transitions and visual effects for continuity defects.',
-        'Listen to narration, dialogue, music, ambience and effects on phone speakers and headphones.',
-        'Inspect caption spelling, safe areas, readability and synchronization against the final audio.'
-      ],
-      automatedReviewLimit: 'Automated technical checks cannot certify subjective creative quality or replace final visual approval.'
-    };
     const creativeKey = objectKey.replace(/\.mp4$/, '.creative-qa.json');
     artifacts.creativeQa = await uploadVerifiedArtifact(creativeKey, Buffer.from(JSON.stringify(creativeReview, null, 2)), 'application/json');
 
