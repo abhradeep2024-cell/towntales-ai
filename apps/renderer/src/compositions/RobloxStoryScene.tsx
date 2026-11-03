@@ -285,6 +285,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
   const scale = width / 360;
   const t = frame / fps;
   const smooth = (value: number) => { const v = Math.max(0, Math.min(1, value)); return v * v * (3 - 2 * v); };
+  const mix3 = (a: [number, number, number], b: [number, number, number], p: number): [number, number, number] => [a[0] + (b[0] - a[0]) * p, a[1] + (b[1] - a[1]) * p, a[2] + (b[2] - a[2]) * p];
   const localWordTime = (needle: string, fallback: number) => {
     const normalized = (value: string) => value.toLowerCase().replace(/[^a-z0-9']/g, '');
     const word = wordAlignments.find((item) => item.sceneIndex === sceneIndex && normalized(item.text) === needle);
@@ -339,9 +340,13 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
       const shake = Math.sin(t * 24) * 0.035;
       cameraPosition = [alexX + shake, 2.7 + Math.abs(shake), alexZ + 5.5 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.5];
     } else if (t < 2.1) {
-      const shake = Math.sin(t * 24) * 0.05;
-      cameraPosition = [alexX - 0.8 + shake, 2.3, alexZ + 4.2 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.1];
-    } else { cameraPosition = [-0.6, 2.1, 1.6]; cameraTarget = [-3, 1.2, -3.2]; }
+      cameraPosition = [alexX + 3.8, 2.2, alexZ + 1.8];
+      cameraTarget = [alexX, 1.1, alexZ - 0.8];
+    } else {
+      const whip = smooth((t - 2.1) / 0.22);
+      cameraPosition = mix3([alexX + 3.8, 2.2, alexZ + 1.8], [-0.6, 2.1, 1.6], whip);
+      cameraTarget = mix3([alexX, 1.1, alexZ - 0.8], [-3, 1.2, -3.2], whip);
+    }
   } else if (sceneIndex === 5) {
     if (t < cues.doubleReveal) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.7, 1.3, -3.05]; }
     else if (t < cues.alexRecoil - 0.55) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - cues.doubleReveal) / Math.max(0.5, cues.alexRecoil - cues.doubleReveal - 0.55)) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
