@@ -168,6 +168,20 @@ class WordAlignmentTests(unittest.TestCase):
                 self.assertEqual(audio.getnframes(), 48000)
                 self.assertGreater(max(abs(value) for value in audio.readframes(1000)), 0)
 
+
+    def test_effects_follow_generic_production_cues(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "cue-effects.wav"
+            make_effects(target, 2.0, [{
+                "type":"sound-effect","label":"door creak","startSeconds":0.4,
+                "durationSeconds":0.8,"gainDb":-3
+            }])
+            with wave.open(str(target), "rb") as audio:
+                self.assertEqual(audio.getnchannels(), 2)
+                self.assertEqual(audio.getframerate(), 24000)
+                frames = audio.readframes(audio.getnframes())
+            self.assertGreater(max(abs(value) for value in __import__("array").array("h", frames)), 0)
+
     def test_ass_captions_use_actual_word_timestamps_and_red_emphasis(self):
         words = [
             {"text": "shadow", "start": 0.10, "end": 0.30},
