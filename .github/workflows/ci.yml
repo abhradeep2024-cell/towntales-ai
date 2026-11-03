@@ -102,7 +102,10 @@ jobs:
             --spec apps/renderer/fixtures/episode-01-roblox.json \
             --video /tmp/towntales-episode-01-preview.mp4 \
             --output /tmp/towntales-episode-01.mp4 \
-            --workdir /tmp/towntales-episode-01-audio
+            --workdir /tmp/towntales-episode-01-audio \
+            --require-word-alignment
+          test -s /tmp/towntales-episode-01-audio/word-alignments.json
+          cp /tmp/towntales-episode-01-audio/word-alignments.json /tmp/towntales-episode-01-word-alignments.json
       - name: Validate all MP4 outputs
         run: |
           for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4 /tmp/towntales-episode-01.mp4; do
@@ -146,5 +149,6 @@ jobs:
             /tmp/film-studio-lemo-smoke.mp4
             /tmp/film-studio-lemo-art-deco.mp4
             /tmp/towntales-episode-01.mp4
+            /tmp/towntales-episode-01-word-alignments.json
           if-no-files-found: error
           retention-days: 7
