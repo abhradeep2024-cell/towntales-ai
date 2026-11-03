@@ -151,6 +151,8 @@ export const EnvironmentSchema = z.object({
   props: z.array(ScenePropSchema).max(150).default([]),
   lighting: SceneLightingSchema.optional(),
   continuityNotes: z.array(z.string().max(500)).max(30).default([])
+}).superRefine((environment,ctx) => {
+  if (environment.fog && environment.fog.far <= environment.fog.near) ctx.addIssue({code:'custom',path:['fog','far'],message:'Environment fog far distance must be greater than near distance.'});
 });
 export const ShotSchema = z.object({
   id: z.string().min(1).max(100),
