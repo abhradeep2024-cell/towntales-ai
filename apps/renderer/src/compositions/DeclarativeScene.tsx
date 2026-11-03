@@ -45,7 +45,7 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const root = useRef<THREE.Group>(null);
   const leftArm = useRef<THREE.Group>(null), rightArm = useRef<THREE.Group>(null);
   const leftLeg = useRef<THREE.Group>(null), rightLeg = useRef<THREE.Group>(null);
-  const head = useRef<THREE.Group>(null);
+  const head = useRef<THREE.Group>(null), mouth = useRef<THREE.Mesh>(null);
   const appearance = character?.appearance;
   const scale = appearance?.scale ?? 1;
   const actions = actor.actions;
@@ -56,6 +56,7 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const jump = active.find(a => a.type === 'jump');
   const recoil = active.find(a => a.type === 'recoil');
   const turn = active.find(a => a.type === 'turn');
+  const expression = active.find(a => a.type === 'expression');
   const move = [...actions].filter(a => a.type === 'move' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const moveP = move ? smooth((time-move.startSeconds)/move.durationSeconds) : 0;
   const base = actor.position;
@@ -84,23 +85,31 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
     if (leftLeg.current) leftLeg.current.rotation.x = stride;
     if (rightLeg.current) rightLeg.current.rotation.x = -stride;
     if (head.current) head.current.rotation.y = turnP * .7;
+    if (mouth.current) { const emotion = expression?.emotion ?? 'neutral'; mouth.current.scale.y = emotion === 'shock' || emotion === 'fear' ? 2.6 : emotion === 'smile' ? 0.7 : 1; }
   });
   const body = appearance?.bodyColor ?? '#2563a6';
   const skin = appearance?.skinColor ?? '#e8b58e';
   const dark = appearance?.hairColor ?? '#171717';
   const pants = appearance?.pantsColor ?? '#171a22';
   const shoes = appearance?.shoeColor ?? '#f2f2f2';
+  const castShadow = appearance?.castShadow ?? true;
+  const receiveShadow = appearance?.receiveShadow ?? true;
+  const eyeColor = appearance?.eyeColor ?? '#171717';
+  const eyeEmissiveColor = appearance?.eyeEmissiveColor ?? '#000000';
+  const eyeEmissiveIntensity = appearance?.eyeEmissiveIntensity ?? 0;
+  const mouthColor = appearance?.mouthColor ?? '#914d43';
   return <group ref={root} position={actor.position} rotation={[0,actor.rotationY,0]}>
-    <mesh position={[0,1.35,0]} castShadow><boxGeometry args={[.72,.85,.38]}/><meshStandardMaterial color={body}/></mesh>
+    <mesh position={[0,1.35,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.72,.85,.38]}/><meshStandardMaterial color={body}/></mesh>
     <group ref={head} position={[0,2.05,0]}>
-      <mesh castShadow><boxGeometry args={[.58,.58,.55]}/><meshStandardMaterial color={skin}/></mesh>
-      <mesh position={[0,.29,-.015]}><boxGeometry args={[.64,.16,.62]}/><meshStandardMaterial color={dark}/></mesh>
-      <mesh position={[-.14,.02,.28]}><boxGeometry args={[.055,.07,.02]}/><meshBasicMaterial color="#171717"/></mesh>
-      <mesh position={[.14,.02,.28]}><boxGeometry args={[.055,.07,.02]}/><meshBasicMaterial color="#171717"/></mesh>
+      <mesh castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.58,.58,.55]}/><meshStandardMaterial color={skin}/></mesh>
+      <mesh position={[0,.29,-.015]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.64,.16,.62]}/><meshStandardMaterial color={dark}/></mesh>
+      <mesh position={[-.14,.02,.28]}><boxGeometry args={[.055,.07,.02]}/><meshStandardMaterial color={eyeColor} emissive={eyeEmissiveColor} emissiveIntensity={eyeEmissiveIntensity}/></mesh>
+      <mesh ref={mouth} position={[0,-.13,.28]}><boxGeometry args={[.16,.035,.02]}/><meshStandardMaterial color={mouthColor}/></mesh>
+      <mesh position={[.14,.02,.28]}><boxGeometry args={[.055,.07,.02]}/><meshStandardMaterial color={eyeColor} emissive={eyeEmissiveColor} emissiveIntensity={eyeEmissiveIntensity}/></mesh>
     </group>
-    <group ref={leftArm} position={[-.48,1.68,0]}><mesh position={[0,-.35,0]} castShadow><boxGeometry args={[.24,.72,.27]}/><meshStandardMaterial color={body}/></mesh></group>
+    <group ref={leftArm} position={[-.48,1.68,0]}><mesh position={[0,-.35,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.24,.72,.27]}/><meshStandardMaterial color={body}/></mesh></group>
     <group ref={rightArm} position={[.48,1.68,0]}><mesh position={[0,-.35,0]} castShadow><boxGeometry args={[.24,.72,.27]}/><meshStandardMaterial color={body}/></mesh></group>
-    <group ref={leftLeg} position={[-.19,.92,0]}><mesh position={[0,-.42,0]} castShadow><boxGeometry args={[.29,.82,.32]}/><meshStandardMaterial color={pants}/></mesh><mesh position={[0,-.84,.08]}><boxGeometry args={[.32,.18,.48]}/><meshStandardMaterial color={shoes}/></mesh></group>
+    <group ref={leftLeg} position={[-.19,.92,0]}><mesh position={[0,-.42,0]} castShadow={castShadow} receiveShadow={receiveShadow}><boxGeometry args={[.29,.82,.32]}/><meshStandardMaterial color={pants}/></mesh><mesh position={[0,-.84,.08]}><boxGeometry args={[.32,.18,.48]}/><meshStandardMaterial color={shoes}/></mesh></group>
     <group ref={rightLeg} position={[.19,.92,0]}><mesh position={[0,-.42,0]} castShadow><boxGeometry args={[.29,.82,.32]}/><meshStandardMaterial color={pants}/></mesh><mesh position={[0,-.84,.08]}><boxGeometry args={[.32,.18,.48]}/><meshStandardMaterial color={shoes}/></mesh></group>
   </group>;
 }
