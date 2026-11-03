@@ -46,13 +46,13 @@ PR: [#2](https://github.com/abhradeep2024-cell/towntales-ai/pull/2) (draft; do n
 - Production contract expanded with provider-neutral assets, environments, shots, tracks, dialogue, audio cues, captions, output profiles and QA rules; validation tests cover references and timeline bounds.
 - Added a backward-compatible schema v1/v2 contract and an additive `migrateProductionSpec` function; v1 remains readable and v2 migration tests are queued in CI (commit `d65ccd0b2f37ebacbaf75f0b3473c200bdc15c93`). Do not mark Task 2 complete until this run passes.
 - Concurrency policy fix committed as `fba4dcb7438fbdaabd6e6b8e2394ba7b5bba382d`; active jobs are not cancelled by newer commits in the same concurrency group.
-- Latest head at this snapshot: `bbb6a5b21bfe27f0363e88e4966ccdb24be9ee4c`.
+- Latest head at this snapshot: `310aae5c85fe5b7c51206c3530373b6d9ef43791` (alignment audit changes pending CI).
 - Run [#41687473008](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41687473008) completed successfully on that head.
 - Its uploaded logs confirm build/type-check, unit tests, audio/caption tests, landscape and vertical smoke renders, declarative 3D, multi-scene, Lemo and Art Deco smoke renders, Episode 01 low-resolution preview, and full-resolution Episode 01 CI render all completed.
 - MP4 validation passed: 60 seconds, 1080x1920, 30 FPS, H.264 + AAC, 1,800 frames; file size 5,529,907 bytes.
 - Private Supabase MP4/JSON upload, signed downloads, byte integrity and MP4 decode passed. Artifact [film-studio-render-suite](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41687473008/artifacts/13261399627) was uploaded.
 - Earlier run [#41682336797](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41682336797) failed at the Supabase upload/retrieval verification step; the subsequent head run passed that step. Treat this as a resolved run-level failure, not proof that transient storage reliability has been fully tested.
-- Audio preparation reported 152 aligned words against 153 expected (99.35%). This discrepancy is unresolved; inspect the missing token and enforce a defined alignment-coverage gate before accepting audio/captions.
+- Audio alignment audit was strengthened: compare normalized narration tokens with actual provider word-boundary tokens, report missing/unexpected tokens, and fail production below 98% matched-token coverage. Added tests for omitted tokens and punctuation/contraction handling; renderer QA uses the same 98% gate. Commits `8a04f205`, `d171fdc2`, `310aae5c`. These changes are committed but awaiting CI validation; the earlier 152/153 report still needs the new audit to identify the exact missing token on a production run.
 - The Render API/database live health step is skipped on pull-request runs. Live Render/Supabase API health is therefore not verified by this successful run.
 - CI's Episode 01 output is a validation artifact, **not** the Stage B example-video deliverable. Stage B remains blocked until Stage A software acceptance.
 
