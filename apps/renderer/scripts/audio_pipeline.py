@@ -25,6 +25,18 @@ def run(command: list[str]) -> None:
         raise RuntimeError(f"Command failed ({completed.returncode}): {' '.join(command[:5])}\n{detail}")
 
 
+def media_dimensions(path: Path) -> tuple[int, int]:
+    completed = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "json", str(path)],
+        text=True, capture_output=True
+    )
+    if completed.returncode:
+        raise RuntimeError(f"Could not read video dimensions for {path}: {completed.stderr[-1000:]}")
+    streams = json.loads(completed.stdout).get("streams", [])
+    if not streams:
+        raise RuntimeError(f"No video stream found in {path}.")
+    return int(streams[0]["width"]), int(streams[0]["height"])
+
 def media_duration(path: Path) -> float:
     completed = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
@@ -407,8 +419,7 @@ def main() -> int:
     if args.require_word_alignment:
         if not aligned_words:
             raise RuntimeError("Word-synchronized captions cannot be generated without actual narration alignment.")
-        width = int(spec.get("width", 360))
-        height = int(spec.get("height", 640))
+        width, height = media_dimensions(video_path)
         ass_path = workdir / "word-captions.ass"
         write_word_ass(aligned_words, ass_path, width, height)
         vf_args = ["-vf", f"ass={ass_path}"]

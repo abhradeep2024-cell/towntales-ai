@@ -10,7 +10,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
@@ -97,12 +97,12 @@ jobs:
         run: npm run render:lemo:smoke
       - name: Render a new film with the native Art Deco engine modules
         run: npm run render:lemo:art-deco
-      - name: Render and mux TownTales Episode 01 preview
+      - name: Render and mux full-resolution TownTales Episode 01 master
         run: |
-          npx remotion render apps/renderer/src/index.tsx TownTalesEpisode01Preview /tmp/towntales-episode-01-preview.mp4 --log=error
+          npx remotion render apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-production-silent.mp4 --log=error
           PYTHON_EXECUTABLE=.venv/bin/python .venv/bin/python apps/renderer/scripts/audio_pipeline.py \
             --spec apps/renderer/fixtures/episode-01-roblox.json \
-            --video /tmp/towntales-episode-01-preview.mp4 \
+            --video /tmp/towntales-episode-01-production-silent.mp4 \
             --output /tmp/towntales-episode-01.mp4 \
             --workdir /tmp/towntales-episode-01-audio \
             --require-word-alignment
@@ -132,12 +132,15 @@ jobs:
           v = video[0]
           assert v.get("codec_name") == "h264", f"Expected H.264, got {v.get('codec_name')}"
           assert audio[0].get("codec_name") == "aac", f"Expected AAC, got {audio[0].get('codec_name')}"
-          assert (v.get("width"), v.get("height")) == (360, 640), f"Unexpected preview dimensions: {v.get('width')}x{v.get('height')}"
+          assert (v.get("width"), v.get("height")) == (1080, 1920), f"Unexpected master dimensions: {v.get('width')}x{v.get('height')}"
           assert v.get("r_frame_rate") == "30/1", f"Expected 30 FPS, got {v.get('r_frame_rate')}"
           duration = float(data["format"]["duration"])
           assert abs(duration - 60.0) <= 0.15, f"Expected 60s duration, got {duration}"
-          assert int(data["format"]["size"]) > 100_000, "Output file suspiciously small"
-          print("Episode 01 preview contract passed: 60s, 360x640, 30fps, H.264 + AAC")
+          size = int(data["format"]["size"])
+          assert 100_000 < size <= 50 * 1024 * 1024, f"Master output size outside private bucket limit: {size}"
+          frames = int(v.get("nb_read_frames", v.get("nb_frames", "0")))
+          assert frames == 1800, f"Expected 1800 frames, got {frames}"
+          print("Episode 01 master contract passed: 60s, 1080x1920, 30fps, H.264 + AAC, 1800 frames")
           PY
       - name: Render a full-resolution Episode 01 master frame
         run: |
