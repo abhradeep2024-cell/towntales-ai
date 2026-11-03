@@ -385,15 +385,21 @@ async function runJob(job: any, serveUrl: string) {
       });
       sceneOffsetSeconds += scene.durationSeconds;
     }
-    const creativeReview = await api(`/internal/jobs/${jobId}/creative-review`,{
-      production,frames:creativeFrames,
-      technicalReport:{
-        passed:qcReport.passed,checks:qcReport.checks,
-        visualSignalAnalysis:qcReport.visualSignalAnalysis,
-        audioMode:qcReport.audioMode,
-        wordAlignmentCoverage:qcReport.checks.wordAlignmentCoverage
-      }
-    });
+    let creativeReview: any;
+    try {
+      creativeReview = await api(`/internal/jobs/${jobId}/creative-review`,{
+        production,frames:creativeFrames,
+        technicalReport:{
+          passed:qcReport.passed,checks:qcReport.checks,
+          visualSignalAnalysis:qcReport.visualSignalAnalysis,
+          audioMode:qcReport.audioMode,
+          wordAlignmentCoverage:qcReport.checks.wordAlignmentCoverage
+        }
+      });
+    } catch (reviewError) {
+      await supabase.storage.from(bucket).remove([objectKey]).catch(()=>undefined);
+      throw reviewError;
+    }
     qcReport.creativeReview = creativeReview;
     qcReport.releaseReady = creativeReview.releaseApproved === true;
     qcReport.releaseStatus = creativeReview.status;
