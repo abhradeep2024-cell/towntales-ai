@@ -376,7 +376,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     cameraTarget = [-3, 2.1, -3.12];
   }
   const blackout = sceneIndex === 6 && t >= cues.blackout;
-  const finalCut = sceneIndex === 8 && t > 3.85;  const hideScene = blackout || finalCut;
+  const finalCut = sceneIndex === 8 && t > 3.85;
+  const hideScene = blackout || finalCut;
   return <div style={{ position: 'absolute', inset: 0, background: hideScene ? '#000' : undefined }}>
     {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
