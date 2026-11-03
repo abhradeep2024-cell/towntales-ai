@@ -125,8 +125,8 @@ def make_effects(path: Path, duration: float) -> None:
     for tick in (5.35, 6.35, 7.35, 8.35, 9.35, 10.35):
         add_event(tick, 0.075, "click", 1750, 0.10)
     add_event(8.7, 0.8, "breath", 180, 0.04)
-    for wave in range(3):
-        add_event(18.0 + wave * 0.92, 0.26, "boom", 52, 0.12)
+    for wave_index in range(3):
+        add_event(18.0 + wave_index * 0.92, 0.26, "boom", 52, 0.12)
     add_event(21.0, 1.1, "breath", 72, 0.06)
     for index in range(14):
         add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
