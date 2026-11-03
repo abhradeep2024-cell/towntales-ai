@@ -124,7 +124,7 @@ describe('declarative animation production contract', () => {
 
   it('accepts reusable environment sets with stable scene references and props', () => {
     const production = structuredClone(base);
-    production.scenes[0].environmentId = 'bedroom';
+    Object.assign(production.scenes[0], {environmentId:'bedroom'});
     Object.assign(production, {
       environments: [{
         id:'bedroom',name:'Bedroom',locationDescription:'A compact bedroom at night',
@@ -139,7 +139,7 @@ describe('declarative animation production contract', () => {
 
   it('rejects scenes that reference undeclared environments', () => {
     const invalid = structuredClone(base);
-    invalid.scenes[0].environmentId = 'missing-environment';
+    Object.assign(invalid.scenes[0], {environmentId:'missing-environment'});
     expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
   });
 
