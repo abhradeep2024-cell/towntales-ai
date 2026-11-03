@@ -24,7 +24,7 @@ export const FilmComposition: React.FC<{ production: ProductionSpec }> = ({ prod
 const Subtitle: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
-  const words = text.trim().split(/\\s+/);
+  const words = text.trim().split(/\s+/);
   const active = Math.min(words.length - 1, Math.floor(frame / Math.max(1, durationInFrames) * words.length));
   return <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '11%' }}>
     <div style={{ fontSize: 32, fontWeight: 800, textAlign: 'center', background: 'rgba(0,0,0,.76)', padding: '12px 24px', borderRadius: 12, maxWidth: '88%', textShadow: '0 2px 8px #000' }}>
