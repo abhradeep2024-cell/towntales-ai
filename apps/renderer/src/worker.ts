@@ -183,10 +183,6 @@ async function runJob(job: any, serveUrl: string) {
     const expectedFrames = Math.round(production.durationSeconds * production.fps);
     const actualFrames = Number(video.nb_read_frames ?? video.nb_frames ?? 0);
     if (!actualFrames || actualFrames !== expectedFrames) throw new Error(`Expected exactly ${expectedFrames} decoded frames, received ${actualFrames || 'unknown'}.`);
-    if (production.styleId === 'roblox-cinematic-horror' &&
-        (production.width !== 1080 || production.height !== 1920 || production.fps !== 30 || production.durationSeconds !== 60)) {
-      throw new Error('TownTales Episode 01 must render at 1080x1920, 30 FPS and 60 seconds.');
-    }
     const audioStream = streams.find((stream: any) => stream.codec_type === 'audio');
     const audioPresent = Boolean(audioStream);
     const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)));
