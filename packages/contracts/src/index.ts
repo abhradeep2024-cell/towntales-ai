@@ -81,7 +81,8 @@ export const SceneActorSchema = z.object({
 });
 export const ScenePropSchema = z.object({
   id: z.string().min(1).max(80),
-  type: z.enum(['box','sphere','cylinder','plane']),
+  type: z.enum(['box','sphere','cylinder','plane','model']),
+  assetId: z.string().min(1).max(100).optional(),
   position: Vector3Schema,
   scale: Vector3Schema.default([1,1,1]),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#777777'),
@@ -341,6 +342,14 @@ export const ProductionSpecSchema = z.preprocess((input) => {
       if (keyframe.atSeconds > scene.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['scenes',index,'camera','keyframes',keyframeIndex,'atSeconds'],message:'Camera keyframe must be within its scene.'});
     });
     if (scene.environmentId && !environmentIds.has(scene.environmentId)) ctx.addIssue({code:'custom',path:['scenes',index,'environmentId'],message:'Scene environmentId must reference a declared environment.'});
+    (scene.props ?? []).forEach((prop,propIndex) => {
+      if (prop.type === 'model' && !prop.assetId) ctx.addIssue({code:'custom',path:['scenes',index,'props',propIndex,'assetId'],message:'Model props require an assetId.'});
+      if (prop.assetId) {
+        const asset = (spec.assets ?? []).find(item => item.id === prop.assetId);
+        if (!asset) ctx.addIssue({code:'custom',path:['scenes',index,'props',propIndex,'assetId'],message:'Scene prop assetId must reference a declared asset.'});
+        else if (!['prop','environment'].includes(asset.type)) ctx.addIssue({code:'custom',path:['scenes',index,'props',propIndex,'assetId'],message:'Model props require a prop or environment asset.'});
+      }
+    });
   });
   (spec.environments ?? []).forEach((environment, index) => {
     if (environment.assetId && !assetIds.has(environment.assetId)) ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference a declared asset.'});
