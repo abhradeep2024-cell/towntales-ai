@@ -36,7 +36,7 @@ async function request(url, token, body) {
 
 try {
   const options=parseArgs(process.argv.slice(2));
-  const apiUrl=(process.env.API_BASE_URL ?? 'https://film-studio-api.onrender.com').replace(/\\/$/,'');
+  const apiUrl=(process.env.API_BASE_URL ?? 'https://film-studio-api.onrender.com').replace(/\/$/,'');
   const token=process.env.API_TOKEN;
   if (!token) throw new Error('Set API_TOKEN in the environment before submitting a production.');
   const filePath=resolve(options.file);
@@ -45,12 +45,12 @@ try {
   const bytes=await readFile(filePath);
   const intake=await request(`${apiUrl}/v1/intake`,token,{
     filename:basename(filePath),contentBase64:bytes.toString('base64'),
-    title:options.title ?? basename(filePath).replace(/\\.[^.]+$/,''),
+    title:options.title ?? basename(filePath).replace(/\.[^.]+$/,''),
     description:options.description,styleId:options.styleId,aspectRatio:options.aspectRatio
   });
   const job=await request(`${apiUrl}/v1/projects/${intake.project.id}/plan`,token,{});
-  process.stdout.write(JSON.stringify({project:intake.project,source:intake.source,job,deliveryEndpoint:`${apiUrl}/v1/jobs/${job.id}`},null,2)+'\\n');
+  process.stdout.write(JSON.stringify({project:intake.project,source:intake.source,job,deliveryEndpoint:apiUrl+'/v1/jobs/'+job.id},null,2)+'\n');
 } catch (error) {
-  process.stderr.write(`Real Factory submission failed: ${error instanceof Error ? error.message : String(error)}\\n`);
+  process.stderr.write('Real Factory submission failed: '+(error instanceof Error ? error.message : String(error))+'\n');
   process.exitCode=1;
 }
