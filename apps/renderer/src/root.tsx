@@ -77,7 +77,9 @@ export const FilmStudioRoot:React.FC = () => <>
   <Composition id="FilmStudioSmoke" component={FilmStudioSmoke} durationInFrames={150} fps={30} width={1280} height={720} />
   <Composition id="FilmStudioMultiSceneSmoke" component={FilmComposition} durationInFrames={300} fps={30} width={1280} height={720}
     defaultProps={{production:multiSceneProduction}} />
-  <Composition id="FilmStudioDeclarativeSmoke" component={FilmComposition} durationInFrames={180} fps={30} width={1280} height={720}\n    defaultProps={{production:declarativeAnimationProduction}} />\n  <Composition id="FilmStudioVerticalSmoke" component={FilmComposition} durationInFrames={150} fps={30} width={720} height={1280}
+  <Composition id="FilmStudioDeclarativeSmoke" component={FilmComposition} durationInFrames={180} fps={30} width={1280} height={720}
+    defaultProps={{production:declarativeAnimationProduction}} />
+  <Composition id="FilmStudioVerticalSmoke" component={FilmComposition} durationInFrames={150} fps={30} width={720} height={1280}
     defaultProps={{production:verticalProduction}} />
   <Composition id="TownTalesEpisode01Preview" component={FilmComposition} durationInFrames={1800} fps={30} width={360} height={640}
     defaultProps={{production:episode01Production}} />
