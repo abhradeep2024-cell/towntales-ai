@@ -169,7 +169,7 @@ export const ShotSchema = z.object({
 export const VoiceProfileSchema = z.object({
   id: z.string().min(1).max(100),
   name: z.string().min(1).max(120),
-  provider: z.enum(['edge-tts','espeak-ng']),
+  provider: z.literal('edge-tts'),
   voice: z.string().min(1).max(120),
   language: z.string().max(35).default('en'),
   rate: z.enum(['-30%','-25%','-20%','-15%','-10%','+0%','+10%','+15%','+20%','+25%','+30%']).default('+0%'),
