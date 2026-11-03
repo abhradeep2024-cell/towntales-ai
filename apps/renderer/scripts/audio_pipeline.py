@@ -177,7 +177,7 @@ def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> No
         else:
             caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H000040FF&}}{current}"
         rows.append(f"Dialogue: 0,{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{caption}")
-    path.write_text("\\n".join(header + rows) + "\\n", encoding="utf-8")
+    path.write_text("\n".join(header + rows) + "\n", encoding="utf-8")
 
 
 def write_srt(subtitles: list[dict], path: Path) -> None:
