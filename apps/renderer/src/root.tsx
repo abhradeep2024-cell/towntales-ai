@@ -35,7 +35,13 @@ const verticalProduction = {
   audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
 
-export const FilmStudioRoot:React.FC = () => <>
+const episode01ProductionFullResolution = {
+  ...episode01Production,
+  width: 1080,
+  height: 1920
+};
+
+export const FilmStudioRoot:React.FC = <>
   <Composition id="FilmStudio" component={FilmComposition} durationInFrames={150} fps={30} width={1280} height={720}
     defaultProps={{production:landscapeProduction}} />
   <Composition id="FilmStudioSmoke" component={FilmStudioSmoke} durationInFrames={150} fps={30} width={1280} height={720} />
@@ -45,4 +51,6 @@ export const FilmStudioRoot:React.FC = () => <>
     defaultProps={{production:verticalProduction}} />
   <Composition id="TownTalesEpisode01Preview" component={FilmComposition} durationInFrames={1800} fps={30} width={360} height={640}
     defaultProps={{production:episode01Production}} />
+  <Composition id="TownTalesEpisode01Production" component={FilmComposition} durationInFrames={1800} fps={30} width={1080} height={1920}
+    defaultProps={{production:episode01ProductionFullResolution}} />
 </>;
