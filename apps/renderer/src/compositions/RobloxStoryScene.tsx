@@ -28,8 +28,8 @@ function ABlock({ shadowless = false, ...props }: { position: [number, number, n
   return <Block {...props} shadowless={shadowless} />;
 }
 
-function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
-  frame: number; fps: number; kind: ActorKind; sceneIndex: number; position?: [number, number, number];
+function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }: {
+  frame: number; fps: number; kind: ActorKind; sceneIndex: number; position?: [number, number, number]; scale?: number;
 }) {
   const t = frame / fps;
   const isShadow = kind === 'shadow';
@@ -55,7 +55,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
   const shoe = isVoid ? voidMat : white;
   const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || isDouble || (kind === 'alex' && sceneIndex === 7)} />;
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
-  return <group position={position} rotation={[0, sceneIndex === 8 ? -0.35 : 0.08, 0]}>
+  return <group position={position} scale={scale} rotation={[0, sceneIndex === 8 ? -0.35 : 0.08, 0]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
       <ActorBlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, 0, headTilt]} />
@@ -166,7 +166,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
   const isBlackout = sceneIndex === 6;
   const night = sceneIndex !== 7;
   const inTown = !isBedroom;
-  const shadowWave = sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8;
+  const shadowWave = sceneIndex === 0 || sceneIndex === 3;
   const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2] : [sceneIndex === 4 ? -1.5 + (frame / fps) * 0.2 : -0.8, 0, 0.2];
   return <>
     <color attach="background" args={[scene.background]} />
@@ -178,7 +178,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, i === 1 ? 1.2 : 0.8]} />)}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={[0.95, 0, -0.1]} />}
-    {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 0.95, -3.45]} />}
+    {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.45]} scale={0.5} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
     {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
   </>;
