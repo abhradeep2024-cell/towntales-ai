@@ -245,8 +245,10 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
     : sceneIndex === 7 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 5)) * 1.4, 9.5]
     : sceneIndex === 8 ? [-2.2, 2.7, 6.1] : [0, 2.6, 9.5];
   const blackout = sceneIndex === 6 && frame / fps > 10.4;
-  return <div style={{ position: 'absolute', inset: 0, background: blackout ? '#000' : undefined }}>
-    {!blackout && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
+  const finalCut = sceneIndex === 8 && frame / fps > 3.65;
+  const hideScene = blackout || finalCut;
+  return <div style={{ position: 'absolute', inset: 0, background: hideScene ? '#000' : undefined }}>
+    {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
       onCreated={({ camera }) => { if (sceneIndex === 8) camera.lookAt(-3, 2.1, -3.12); }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
       <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} />
@@ -254,11 +256,20 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
     {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - 10.4) / 0.85) }}>
       {[0, 1].map((eye) => <div key={eye} style={{ width: 12 * scale, height: 7 * scale, borderRadius: '50%', background: '#bceaff', boxShadow: '0 0 18px 7px rgba(188,234,255,.75)' }} />)}
     </div>}
-    {sceneIndex === 1 && <div style={{ position: 'absolute', top: '16%', right: '7%', padding: `${8 * scale}px ${12 * scale}px`, border: `${2 * scale}px solid rgba(255,230,180,.8)`, borderRadius: 8 * scale, background: 'rgba(12,16,25,.82)', color: '#fff0c9', fontFamily: 'Arial', fontWeight: 900, fontSize: 23 * scale, letterSpacing: 1.5 * scale, boxShadow: '0 0 18px rgba(255,210,130,.25)' }}>
+    {scene.onScreenText?.map((line, index) => !hideScene && <div key={index} style={{
+      position: 'absolute', top: `${15 + index * 5}%`, left: '50%', transform: 'translateX(-50%)',
+      maxWidth: '88%', padding: `${6 * scale}px ${12 * scale}px`,
+      color: sceneIndex === 0 ? '#fff3d6' : '#ffffff',
+      background: sceneIndex === 0 ? 'rgba(10,14,24,.48)' : 'rgba(10,14,24,.58)',
+      borderRadius: 6 * scale, fontFamily: 'Arial', fontSize: (sceneIndex === 0 ? 23 : 18) * scale,
+      fontWeight: 900, letterSpacing: 1.4 * scale, textAlign: 'center',
+      textShadow: '0 2px 8px rgba(0,0,0,.9)', whiteSpace: 'nowrap'
+    }}>{line}</div>)}
+    {sceneIndex === 1 && !hideScene && <div style={{ position: 'absolute', top: '16%', right: '7%', padding: `${8 * scale}px ${12 * scale}px`, border: `${2 * scale}px solid rgba(255,230,180,.8)`, borderRadius: 8 * scale, background: 'rgba(12,16,25,.82)', color: '#fff0c9', fontFamily: 'Arial', fontWeight: 900, fontSize: 23 * scale, letterSpacing: 1.5 * scale, boxShadow: '0 0 18px rgba(255,210,130,.25)' }}>
       9:00 PM
     </div>}
-    <div style={{ position: 'absolute', top: '5%', left: '6%', color: 'rgba(255,255,255,.58)', fontFamily: 'Arial', fontSize: 18 * scale, letterSpacing: 5 * scale }}>
+    {!hideScene && <div style={{ position: 'absolute', top: '5%', left: '6%', color: 'rgba(255,255,255,.58)', fontFamily: 'Arial', fontSize: 18 * scale, letterSpacing: 5 * scale }}>
       TOWNTALES  /  {String(sceneIndex + 1).padStart(2, '0')}
-    </div>
+    </div>}
   </div>;
 };
