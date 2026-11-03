@@ -130,7 +130,7 @@ async function runJob(job: any, serveUrl: string) {
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
 
-    const probe = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration,size:stream=codec_type,width,height,r_frame_rate', '-of', 'json', outputPath]);
+    const probe = await execFileAsync('ffprobe', ['-v', 'error', '-count_frames', '-show_entries', 'format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames', '-of', 'json', outputPath]);
     const metadata = JSON.parse(probe.stdout);
     const bytes = (await stat(outputPath)).size;
     if (!bytes || bytes < 1000) throw new Error('Rendered MP4 is unexpectedly small.');
@@ -138,14 +138,25 @@ async function runJob(job: any, serveUrl: string) {
     await execFileAsync('ffmpeg', ['-v', 'error', '-i', outputPath, '-f', 'null', '-']);
     const duration = Number(metadata.format?.duration ?? 0);
     if (Math.abs(duration - production.durationSeconds) > 1) throw new Error(`Duration mismatch: expected ${production.durationSeconds}s, got ${duration}s.`);
-    const video = (metadata.streams ?? []).find((stream: any) => stream.codec_type === 'video');
+    const streams = metadata.streams ?? [];
+    const video = streams.find((stream: any) => stream.codec_type === 'video');
     if (!video || video.width !== production.width || video.height !== production.height) throw new Error('Video dimensions do not match the production specification.');
-    const [frameNumerator, frameDenominator] = String(video.r_frame_rate ?? '0/1').split('/').map(Number);
+    if (video.codec_name !== 'h264') throw new Error(`Expected H.264 video, received ${video.codec_name ?? 'unknown'}.`);
+    const [frameNumerator, frameDenominator] = String(video.avg_frame_rate ?? video.r_frame_rate ?? '0/1').split('/').map(Number);
     const actualFps = frameDenominator ? frameNumerator / frameDenominator : 0;
-    if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Frame rate does not match the production specification.');
-    const audioPresent = (metadata.streams ?? []).some((stream: any) => stream.codec_type === 'audio');
+    if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Average frame rate does not match the production specification.');
+    const expectedFrames = Math.round(production.durationSeconds * production.fps);
+    const actualFrames = Number(video.nb_read_frames ?? video.nb_frames ?? 0);
+    if (actualFrames && actualFrames !== expectedFrames) throw new Error(`Expected ${expectedFrames} decoded frames, received ${actualFrames}.`);
+    if (production.styleId === 'roblox-cinematic-horror' &&
+        (production.width !== 1080 || production.height !== 1920 || production.fps !== 30 || production.durationSeconds !== 60)) {
+      throw new Error('TownTales Episode 01 must render at 1080x1920, 30 FPS and 60 seconds.');
+    }
+    const audioStream = streams.find((stream: any) => stream.codec_type === 'audio');
+    const audioPresent = Boolean(audioStream);
     const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)));
     if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was found in the final MP4.');
+    if (audioRequested && audioStream.codec_name !== 'aac') throw new Error(`Expected AAC audio, received ${audioStream.codec_name ?? 'unknown'}.`);
 
     const { data: latest, error: latestError } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
     if (latestError) throw latestError;
