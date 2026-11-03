@@ -49,7 +49,12 @@ export const CharacterAppearanceSchema = z.object({
   castShadow: z.boolean().default(true),
   receiveShadow: z.boolean().default(true),
   scale: z.number().min(0.25).max(3).default(1)
-}).default({});
+}).default({
+  bodyColor: '#2563a6', skinColor: '#e8b58e', hairColor: '#171717',
+  pantsColor: '#171a22', shoeColor: '#f2f2f2', eyeColor: '#171717',
+  eyeEmissiveColor: '#000000', eyeEmissiveIntensity: 0, mouthColor: '#914d43',
+  castShadow: true, receiveShadow: true, scale: 1
+});
 export const CharacterAssetSchema = z.object({
   id: z.string().min(1).max(80),
   name: z.string().min(1).max(120),
