@@ -38,6 +38,13 @@ class WordAlignmentTests(unittest.TestCase):
         self.assertTrue(all(scene["narration"].strip() for scene in spec["scenes"]))
         self.assertAlmostEqual(sum(scene["durationSeconds"] for scene in spec["scenes"]), 60)
 
+    def test_episode_production_defaults_to_bible_master_format(self):
+        source = (Path(__file__).parent.parent / "src" / "compositions" / "episode01.ts").read_text(encoding="utf-8")
+        self.assertIn("width: 1080", source)
+        self.assertIn("height: 1920", source)
+        self.assertIn("fps: 30", source)
+        self.assertIn("durationSeconds: 60", source)
+
     def test_original_effects_render_as_stereo_24khz_audio(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "effects.wav"
