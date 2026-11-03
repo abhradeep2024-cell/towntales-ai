@@ -25,7 +25,8 @@ const Subtitle: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
   const { durationInFrames, width } = useVideoConfig();
   const scale = width / 360;
-  const words = text.trim().split(/\\s+/);
+  // Split on whitespace so the two-word karaoke window is applied to real words.
+  const words = text.trim().split(/\s+/).filter(Boolean);
   const active = Math.min(words.length - 1, Math.floor(frame / Math.max(1, durationInFrames) * words.length));
   // Keep captions to one or two words for phone readability.
   const firstVisible = Math.floor(active / 2) * 2;
