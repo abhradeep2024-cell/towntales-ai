@@ -112,8 +112,8 @@ def make_music(path: Path, duration: float, mood: str, duck_intervals: list[tupl
         wav.writeframes(samples.tobytes())
 
 
-def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, float]] | None = None, shadow_wave_start: float = 20.0, shadow_reveal_start: float = 40.5, blackout_start: float = 50.4) -> None:
-    """Create a deterministic, original suspense SFX bed aligned to Episode 01 story beats."""
+def make_effects(path: Path, duration: float, cues: list[dict] | None = None, duck_intervals: list[tuple[float, float]] | None = None) -> None:
+    """Create deterministic original effects from production-defined audio cues."""
     sr = 24000
     frame_count = max(1, int(duration * sr))
     mono = array.array("h", [0]) * frame_count
@@ -158,42 +158,36 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
                 envelope = math.sin(math.pi * min(1.0, progress)) ** 1.25
                 swept = frequency + 24 * math.sin(2 * math.pi * 3.2 * t)
                 wave_value = noise_state * 1.35 + 0.34 * math.sin(2 * math.pi * swept * t) + 0.16 * math.sin(2 * math.pi * swept * 1.51 * t)
-            else:  # filtered, low-frequency wind texture
+            else:
                 envelope = 0.7 + 0.3 * math.sin(2 * math.pi * 0.11 * t)
                 wave_value = noise_state * 1.8 + 0.18 * math.sin(2 * math.pi * frequency * t)
-            index = first + offset
             global_time = start + t
             duck_gain = 0.0 if duck_intervals and any(left <= global_time <= right for left, right in duck_intervals) else 1.0
+            index = first + offset
             value = mono[index] + int(amplitude * envelope * wave_value * duck_gain * 32767)
             mono[index] = max(-32768, min(32767, value))
 
-    add_event(0.0, min(51.0, duration), "wind", 92, 0.035)
-    add_event(0.0, 0.95, "boom", 48, 0.26)
-    add_event(1.45, 0.32, "click", 1250, 0.12)
-    for tick in (5.35, 6.35, 7.35, 8.35, 9.35, 10.35):
-        add_event(tick, 0.075, "click", 1750, 0.10)
-    add_event(8.7, 0.8, "breath", 180, 0.04)
-    for wave_index in range(3):
-        add_event(shadow_wave_start + 0.15 + wave_index * 0.6, 0.26, "boom", 52, 0.12)
-    add_event(shadow_wave_start + 1.95, 1.1, "breath", 72, 0.06)
-    for index in range(14):
-        add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
-    for breath in (26.4, 28.1, 29.7):
-        add_event(breath, 0.65, "breath", 105, 0.06)
-    add_event(30.75, 0.32, "boom", 60, 0.18)
-    add_event(31.35, 1.25, "creak", 310, 0.10)
-    for beat in range(5):
-        add_event(33.0 + beat * 0.92, 0.20, "boom", 58, 0.09)
-        add_event(33.24 + beat * 0.92, 0.16, "boom", 66, 0.075)
-    add_event(40.2, 2.4, "buzz", 60, 0.075)
-    add_event(shadow_reveal_start + 0.25, 1.35, "whisper", 92, 0.07)
-    add_event(43.0, 0.9, "breath", 145, 0.065)
-    for flicker_time in (blackout_start - 2.0, blackout_start - 1.15, blackout_start - 0.45):
-        add_event(flicker_time, 0.22, "buzz", 54, 0.07)
-    for chirp in (51.25, 52.05, 53.1, 54.0, 55.0):
-        add_event(chirp, 0.32, "bird", 1850, 0.045)
-    add_event(57.35, 1.15, "breath", 110, 0.085)
-    add_event(59.6, 0.2, "boom", 42, 0.22)
+    kind_settings = {
+        "impact": ("boom", 58), "boom": ("boom", 58),
+        "click": ("click", 1450), "footstep": ("step", 78), "step": ("step", 78),
+        "door": ("creak", 300), "creak": ("creak", 300),
+        "electric": ("buzz", 62), "buzz": ("buzz", 62),
+        "bird": ("bird", 1850), "breath": ("breath", 120),
+        "whisper": ("whisper", 95), "wind": ("wind", 92),
+    }
+    selected_cues = cues if cues is not None else [{"type":"ambience","label":"wind ambience","startSeconds":0,"durationSeconds":duration,"gainDb":-18}]
+    for cue in selected_cues:
+        cue_type = str(cue.get("type", "")).lower()
+        if cue_type not in ("ambience", "foley", "sound-effect"):
+            continue
+        label = str(cue.get("label", "")).lower()
+        match = next((settings for token, settings in kind_settings.items() if token in label), ("wind", 92) if cue_type == "ambience" else ("click", 900))
+        kind, frequency = match
+        start = max(0.0, float(cue.get("startSeconds", 0)))
+        seconds = min(float(cue.get("durationSeconds") or 0.35), max(0.0, duration - start))
+        gain_db = max(-48.0, min(12.0, float(cue.get("gainDb", -6))))
+        amplitude = 0.075 * (10 ** (gain_db / 20.0))
+        add_event(start, seconds, kind, frequency, amplitude)
 
     stereo = array.array("h")
     for sample in mono:
@@ -406,7 +400,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         voice_text = "\n\n".join(narration_lines)
         target = workdir / "voice-master.mp3"
         expected_word_count = len(re.findall(r"\b[\w]+(?:['’][\w]+)?\b", voice_text))
-        # Fit the continuous voice track inside the fixed 60-second Bible timeline.
+        # Fit the continuous voice track inside the configured production timeline.
         # Retry only with progressively faster Edge voices; retain the final attempt's
         # real word-boundary events so captions and animation remain aligned to its audio.
         voice_rate = "+10%"
@@ -438,12 +432,12 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         if clip_duration <= 0:
             raise RuntimeError("Continuous narration master produced an empty audio track.")
         if clip_duration > duration - 0.45:
-            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s even at {voice_rate}; it must finish by {duration - 0.45:.2f}s to preserve the Bible's final impact and silence. Adjust delivery without changing the approved scene timecodes.")
+            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s even at {voice_rate}; it must finish by {duration - 0.45:.2f}s to preserve the configured ending and silence. Adjust delivery without changing the approved scene timecodes.")
         for event in word_events:
             word_start = float(event["start"])
             scene_index = next((idx for idx, start, end in scene_boundaries if start <= word_start < end), None)
             if scene_index is None:
-                raise RuntimeError(f"Narration word {event['text']!r} at {word_start:.3f}s falls outside the nine-scene Bible timeline.")
+                raise RuntimeError(f"Narration word {event['text']!r} at {word_start:.3f}s falls outside the production timeline.")
             aligned_words.append({**event, "sceneIndex": scene_index, "start": round(word_start, 6), "end": round(float(event["end"]), 6)})
         providers = {provider}
         report["voiceProvider"] = provider
@@ -469,31 +463,13 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     elif require_word_alignment:
         raise RuntimeError("Production word alignment required, but no word-boundary events were captured.")
 
-    word_at = lambda scene_index, token: next((item for item in aligned_words if item.get("sceneIndex") == scene_index and str(item["text"]).strip().strip(".,!?;:").lower() == token), None)
-    waved_word = word_at(3, "waved")
-    shadow_wave_start = max(0.0, float(waved_word["start"]) - 0.25) if waved_word else 18.5
-    shadow_reveal_word = word_at(6, "shadow")
-    shadow_reveal_start = float(shadow_reveal_word["start"]) if shadow_reveal_word else 40.5
-    blackout_word = word_at(6, "out")
-    blackout_start = float(blackout_word["start"]) if blackout_word else 50.4
-    window_wave_word = word_at(8, "waving")
-    window_wave_start = max(0.0, float(window_wave_word["start"]) - 0.35) if window_wave_word else 3.0
-    if window_wave_word and float(window_wave_word["start"]) > 59.2:
-        raise RuntimeError("The final 'waving' cue lands too late to complete the window wave before the final impact and silence.")
     music_ducks: list[tuple[float, float]] = []
-    if spec.get("styleId") == "roblox-cinematic-horror":
-        music_ducks.append((max(0.0, shadow_wave_start - 0.08), shadow_wave_start + 1.8))
     effects_ducks: list[tuple[float, float]] = []
-    final_silence_start = min(duration, 59.85)
+    final_silence_start = max(0.0, duration - 0.15)
     music_ducks.append((final_silence_start, duration))
     effects_ducks.append((final_silence_start, duration))
-    except_word = word_at(7, "except")
-    if except_word:
-        me_word = next((item for item in aligned_words if item.get("sceneIndex") == 7 and str(item["text"]).strip(".,!?;:").lower() == "me" and float(item["start"]) >= float(except_word["start"])), None)
-        if me_word:
-            reveal_silence = (max(0.0, float(except_word["start"]) - 0.04), min(duration, float(me_word["end"]) + 0.35))
-            music_ducks.append(reveal_silence)
-            effects_ducks.append(reveal_silence)
+    audio_cues = spec.get("audioCues") or []
+    effect_cues = [cue for cue in audio_cues if cue.get("type") in ("ambience", "foley", "sound-effect")]
 
     tracks: list[dict] = []
     if audio.get("musicEnabled", True):
@@ -501,20 +477,16 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         make_music(music_path, duration, audio.get("musicStyle", "ambient"), music_ducks)
         tracks.append({"kind": "music", "file": music_path.name, "delayMs": 0, "volume": float(audio.get("musicVolume", 0.12)), "bytes": music_path.stat().st_size, "sha256": hashlib.sha256(music_path.read_bytes()).hexdigest()})
         report["musicGenerated"] = True
-    effects_enabled = bool(audio.get("effectsEnabled", spec.get("styleId") == "roblox-cinematic-horror"))
+    effects_enabled = bool(audio.get("effectsEnabled", effect_cues))
     if effects_enabled:
         effects_path = workdir / "effects.wav"
-        make_effects(effects_path, duration, effects_ducks, shadow_wave_start, shadow_reveal_start, blackout_start)
+        make_effects(effects_path, duration, effect_cues, effects_ducks)
         tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18, "bytes": effects_path.stat().st_size, "sha256": hashlib.sha256(effects_path.read_bytes()).hexdigest()})
         report["effectsGenerated"] = True
     tracks.extend(voice_tracks)
     report["effectsEnabled"] = effects_enabled
     report["musicDuckIntervals"] = music_ducks
     report["effectsDuckIntervals"] = effects_ducks
-    report["shadowWaveStart"] = shadow_wave_start
-    report["shadowRevealStart"] = shadow_reveal_start
-    report["blackoutStart"] = blackout_start
-    report["windowWaveStart"] = window_wave_start
     report["finalSilenceStart"] = final_silence_start
     report["subtitleTiming"] = "edge-tts-word-boundary" if aligned_words else None
     report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
