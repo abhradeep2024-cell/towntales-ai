@@ -41,7 +41,7 @@ const declarativeAnimationProduction = {
   fps: 30 as const, width: 1280, height: 720,
   characters: [{
     id: 'CHAR_QA_001', name: 'QA Actor', rig: 'block-humanoid' as const,
-    appearance: { bodyColor: '#2563a6', skinColor: '#e8b58e', hairColor: '#171717', pantsColor: '#171a22', shoeColor: '#f2f2f2', scale: 1 }
+    appearance: { bodyColor: '#2563a6', skinColor: '#e8b58e', hairColor: '#171717', pantsColor: '#171a22', shoeColor: '#f2f2f2', eyeColor: '#171717', eyeEmissiveColor: '#000000', eyeEmissiveIntensity: 0, mouthColor: '#914d43', castShadow: true, receiveShadow: true, scale: 1 }
   }],
   scenes: [{
     id: 'declarative-scene', title: 'Actor motion contract', durationSeconds: 6,
