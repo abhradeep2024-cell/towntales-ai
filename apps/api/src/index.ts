@@ -343,7 +343,7 @@ app.post('/v1/projects/:id/plan', async (request, reply) => {
     const structuredProduction = parseStructuredProductionSpec(sourceText);
     if (!structuredProduction && (!aiKey || !aiModel)) return reply.code(503).send({error:'ai_planner_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['AI_BASE_URL']});
     const projectAspectRatio = ['9:16','16:9','1:1'].includes(project.default_aspect_ratio) ? project.default_aspect_ratio as '9:16'|'16:9'|'1:1' : '9:16';
-    const production = structuredProduction ?? await planProductionFromSource(sourceText,{apiKey:aiKey,baseUrl:aiBaseUrl,model:aiModel,defaults:{styleId:project.default_style_id ?? null,aspectRatio:projectAspectRatio}});
+    const production = structuredProduction ?? await planProductionFromSource(sourceText,{apiKey:aiKey!,baseUrl:aiBaseUrl!,model:aiModel!,defaults:{styleId:project.default_style_id ?? null,aspectRatio:projectAspectRatio}});
     const validated = CreateJobSchema.safeParse({production:{
       ...production,
       projectMetadata:{...(production.projectMetadata ?? {}),projectId:id}
