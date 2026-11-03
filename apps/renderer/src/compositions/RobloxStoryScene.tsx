@@ -83,10 +83,11 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 1 || sceneIndex === 3 || sceneIndex === 8);
   // Word-aligned cues make the hand raise, independent wave and head turn land on the final narration.
   const waveStart = sceneIndex === 0 ? Math.max(0.1, cues.openingPunch - 0.2) : sceneIndex === 1 ? Math.max(0.2, cues.residentRun - 0.8) : sceneIndex === 3 ? cues.shadowWave : sceneIndex === 8 ? cues.windowWave : 0.35;
-  const waveDuration = 1.8;
+  const waveDuration = sceneIndex === 8 ? 1.2 : 1.8;
+  const waveCycles = sceneIndex === 8 ? 2 : 3;
   const wavePhase = (t - waveStart) / waveDuration;
   const waveEnvelope = wavePhase >= 0 && wavePhase <= 1 ? Math.sin(Math.PI * wavePhase) ** 2 : 0;
-  const waveArm = Math.sin(wavePhase * Math.PI * 6) * 0.62 * waveEnvelope;
+  const waveArm = Math.sin(wavePhase * Math.PI * 2 * waveCycles) * 0.62 * waveEnvelope;
   const alexRaise = Math.max(0, Math.min(1, (t - cues.alexRaise) / 0.45));
   const leftArmRotation: [number, number, number] = wave
     ? [0, 0, wavePhase >= 0 && wavePhase <= 1 ? 2.05 + waveArm : 0.04]
@@ -306,7 +307,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     blackout: Math.max(8, localWordTime('out', 10.4) - 0.1),
     morningReveal: localWordTime('except', 4.0),
     windowReveal: localWordTime('window', 1.0),
-    windowWave: Math.max(0.4, localWordTime('waving', 2.0) - 0.8)
+    windowWave: Math.max(0.4, localWordTime('waving', 4.8) - 0.5)
   };
   const alexX = sceneIndex === 4 ? -0.8 - t * 0.73 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
   const alexZ = sceneIndex === 4 ? 0.2 - t * 1.13 : 0.2;
@@ -363,12 +364,12 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     else if (t < cues.morningReveal) { cameraPosition = [0, 3.4, 7.0]; cameraTarget = [-0.8, 0.1, 0.2]; }
     else { cameraPosition = [-0.8, 0.85, 2.6]; cameraTarget = [-0.8, 0.1, 0.2]; }
   } else if (sceneIndex === 8) {
-    const push = smooth((t - cues.windowReveal) / Math.max(0.25, 3.65 - cues.windowReveal));
+    const push = smooth((t - cues.windowReveal) / Math.max(0.25, 5.4 - cues.windowReveal));
     cameraPosition = t < cues.windowReveal ? [-2.2, 2.7, 6.1] : [-2.2 - 0.4 * push, 2.7 - 0.3 * push, 6.1 - 3.6 * push];
     cameraTarget = [-3, 2.1, -3.12];
   }
   const blackout = sceneIndex === 6 && t >= cues.blackout;
-  const finalCut = sceneIndex === 8 && t > 3.85;  const hideScene = blackout || finalCut;
+  const finalCut = sceneIndex === 8 && t > 5.85;  const hideScene = blackout || finalCut;
   return <div style={{ position: 'absolute', inset: 0, background: hideScene ? '#000' : undefined }}>
     {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
