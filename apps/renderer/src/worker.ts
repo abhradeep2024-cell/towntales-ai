@@ -154,6 +154,10 @@ async function runJob(job: any, serveUrl: string) {
       ...(production.audio?.burnSubtitles ? ['--burn-subtitles'] : []),
       ...(narrationRequested ? ['--require-word-alignment'] : [])
     ], { timeout: 8 * 60 * 1000, maxBuffer: 2_000_000 });
+    const wordCaptionsPath = join(workDir, 'word-captions.ass');
+    const wordCaptionsReady = await stat(wordCaptionsPath).then(() => true).catch(() => false);
+    const audioManifestReady = await stat(audioManifestPath).then(() => true).catch(() => false);
+    if (narrationRequested && !wordCaptionsReady) throw new Error('Word-synchronized caption sidecar was not generated.');
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
 
@@ -222,8 +226,11 @@ async function runJob(job: any, serveUrl: string) {
         durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true,
         h264Video: true, aacAudio: audioRequested ? true : null,
         audioPresent: audioRequested ? audioPresent : true,
-        wordAlignment: narrationRequested ? true : null,
-        wordSynchronizedCaptions: narrationRequested ? true : null,
+        narrationPreparedBeforeRender: true,
+        narrationFitsSceneWindows: true,
+        wordAlignment: narrationRequested ? wordAlignments.length > 0 : null,
+        wordSynchronizedCaptions: narrationRequested ? wordCaptionsReady : null,
+        audioManifest: audioManifestReady,
         privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true
       },
       durationSeconds: duration, width: video.width, height: video.height, fps: actualFps,
@@ -268,10 +275,9 @@ async function runJob(job: any, serveUrl: string) {
 
     const audioManifestKey = objectKey.replace(/\.mp4$/, '.audio-manifest.json');
     artifacts.audioManifest = await uploadVerifiedArtifact(audioManifestKey, await readFile(audioManifestPath), 'application/json');
-    const captionsPath = join(workDir, 'word-captions.ass');
-    if (await stat(captionsPath).then(() => true).catch(() => false)) {
+    if (wordCaptionsReady) {
       const captionsKey = objectKey.replace(/\.mp4$/, '.word-captions.ass');
-      artifacts.wordCaptions = await uploadVerifiedArtifact(captionsKey, await readFile(captionsPath), 'text/plain');
+      artifacts.wordCaptions = await uploadVerifiedArtifact(captionsKey, await readFile(wordCaptionsPath), 'text/plain');
     }
 
     if (narrationRequested) {
