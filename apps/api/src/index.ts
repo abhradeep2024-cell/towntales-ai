@@ -238,8 +238,8 @@ app.post('/v1/intake', async (request, reply) => {
     });
   } catch (error) {
     request.log.error(error,'Production intake persistence failed');
-    if (uploadedKeys.length) await db.storage.from(bucket).remove(uploadedKeys).catch(() => undefined);
-    if (projectId) await db.from('film_studio_projects').delete().eq('id',projectId).catch(() => undefined);
+    try { if (uploadedKeys.length) await db.storage.from(bucket).remove(uploadedKeys); } catch { /* best-effort rollback */ }
+    try { if (projectId) await db.from('film_studio_projects').delete().eq('id',projectId); } catch { /* best-effort rollback */ }
     return reply.code(503).send({error:'production_intake_persistence_failed'});
   }
 });
