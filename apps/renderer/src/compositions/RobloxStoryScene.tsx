@@ -37,7 +37,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const isVoid = isShadow;
   const residentPanics = kind === 'resident' && sceneIndex === 1 && t >= 3.4;
   const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || sceneIndex === 7;
-  const running = sceneIndex === 4 || residentPanics;
+  const running = sceneIndex === 4 || sceneIndex === 7 || residentPanics;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
   const idle = Math.sin(t * 2.1) * 0.025;
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8);
@@ -52,10 +52,17 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const leftArmRotation: [number, number, number] = wave
     ? [0, 0, wavePhase >= 0 && wavePhase <= 1 ? 2.05 + waveArm : 0.04]
     : [walking ? stride * 0.45 : 0.04, 0, -0.08];
+  const dismissGesture = Math.max(0, Math.min(1, (t - 2.15) / 0.35)) * (1 - Math.max(0, Math.min(1, (t - 2.85) / 0.35)));
   const rightArmRotation: [number, number, number] = sceneIndex === 3 && kind === 'alex'
     ? [0, 0, -2.05 * alexRaise]
-    : [walking ? -stride * 0.45 : -0.04, 0, 0.08];
-  const headYaw = isShadow && sceneIndex === 3 ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72 : 0;
+    : kind === 'alex' && sceneIndex === 2
+      ? [0, 0, -0.72 * dismissGesture]
+      : [walking ? -stride * 0.45 : -0.04, 0, 0.08];
+  const headYaw = isShadow && sceneIndex === 3
+    ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72
+    : kind === 'alex' && sceneIndex === 2
+      ? (t >= 1.4 && t <= 2.5 ? -0.42 : t > 2.5 && t < 3.0 ? 0.18 : 0)
+      : 0;
   const mouthOpen = kind === 'double' && sceneIndex === 6 ? 0.085
     : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
       ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
@@ -120,8 +127,8 @@ function Town({ night = true }: { night?: boolean }) {
       <ABlock position={[0, 0.7, 0.88]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
       <ABlock position={[-0.62, 1.45, 0.89]} scale={[0.35, 0.45, 0.08]} material={material('#92b8d0')} />
     </group>)}
-    <ABlock position={[-3.7, 2.3, -1.4]} scale={[0.12, 4.6, 0.12]} material={material('#242a34')} />
-    <mesh position={[-3.7, 4.55, -1.4]}><sphereGeometry args={[0.24, 16, 16]} /><meshBasicMaterial color="#ffd58a" /></mesh>
+    <ABlock position={[-0.8, 2.3, 0.2]} scale={[0.12, 4.6, 0.12]} material={material('#242a34')} />
+    <mesh position={[-0.8, 4.55, 0.2]}><sphereGeometry args={[0.24, 16, 16]} /><meshBasicMaterial color="#ffd58a" /></mesh>
     {/* A readable 9 PM street clock, placed in the town establishing-shot sightline. */}
     <ABlock position={[3.45, 2.65, -1.55]} scale={[0.14, 3.2, 0.14]} material={material('#242a34')} />
     <mesh position={[3.45, 3.65, -1.48]} rotation={[0, 0, 0]}>
@@ -141,10 +148,10 @@ function Town({ night = true }: { night?: boolean }) {
       <meshBasicMaterial color="#171923" />
     </mesh>
     {/* Warning sign: yellow board and dark warning mark, visible from the street. */}
-    <ABlock position={[-4.1, 0.95, 1.35]} scale={[0.1, 1.9, 0.1]} material={material('#34343a')} />
-    <ABlock position={[-4.1, 1.85, 1.35]} scale={[1.05, 0.82, 0.12]} material={material('#e5b83f')} />
-    <ABlock position={[-4.1, 1.88, 1.425]} scale={[0.12, 0.43, 0.025]} material={material('#24232a')} />
-    <mesh position={[-4.1, 1.58, 1.445]}><sphereGeometry args={[0.055, 12, 12]} /><meshBasicMaterial color="#24232a" /></mesh>
+    <ABlock position={[-1.8, 0.95, 1.35]} scale={[0.1, 1.9, 0.1]} material={material('#34343a')} />
+    <ABlock position={[-1.8, 1.85, 1.35]} scale={[1.05, 0.82, 0.12]} material={material('#e5b83f')} />
+    <ABlock position={[-1.8, 1.88, 1.425]} scale={[0.12, 0.43, 0.025]} material={material('#24232a')} />
+    <mesh position={[-1.8, 1.58, 1.445]}><sphereGeometry args={[0.055, 12, 12]} /><meshBasicMaterial color="#24232a" /></mesh>
     {/* Upstairs window: a fixed landmark for the final shadow reveal. */}
     <ABlock position={[-3, 2.15, -3.18]} scale={[1.35, 1.35, 0.1]} material={material('#111827')} />
     <ABlock position={[-3, 2.15, -3.105]} scale={[1.16, 1.16, 0.035]} material={new THREE.MeshStandardMaterial({ color: '#6e8da8', roughness: 0.28, transparent: true, opacity: 0.32 })} shadowless />
@@ -185,7 +192,9 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
   const inTown = !isBedroom;
   const shadowWave = sceneIndex === 0 || sceneIndex === 3;
   const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2]
-    : sceneIndex === 4 ? [-1.5 + (frame / fps) * 0.38, 0, 0.2]
+    : sceneIndex === 7 ? [-2.8 + Math.min(1, (frame / fps) / 2.2) * 2.0, 0, 0.2]
+    : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.28, 0, 0.2]
+    : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.22, 0, 0.2]
     : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
     : [-0.8, 0, 0.2];
   return <>
@@ -193,7 +202,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <fog attach="fog" args={[scene.background, 9, 22]} />
     <ambientLight intensity={isMorning ? 1.35 : isBlackout && frame / fps > 8 ? 0.06 : 0.72} />
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-    <pointLight position={[-3.7, 4.4, -1.4]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
+    <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => {
       const residentRun = sceneIndex === 1 && i === 2 && frame / fps > 3.4;
@@ -201,13 +210,13 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
       const residentPosition: [number, number, number] = [
         x + (sceneIndex === 1 ? frame / fps * 0.12 + (residentRun ? travel * 0.55 : 0) : 0),
         0,
-        (i === 1 ? 1.2 : 0.8) - (residentRun ? travel * 0.65 : 0)
+        (i === 1 ? 1.2 : 0.8) - (residentRun ? travel * 1.2 : 0)
       ];
       return <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={residentPosition} />;
     })}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
-      position={sceneIndex === 4 ? [0.95 + (frame / fps) * 0.72, 0, -0.1] : [0.95, 0, -0.1]} />}
+      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1] : [0.95, 0, -0.1]} />}
     {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.45]} scale={0.5} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
     {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
