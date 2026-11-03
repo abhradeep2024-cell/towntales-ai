@@ -182,8 +182,8 @@ export const DialogueLineSchema = z.object({
   characterId: z.string().max(80).optional(),
   speaker: z.string().min(1).max(120),
   text: z.string().min(1).max(5000),
-  startSeconds: z.number().nonnegative().optional(),
-  endSeconds: z.number().positive().optional(),
+  startSeconds: z.number().nonnegative(),
+  endSeconds: z.number().positive(),
   voiceProfileId: z.string().max(100).optional(),
   delivery: z.string().max(500).optional()
 });
@@ -340,8 +340,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   (spec.dialogue ?? []).forEach((line, index) => {
     if (!sceneIds.has(line.sceneId)) ctx.addIssue({code:'custom',path:['dialogue',index,'sceneId'],message:'Dialogue sceneId must reference a declared scene.'});
     if (line.voiceProfileId && !voiceProfileIds.has(line.voiceProfileId)) ctx.addIssue({code:'custom',path:['dialogue',index,'voiceProfileId'],message:'Dialogue voiceProfileId must reference a declared voice profile.'});
-    if ((line.startSeconds === undefined) !== (line.endSeconds === undefined)) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing requires both startSeconds and endSeconds.'});
-    if (line.startSeconds !== undefined && line.endSeconds !== undefined && (line.endSeconds <= line.startSeconds || line.endSeconds > spec.durationSeconds + 0.001)) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing must be ordered and within the production timeline.'});
+    if (line.endSeconds <= line.startSeconds || line.endSeconds > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing must be ordered and within the production timeline.'});
   });
   (spec.audioCues ?? []).forEach((cue, index) => {
     if (!sceneIds.has(cue.sceneId)) ctx.addIssue({code:'custom',path:['audioCues',index,'sceneId'],message:'Audio cue sceneId must reference a declared scene.'});
