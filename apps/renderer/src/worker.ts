@@ -372,13 +372,13 @@ async function runJob(job: any, serveUrl: string) {
 
     const creativeFrames: Array<{sceneId:string;timeSeconds:number;imageBase64:string}> = [];
     let sceneOffsetSeconds = 0;
-    for (const scene of production.scenes) {
+    for (const [sceneIndex,scene] of production.scenes.entries()) {
       const sceneFrameCount = Math.max(1,Math.round(scene.durationSeconds * production.fps));
       const middleFrame = Math.floor((sceneFrameCount - 1) / 2);
       const finalFrame = Math.max(0,sceneFrameCount - 1);
       const selectedFrames = [...new Set([0,middleFrame,finalFrame])];
       const selectExpression = selectedFrames.map(frame=>`eq(n\\,${frame})`).join('+');
-      const contactSheetPath = join(workDir,`creative-${scene.id.replace(/[^a-zA-Z0-9_-]/g,'_')}.jpg`);
+      const contactSheetPath = join(workDir,`creative-${sceneIndex}-${scene.id.replace(/[^a-zA-Z0-9_-]/g,'_')}.jpg`);
       await execFileAsync('ffmpeg',[
         '-y','-ss',String(sceneOffsetSeconds.toFixed(3)),'-i',outputPath,
         '-vf',`select='${selectExpression}',scale=180:-2,tile=${selectedFrames.length}x1`,
@@ -413,6 +413,13 @@ async function runJob(job: any, serveUrl: string) {
     qcReport.releaseStatus = creativeReview.status;
     const artifacts: Record<string, any> = {};
     artifacts.preview = await uploadVerifiedArtifact(objectKey.slice(0,-4) + '.preview.mp4', await readFile(previewPath), 'video/mp4');
+    const creativeFrameArtifacts: Record<string,any> = {};
+    for (const [sceneIndex,frame] of creativeFrames.entries()) {
+      const safeSceneId = frame.sceneId.replace(/[^a-zA-Z0-9_-]/g,'_');
+      const framePath = join(workDir,`creative-${sceneIndex}-${safeSceneId}.jpg`);
+      creativeFrameArtifacts[frame.sceneId] = await uploadVerifiedArtifact(objectKey.slice(0,-4)+`.scene-${sceneIndex}-${safeSceneId}.qa.jpg`,await readFile(framePath),'image/jpeg');
+    }
+    artifacts.creativeFrames = creativeFrameArtifacts;
     const manifest = {
       schemaVersion: 1,
       episode: production.title,
