@@ -190,7 +190,7 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
     for chirp in (51.25, 52.05, 53.1, 54.0, 55.0):
         add_event(chirp, 0.32, "bird", 1850, 0.045)
     add_event(57.35, 1.15, "breath", 110, 0.085)
-    add_event(59.25, 0.72, "boom", 42, 0.22)
+    add_event(59.15, 0.4, "boom", 42, 0.22)
 
     stereo = array.array("h")
     for sample in mono:
@@ -406,6 +406,9 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     if spec.get("styleId") == "roblox-cinematic-horror":
         music_ducks.append((max(0.0, shadow_wave_start - 0.08), shadow_wave_start + 1.8))
     effects_ducks: list[tuple[float, float]] = []
+    final_silence_start = min(duration, 59.6)
+    music_ducks.append((final_silence_start, duration))
+    effects_ducks.append((final_silence_start, duration))
     except_word = word_at(7, "except")
     if except_word:
         me_word = next((item for item in aligned_words if item.get("sceneIndex") == 7 and str(item["text"]).strip(".,!?;:").lower() == "me" and float(item["start"]) >= float(except_word["start"])), None)
@@ -433,6 +436,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     report["shadowWaveStart"] = shadow_wave_start
     report["shadowRevealStart"] = shadow_reveal_start
     report["blackoutStart"] = blackout_start
+    report["finalSilenceStart"] = final_silence_start
     report["subtitleTiming"] = "edge-tts-word-boundary" if aligned_words else None
     report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
     manifest_path = workdir / "audio-manifest.json"
