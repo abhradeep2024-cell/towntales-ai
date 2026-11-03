@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audio_pipeline import make_effects, normalize_word_alignments, write_word_ass
+from audio_pipeline import make_effects, normalize_word_alignments, validate_word_alignment_bounds, write_word_ass
 import wave
 
 
@@ -23,6 +23,11 @@ class WordAlignmentTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(RuntimeError, "overlaps by"):
             normalize_word_alignments(words)
+
+    def test_word_events_cannot_extend_past_video_duration(self):
+        words = [{"text": "late", "start": 59.8, "end": 60.2}]
+        with self.assertRaisesRegex(RuntimeError, "outside the 60.00s video timeline"):
+            validate_word_alignment_bounds(words, 60.0)
 
     def test_zero_length_word_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "zero-length"):
