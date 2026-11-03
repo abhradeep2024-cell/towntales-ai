@@ -176,4 +176,21 @@ describe('declarative animation production contract', () => {
     expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
   });
 
+
+  it('accepts explicit immutable library asset versions', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      assets:[{id:'hero-rig',type:'rig',libraryAssetKey:'hero-rig',libraryVersion:3,required:true}]
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects incomplete reusable library asset references', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      assets:[{id:'hero-rig',type:'rig',libraryAssetKey:'hero-rig',required:true}]
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
 });
