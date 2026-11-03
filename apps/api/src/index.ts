@@ -251,7 +251,8 @@ app.post('/v1/projects/:id/plan', async (request, reply) => {
   const {id} = request.params as {id:string};
   const aiKey = env('AI_API_KEY') || env('OPENAI_API_KEY') || env('OPENROUTER_API_KEY');
   const aiModel = env('AI_MODEL');
-  const aiBaseUrl = env('AI_BASE_URL') || (env('OPENROUTER_API_KEY') ? 'https://openrouter.ai/api/v1' : 'https://api.openai.com/v1');
+  const defaultProvider = env('AI_API_KEY') || env('OPENAI_API_KEY') ? 'https://api.openai.com/v1' : 'https://openrouter.ai/api/v1';
+  const aiBaseUrl = env('AI_BASE_URL') || defaultProvider;
   if (!aiKey || !aiModel) return reply.code(503).send({error:'ai_planner_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['AI_BASE_URL']});
   try {
     const db = requireDb();
