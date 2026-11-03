@@ -132,8 +132,8 @@ function Town({ night = true, frame, fps, sceneIndex }: { night?: boolean; frame
     {[-6, -3, 3, 6].map((x, i) => <group key={x} position={[x, 0, -4.1]}>
       <ABlock position={[0, 1.1, 0]} scale={[2.2, 2.2, 1.7]} material={house} />
       <ABlock position={[0, 2.55, 0]} scale={[2.5, 0.75, 1.9]} material={material(night ? '#171d2c' : '#a65e4d')} />
-      <group position={[0, 0.7, 0.88]} rotation={[0, x === -3 ? alexHouseDoorAngle : 0, 0]}>
-        <ABlock position={[0, 0, 0]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
+      <group position={[-0.24, 0.7, 0.88]} rotation={[0, x === -3 ? alexHouseDoorAngle : 0, 0]}>
+        <ABlock position={[0.24, 0, 0]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
       </group>
       <ABlock position={[-0.62, 1.45, 0.89]} scale={[0.35, 0.45, 0.08]} material={material('#92b8d0')} />
     </group>)}
