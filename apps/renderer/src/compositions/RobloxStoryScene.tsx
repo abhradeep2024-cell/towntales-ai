@@ -6,7 +6,7 @@ import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
 type WordAlignmentCue = { text: string; start: number; end: number; sceneIndex: number; source?: string };
-type SceneCues = { openingPunch: number; residentNotice: number; residentRun: number; dismissStart: number; alexRaise: number; shadowWave: number; alexRun: number; alexTurn: number; doubleReveal: number; blackout: number; morningReveal: number; windowReveal: number; windowWave: number };
+type SceneCues = { openingPunch: number; residentNotice: number; residentRun: number; dismissStart: number; alexRaise: number; shadowWave: number; alexRun: number; alexTurn: number; doubleReveal: number; alexRecoil: number; noShadowReveal: number; blackout: number; morningReveal: number; windowReveal: number; windowWave: number };
 type ActorKind = 'alex' | 'shadow' | 'resident' | 'double';
 export const CHARACTER_IDS = {
   alex: 'CHAR_ALEX_001',
@@ -100,10 +100,11 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const headYaw = isShadow && sceneIndex === 3
     ? Math.max(0, Math.min(1, (t - (waveStart + waveDuration)) / 0.55)) * 0.72
     : kind === 'resident' && (residentNotices || residentPanics) ? -0.5
-      : kind === 'alex' && sceneIndex === 6 ? Math.max(0, Math.min(1, (t - 4) / 0.7)) * 0.85
+      : kind === 'alex' && sceneIndex === 6 ? Math.max(0, Math.min(1, (t - cues.alexTurn) / 0.7)) * 0.85
       : kind === 'alex' && sceneIndex === 2
         ? (t >= cues.dismissStart - 1.1 && t <= cues.dismissStart ? -0.42 : t > cues.dismissStart && t < cues.dismissStart + 0.4 ? 0.18 : 0)
-        : 0;
+        : kind === 'alex' && sceneIndex === 5 && t >= cues.alexRecoil ? 0.28
+          : 0;
   const mouthOpen = kind === 'double' && sceneIndex === 6 ? 0.085
     : kind === 'alex' && sceneIndex === 2 && t >= cues.dismissStart - 0.6 && t <= cues.dismissStart + 0.6 ? 0.085
       : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
@@ -117,7 +118,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const actorShadowless = isVoid || isDouble || (kind === 'alex' && sceneIndex === 7);
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : residentNotices ? 0.22 : 0;
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
-    : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
+    : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - cues.alexRecoil) / 0.65)) * 0.24 : 0;
   const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
   return <group name={CHARACTER_IDS[kind]} userData={{ characterId: CHARACTER_IDS[kind], sceneIndex }} position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : sceneIndex === 6 && kind === 'alex' ? Math.max(0, Math.min(1, (t - cues.alexTurn) / 0.8)) * 1.15 : 0.08, bodyLean]}>
     <group position={[0, 1.12 + idle, 0]}>
@@ -299,6 +300,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     alexRun: localWordTime('ran', 0.1),
     alexTurn: localWordTime('turned', 4.0),
     doubleReveal: localWordTime('inside', 1.2),
+    alexRecoil: localWordTime('exactly', 3.0),
+    noShadowReveal: localWordTime('shadow', 1.6),
     blackout: Math.max(8, localWordTime('out', 10.4) - 0.1),
     morningReveal: localWordTime('except', 4.0),
     windowReveal: localWordTime('window', 1.0),
@@ -342,11 +345,12 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     else { cameraPosition = [-0.6, 2.1, 1.6]; cameraTarget = [-3, 1.2, -3.2]; }
   } else if (sceneIndex === 5) {
     if (t < cues.doubleReveal) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.7, 1.3, -3.05]; }
-    else if (t < cues.doubleReveal + 2.0) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - cues.doubleReveal) / 2.0) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
-    else if (t < 5.0) { cameraPosition = [-1.7, 1.8, 0.9]; cameraTarget = [-1.55, 1.7, -3.05]; }
+    else if (t < cues.alexRecoil - 0.55) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - cues.doubleReveal) / Math.max(0.5, cues.alexRecoil - cues.doubleReveal - 0.55)) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
+    else if (t < cues.alexRecoil + 0.25) { cameraPosition = [-1.7, 1.8, 0.9]; cameraTarget = [-1.55, 1.7, -3.05]; }
     else { cameraPosition = [-0.8, 2.1, 3.2]; cameraTarget = [-0.8, 1.9, 0.2]; }
   } else if (sceneIndex === 6) {
-    if (t < 2.0) { cameraPosition = [-1.25, 0.65, 0.8]; cameraTarget = [-1.25, 0.1, -3.05]; }
+    if (t < cues.noShadowReveal) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.25, 1.4, -3.05]; }
+    else if (t < cues.noShadowReveal + 1.2) { cameraPosition = [-1.25, 0.65, 0.8]; cameraTarget = [-1.25, 0.1, -3.05]; }
     else if (t < cues.alexTurn) { cameraPosition = [-1.25, 2.2, 1.2]; cameraTarget = [-1.25, 2.1, -3.05]; }
     else if (t < cues.alexTurn + 2.5) { cameraPosition = [0, 2.3, 6.5]; cameraTarget = [-0.3, 1.1, 0.3]; }
     else { cameraPosition = [0, 2.8, 8.2]; cameraTarget = [-0.5, 1, 0]; }
