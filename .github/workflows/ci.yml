@@ -52,7 +52,7 @@ jobs:
           ready=0
           for attempt in $(seq 1 24); do
             if curl -fsS --max-time 12 https://film-studio-api.onrender.com/openapi.yaml -o /tmp/film-studio-openapi.yaml; then
-              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml; then
+              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs/{id}/artifacts:' /tmp/film-studio-openapi.yaml; then
                 ready=1
                 break
               fi
