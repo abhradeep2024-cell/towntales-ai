@@ -91,6 +91,11 @@ jobs:
             --workdir /tmp/film-studio-audio-test
       - name: Render three-scene timeline
         run: npm run render:smoke:multi
+      - name: Render reusable declarative 3D animation contract
+        run: |
+          npm run render:smoke:declarative
+          ffmpeg -v error -i /tmp/film-studio-declarative.mp4 -f null -
+          test -s /tmp/film-studio-declarative.mp4
       - name: Render vertical 9:16 format
         run: npm run render:smoke:vertical
       - name: Render Lemo-Opuscar project-page contract
