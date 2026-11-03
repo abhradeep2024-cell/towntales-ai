@@ -1,6 +1,6 @@
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 
-let app: typeof import('./index.js').app;
+let app: typeof import('./index.js').app | undefined;
 let previousNodeEnv: string | undefined;
 let previousApiToken: string | undefined;
 
@@ -23,7 +23,7 @@ afterAll(async () => {
 
 describe('Real Factory API authentication boundary', () => {
   it('rejects unauthenticated asset-library reads', async () => {
-    const response = await app.inject({method:'GET',url:'/v1/assets'});
+    const response = await app!.inject({method:'GET',url:'/v1/assets'});
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({error:'unauthorized'});
   });
