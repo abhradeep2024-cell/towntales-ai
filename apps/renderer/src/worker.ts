@@ -92,6 +92,9 @@ async function resolveProductionAssets(production: any, workDir: string) {
     const target = join(workDir,relativePath);
     await mkdir(dirname(target),{recursive:true});
     await writeFile(target,bytes);
+    const {data:signedAsset,error:signedAssetError} = await supabase.storage.from(bucket).createSignedUrl(record.storage_key,1800);
+    if (signedAssetError || !signedAsset?.signedUrl) throw signedAssetError ?? new Error(`Could not sign library asset ${asset.libraryAssetKey} for rendering.`);
+    asset.uri = signedAsset.signedUrl;
     asset.metadata = {
       ...(asset.metadata ?? {}),
       resolvedPath:relativePath,
