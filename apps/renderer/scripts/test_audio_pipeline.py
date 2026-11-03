@@ -3,13 +3,32 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audio_pipeline import make_effects, normalize_word_alignments, validate_word_alignment_bounds, write_word_ass, prepare_audio, mux_prepared_audio
+from audio_pipeline import make_effects, normalize_word_alignments, validate_word_alignment_bounds, write_word_ass, prepare_audio, mux_prepared_audio, compare_word_alignment_coverage
 import wave
 from unittest.mock import patch
 
 
 
 class PreparedAudioTests(unittest.TestCase):
+    def test_word_alignment_audit_reports_missing_token_without_hiding_it_in_count_ratio(self):
+        audit = compare_word_alignment_coverage(
+            "Never trust your shadow because it moves",
+            [{"text": word} for word in ["Never", "trust", "your", "shadow", "because", "moves"]]
+        )
+        self.assertEqual(audit["expectedWordCount"], 7)
+        self.assertEqual(audit["matchedWordCount"], 6)
+        self.assertEqual(audit["missingWords"], ["it"])
+        self.assertAlmostEqual(audit["coverage"], 6 / 7)
+
+    def test_word_alignment_audit_tolerates_punctuation_and_curly_apostrophes(self):
+        audit = compare_word_alignment_coverage(
+            "Don't trust your shadow, Alex!",
+            [{"text": "Don't"}, {"text": "trust"}, {"text": "your"}, {"text": "shadow,"}, {"text": "Alex!"}]
+        )
+        self.assertEqual(audit["missingWords"], [])
+        self.assertEqual(audit["unexpectedWords"], [])
+        self.assertEqual(audit["coverage"], 1.0)
+
     def test_audio_is_prepared_before_render_with_scene_relative_word_alignment_and_hashes(self):
         spec = {
             "durationSeconds": 5,
