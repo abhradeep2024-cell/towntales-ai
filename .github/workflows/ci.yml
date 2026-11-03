@@ -105,8 +105,32 @@ jobs:
           for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4 /tmp/towntales-episode-01.mp4; do
             test -s "$f"
             ffmpeg -v error -i "$f" -f null -
-            ffprobe -v error -show_entries format=duration,size:stream=codec_type,width,height,r_frame_rate -of json "$f"
+            ffprobe -v error -show_entries format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate -of json "$f"
           done
+          python - <<'PY'
+          import json, subprocess
+          path = "/tmp/towntales-episode-01.mp4"
+          raw = subprocess.check_output([
+              "ffprobe", "-v", "error", "-show_entries",
+              "format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate",
+              "-of", "json", path
+          ], text=True)
+          data = json.loads(raw)
+          streams = data.get("streams", [])
+          video = [s for s in streams if s.get("codec_type") == "video"]
+          audio = [s for s in streams if s.get("codec_type") == "audio"]
+          assert len(video) == 1, f"Expected exactly one video stream, got {len(video)}"
+          assert len(audio) >= 1, "Missing audio stream"
+          v = video[0]
+          assert v.get("codec_name") == "h264", f"Expected H.264, got {v.get('codec_name')}"
+          assert audio[0].get("codec_name") == "aac", f"Expected AAC, got {audio[0].get('codec_name')}"
+          assert (v.get("width"), v.get("height")) == (360, 640), f"Unexpected preview dimensions: {v.get('width')}x{v.get('height')}"
+          assert v.get("r_frame_rate") == "30/1", f"Expected 30 FPS, got {v.get('r_frame_rate')}"
+          duration = float(data["format"]["duration"])
+          assert abs(duration - 60.0) <= 0.15, f"Expected 60s duration, got {duration}"
+          assert int(data["format"]["size"]) > 100_000, "Output file suspiciously small"
+          print("Episode 01 preview contract passed: 60s, 360x640, 30fps, H.264 + AAC")
+          PY
       - name: Upload video test artifacts
         uses: actions/upload-artifact@v4
         with:
