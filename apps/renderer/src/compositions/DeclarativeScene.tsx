@@ -132,14 +132,17 @@ export const DeclarativeScene: React.FC<{ scene: Scene; production: ProductionSp
   const lighting = scene.lighting ?? environment?.lighting;
   const background = lighting?.background ?? environment?.background ?? scene.background;
   const groundColor = environment?.groundColor ?? '#454a52';
+  const groundSize = environment?.groundSize ?? 80;
+  const fog = environment?.fog;
   const props = [...(environment?.props ?? []), ...(scene.props ?? [])];
   return <div style={{position:'absolute',inset:0,background}}>
     <Canvas shadows dpr={1} camera={{position:[0,3,9],fov:40}} gl={{antialias:true,alpha:false,powerPreference:'high-performance'}}>
       <color attach="background" args={[background]}/>
+      {fog ? <fog attach="fog" args={[fog.color,fog.near,fog.far]}/> : null}
       <ambientLight color={lighting?.ambientColor ?? '#ffffff'} intensity={lighting?.ambientIntensity ?? 1.2}/>
       <directionalLight color={lighting?.keyColor ?? '#ffffff'} intensity={lighting?.keyIntensity ?? 2} position={lighting?.keyPosition ?? [4,8,5]} castShadow/>
       <CameraTrack scene={scene} time={time}/>
-      <mesh rotation={[-Math.PI/2,0,0]} position={[0,-.06,0]} receiveShadow><planeGeometry args={[80,80]}/><meshStandardMaterial color={groundColor}/></mesh>
+      <mesh rotation={[-Math.PI/2,0,0]} position={[0,-.06,0]} receiveShadow><planeGeometry args={[groundSize,groundSize]}/><meshStandardMaterial color={groundColor}/></mesh>
       <SceneProps props={props}/>
       {(scene.actors ?? []).map((actor,index)=><AnimatedActor key={actor.characterId+index} actor={actor} character={characters.get(actor.characterId)} time={time}/>)}
     </Canvas>
