@@ -137,7 +137,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   fps: z.union([z.literal(24), z.literal(25), z.literal(30)]).default(30),
   width: z.number().int().min(320).max(1920).default(1280),
   height: z.number().int().min(320).max(1920).default(720),
-  characters: z.array(CharacterAssetSchema).max(100).default([]),
+  characters: z.array(CharacterAssetSchema).max(100).optional(),
   scenes: z.array(SceneSchema).min(1).max(30),
   projectFiles: ProjectFilesSchema.optional(),
   subtitles: z.array(z.object({start: z.number().nonnegative(), end: z.number().positive(), text: z.string().min(1).max(500)})).max(300).default([]),
