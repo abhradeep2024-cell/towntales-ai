@@ -7,7 +7,7 @@
       "narration": "In this town, your shadow must NEVER move differently from you after sunset."
     },
     {
-      "durationSeconds": 6,
+      "durationSeconds": 8,
       "narration": "Everyone knows the rule. Because once your shadow moves on its own, it means something is coming to take your place."
     },
     {
@@ -15,11 +15,11 @@
       "narration": "My name is Alex, and I thought it was just another stupid town legend."
     },
     {
-      "durationSeconds": 7,
+      "durationSeconds": 9,
       "narration": "Until one night, at exactly 9 PM, I raised my hand. But my shadow didn’t. Instead... it waved at me."
     },
     {
-      "durationSeconds": 7,
+      "durationSeconds": 3,
       "narration": "I ran home as fast as I could."
     },
     {
@@ -27,15 +27,15 @@
       "narration": "But when I opened my bedroom door, someone was already standing inside. It looked exactly like me. Same clothes. Same face."
     },
     {
-      "durationSeconds": 12,
+      "durationSeconds": 9,
       "narration": "But something was wrong. It had no shadow. I turned around to run. And suddenly, every light in the house went out."
     },
     {
-      "durationSeconds": 5,
+      "durationSeconds": 6,
       "narration": "The next morning, I ran outside. The sun was shining. Everyone had a shadow. Except me."
     },
     {
-      "durationSeconds": 4,
+      "durationSeconds": 6,
       "narration": "Then I noticed something terrifying. My shadow was standing behind my bedroom window. And it was waving again."
     }
   ],
@@ -47,21 +47,21 @@
     },
     {
       "start": 5,
-      "end": 11,
+      "end": 13,
       "text": "Everyone knows the rule. Because once your shadow moves on its own, it means something is coming to take your place."
     },
     {
-      "start": 11,
-      "end": 17,
+      "start": 13,
+      "end": 19,
       "text": "My name is Alex, and I thought it was just another stupid town legend."
     },
     {
-      "start": 17,
-      "end": 24,
+      "start": 19,
+      "end": 28,
       "text": "Until one night, at exactly 9 PM, I raised my hand. But my shadow didn’t. Instead... it waved at me."
     },
     {
-      "start": 24,
+      "start": 28,
       "end": 31,
       "text": "I ran home as fast as I could."
     },
@@ -72,16 +72,16 @@
     },
     {
       "start": 39,
-      "end": 51,
+      "end": 48,
       "text": "But something was wrong. It had no shadow. I turned around to run. And suddenly, every light in the house went out."
     },
     {
-      "start": 51,
-      "end": 56,
+      "start": 48,
+      "end": 54,
       "text": "The next morning, I ran outside. The sun was shining. Everyone had a shadow. Except me."
     },
     {
-      "start": 56,
+      "start": 54,
       "end": 60,
       "text": "Then I noticed something terrifying. My shadow was standing behind my bedroom window. And it was waving again."
     }
