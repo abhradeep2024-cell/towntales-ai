@@ -85,7 +85,7 @@ export async function reviewProductionCreatively(
     content.push({type:'image_url',image_url:{url:`data:image/jpeg;base64,${frame.imageBase64}`,detail:'low'}});
   }
   const fetchImpl = config.fetchImpl ?? fetch;
-  const response = await fetchImpl(`${config.baseUrl.replace(/\\/$/,'')}/chat/completions`,{
+  const response = await fetchImpl(`${config.baseUrl.replace(/\/$/,'')}/chat/completions`,{
     method:'POST',
     headers:{authorization:`Bearer ${config.apiKey}`,'content-type':'application/json'},
     body:JSON.stringify({
