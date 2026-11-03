@@ -282,36 +282,63 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
   const scale = width / 360;
   const t = frame / fps;
   const smooth = (value: number) => { const v = Math.max(0, Math.min(1, value)); return v * v * (3 - 2 * v); };
+  const localWordTime = (needle: string, fallback: number) => {
+    const normalized = (value: string) => value.toLowerCase().replace(/[^a-z0-9']/g, '');
+    const word = wordAlignments.find((item) => item.sceneIndex === sceneIndex && normalized(item.text) === needle);
+    return word ? Math.max(0, word.start - sceneStartSeconds) : fallback;
+  };
+  const cues: SceneCues = {
+    openingPunch: localWordTime('never', 2.7) + 0.35,
+    residentNotice: localWordTime('shadow', 1.6),
+    residentRun: localWordTime('take', 3.4),
+    dismissStart: localWordTime('legend', 2.15),
+    alexRaise: localWordTime('raised', 0.72),
+    shadowWave: Math.max(0.2, localWordTime('waved', 3.2) - 0.25),
+    alexRun: localWordTime('ran', 0.1),
+    doubleReveal: localWordTime('inside', 1.2),
+    blackout: Math.max(8, localWordTime('out', 10.4) - 0.1),
+    morningReveal: localWordTime('except', 4.0),
+    windowReveal: localWordTime('window', 1.0),
+    windowWave: Math.max(0.4, localWordTime('waving', 2.0) - 0.15)
+  };
   const alexX = sceneIndex === 4 ? -0.8 - t * 0.28 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
   const alexZ = sceneIndex === 4 ? 0.2 - t * 0.5 : 0.2;
   let cameraPosition: [number, number, number] = [0, 2.6, 9.5];
   let cameraTarget: [number, number, number] = [0, 1, 0];
   if (sceneIndex === 0) {
-    cameraPosition = t < 2.7 ? [0, 5.5 - smooth(t / 2) * 2.8, 11 - smooth(t / 2) * 2.1] : [0.95, 2.1, 4.8];
-    cameraTarget = t < 2.7 ? [0, 1, 0] : [0.95, 1.2, -0.1];
+    cameraPosition = t < cues.openingPunch ? [0, 5.5 - smooth(t / Math.max(0.5, cues.openingPunch)) * 2.8, 11 - smooth(t / Math.max(0.5, cues.openingPunch)) * 2.1] : [0.95, 2.1, 4.8];
+    cameraTarget = t < cues.openingPunch ? [0, 1, 0] : [0.95, 1.2, -0.1];
   } else if (sceneIndex === 1) {
-    if (t < 3.2) { cameraPosition = [-0.5 + t * 0.12, 2.6, 9.5]; cameraTarget = [0, 1, 0.8]; }
-    else if (t < 4.3) { cameraPosition = [1.2, 2.1, 5.5]; cameraTarget = [1.2, 1.2, 0.8]; }
+    const reactionEnd = Math.max(cues.residentNotice + 0.8, cues.residentRun - 0.8);
+    if (t < cues.residentNotice) { cameraPosition = [-0.5 + t * 0.12, 2.6, 9.5]; cameraTarget = [0, 1, 0.8]; }
+    else if (t < reactionEnd) { cameraPosition = [1.2, 2.1, 5.5]; cameraTarget = [1.2, 1.2, 0.8]; }
     else { cameraPosition = [3.45, 3.65, 4.2]; cameraTarget = [3.45, 3.65, -1.48]; }
   } else if (sceneIndex === 2) {
-    if (t < 3.5) { cameraPosition = [alexX - 0.2, 2.6, 9.5]; cameraTarget = [alexX, 1.2, 0.2]; }
-    else if (t < 4.6) { cameraPosition = [alexX, 2.1, 4.0]; cameraTarget = [alexX, 2.0, 0.2]; }
+    const faceStart = Math.max(2.5, cues.dismissStart - 0.9);
+    if (t < faceStart) { cameraPosition = [alexX - 0.2, 2.6, 9.5]; cameraTarget = [alexX, 1.2, 0.2]; }
+    else if (t < cues.dismissStart + 0.45) { cameraPosition = [alexX, 2.1, 4.0]; cameraTarget = [alexX, 2.0, 0.2]; }
     else { cameraPosition = [-1.8, 2.0, 4.5]; cameraTarget = [-1.8, 1.85, 1.35]; }
   } else if (sceneIndex === 3) {
-    if (t < 1.1) { cameraPosition = [-0.8, 2.0, 4.5]; cameraTarget = [-0.8, 1.65, 0.2]; }
-    else if (t < 3.0) { cameraPosition = [0.95, 2.2, 4.4]; cameraTarget = [0.95, 1.3, -0.1]; }
-    else if (t < 4.0) { cameraPosition = [-0.8, 2.2, 4.0]; cameraTarget = [-0.8, 2.0, 0.2]; }
+    const shadowShot = Math.max(0.6, cues.shadowWave - 0.25);
+    const reactionShot = cues.shadowWave + 1.8;
+    const wideShot = reactionShot + 0.55;
+    if (t < shadowShot) { cameraPosition = [-0.8, 2.0, 4.5]; cameraTarget = [-0.8, 1.65, 0.2]; }
+    else if (t < reactionShot) { cameraPosition = [0.95, 2.2, 4.4]; cameraTarget = [0.95, 1.3, -0.1]; }
+    else if (t < wideShot) { cameraPosition = [-0.8, 2.2, 4.0]; cameraTarget = [-0.8, 2.0, 0.2]; }
     else { cameraPosition = [0, 2.6, 9.5]; cameraTarget = [0, 1, 0]; }
   } else if (sceneIndex === 4) {
-    if (t < 4.8) {
+    if (t < 2.4) {
       const shake = Math.sin(t * 24) * 0.035;
-      cameraPosition = [alexX + shake, 2.7 + Math.abs(shake), alexZ + 5.5 + shake];
-      cameraTarget = [alexX, 1.1, alexZ - 1.5];
+      cameraPosition = [alexX + shake, 2.7 + Math.abs(shake), alexZ + 5.5 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.5];
+    } else if (t < 4.8) {
+      const shake = Math.sin(t * 24) * 0.05;
+      cameraPosition = [alexX - 0.8 + shake, 2.3, alexZ + 4.2 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.1];
     } else if (t < 5.6) { cameraPosition = [alexX + 3.8, 2.2, alexZ + 1.8]; cameraTarget = [alexX, 1.1, alexZ - 0.8]; }
     else { cameraPosition = [-0.6, 2.1, 1.6]; cameraTarget = [-3, 1.2, -3.2]; }
   } else if (sceneIndex === 5) {
-    if (t < 1.8) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.7, 1.3, -3.05]; }
-    else if (t < 5.0) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - 1.8) / 3.2) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
+    if (t < cues.doubleReveal) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.7, 1.3, -3.05]; }
+    else if (t < cues.doubleReveal + 2.0) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - cues.doubleReveal) / 2.0) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
+    else if (t < 5.0) { cameraPosition = [-1.7, 1.8, 0.9]; cameraTarget = [-1.55, 1.7, -3.05]; }
     else { cameraPosition = [-0.8, 2.1, 3.2]; cameraTarget = [-0.8, 1.9, 0.2]; }
   } else if (sceneIndex === 6) {
     if (t < 2.0) { cameraPosition = [-1.25, 0.65, 0.8]; cameraTarget = [-1.25, 0.1, -3.05]; }
@@ -320,23 +347,22 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     else { cameraPosition = [0, 2.8, 8.2]; cameraTarget = [-0.5, 1, 0]; }
   } else if (sceneIndex === 7) {
     if (t < 1.6) { cameraPosition = [0, 2.5, 9.5]; cameraTarget = [0, 1, 0]; }
-    else if (t < 3.8) { cameraPosition = [0, 3.4, 7.0]; cameraTarget = [-0.8, 0.1, 0.2]; }
+    else if (t < cues.morningReveal) { cameraPosition = [0, 3.4, 7.0]; cameraTarget = [-0.8, 0.1, 0.2]; }
     else { cameraPosition = [-0.8, 0.85, 2.6]; cameraTarget = [-0.8, 0.1, 0.2]; }
   } else if (sceneIndex === 8) {
-    const push = smooth((t - 1.5) / 2.15);
-    cameraPosition = t < 1.5 ? [-2.2, 2.7, 6.1] : [-2.2 - 0.4 * push, 2.7 - 0.3 * push, 6.1 - 3.6 * push];
+    const push = smooth((t - cues.windowReveal) / Math.max(0.25, 3.65 - cues.windowReveal));
+    cameraPosition = t < cues.windowReveal ? [-2.2, 2.7, 6.1] : [-2.2 - 0.4 * push, 2.7 - 0.3 * push, 6.1 - 3.6 * push];
     cameraTarget = [-3, 2.1, -3.12];
   }
-  const blackout = sceneIndex === 6 && frame / fps > 10.4;
-  const finalCut = sceneIndex === 8 && frame / fps > 3.65;
-  const hideScene = blackout || finalCut;
+  const blackout = sceneIndex === 6 && t >= cues.blackout;
+  const finalCut = sceneIndex === 8 && t > 3.85;  const hideScene = blackout || finalCut;
   return <div style={{ position: 'absolute', inset: 0, background: hideScene ? '#000' : undefined }}>
     {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
       <CameraRig position={cameraPosition} target={cameraTarget} />
-      <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} wordAlignments={wordAlignments} sceneStartSeconds={sceneStartSeconds} />
+      <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} wordAlignments={wordAlignments} sceneStartSeconds={sceneStartSeconds} cues={cues} />
     </Canvas>}
-    {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - 10.4) / 0.85) }}>
+    {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - cues.blackout) / 0.85) }}>
       {[0, 1].map((eye) => <div key={eye} style={{ width: 12 * scale, height: 7 * scale, borderRadius: '50%', background: '#bceaff', boxShadow: '0 0 18px 7px rgba(188,234,255,.75)' }} />)}
     </div>}
     {scene.onScreenText?.map((line, index) => !hideScene && <div key={index} style={{
