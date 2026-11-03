@@ -236,7 +236,7 @@ function Bedroom({ frame, fps, blackout = false, blackoutStart = 10.4 }: { frame
   </group>;
 }
 
-function World({ scene, sceneIndex, frame, fps, wordAlignments, sceneStartSeconds, cues }: { scene: Scene; sceneIndex: number; frame: number; fps: number; wordAlignments: WordAlignmentCue[]; sceneStartSeconds: number; cues: SceneCues }) {
+function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneIndex: number; frame: number; fps: number; cues: SceneCues }) {
   const isMorning = sceneIndex === 7;
   const isBedroom = sceneIndex === 5 || sceneIndex === 6;
   const isBlackout = sceneIndex === 6;
@@ -365,7 +365,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
       <CameraRig position={cameraPosition} target={cameraTarget} />
-      <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} wordAlignments={wordAlignments} sceneStartSeconds={sceneStartSeconds} cues={cues} />
+      <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} cues={cues} />
     </Canvas>}
     {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - cues.blackout) / 0.85) }}>
       {[0, 1].map((eye) => <div key={eye} style={{ width: 12 * scale, height: 7 * scale, borderRadius: '50%', background: '#bceaff', boxShadow: '0 0 18px 7px rgba(188,234,255,.75)' }} />)}
