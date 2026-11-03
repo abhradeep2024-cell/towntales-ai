@@ -142,6 +142,8 @@ export const EnvironmentSchema = z.object({
   atmosphere: z.string().max(1000).optional(),
   background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
   groundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#454a52'),
+  groundSize: z.number().min(10).max(500).default(80),
+  fog: z.object({color:z.string().regex(/^#[0-9a-fA-F]{6}$/),near:z.number().min(0).max(500),far:z.number().positive().max(1000)}).optional(),
   props: z.array(ScenePropSchema).max(150).default([]),
   lighting: SceneLightingSchema.optional(),
   continuityNotes: z.array(z.string().max(500)).max(30).default([])
