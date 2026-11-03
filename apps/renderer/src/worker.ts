@@ -375,6 +375,17 @@ async function runJob(job: any, serveUrl: string) {
         environmentId: scene.environmentId ?? null, actors: scene.actors ?? [], props: scene.props ?? [],
         camera: scene.camera ?? null, lighting: scene.lighting ?? null, background: scene.background
       })),
+      assets: (production.assets ?? []).map((asset) => {
+        const runtimeAsset = (runtimeProduction.assets ?? []).find((item:any) => item.id === asset.id);
+        const metadata = runtimeAsset?.metadata ?? {};
+        return {
+          id:asset.id,type:asset.type,libraryAssetKey:asset.libraryAssetKey ?? null,
+          libraryVersion:asset.libraryVersion ?? null,
+          resolutionStatus:metadata.resolutionStatus ?? (asset.uri ? 'external-uri-not-fetched' : 'not-resolved'),
+          resolvedMimeType:metadata.resolvedMimeType ?? null,
+          sha256:metadata.resolvedSha256 ?? null
+        };
+      }),
       characters: (production.characters ?? []).map((character) => ({
         id: character.id, name: character.name, rig: character.rig,
         appearance: character.appearance, assetStatus: 'resolved-from-production-manifest'
