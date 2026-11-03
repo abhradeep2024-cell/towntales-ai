@@ -201,12 +201,12 @@ def make_effects(path: Path, duration: float, cues: list[dict] | None = None, du
         wav.writeframes(stereo.tobytes())
 
 
-async def make_edge_voice(text: str, voice: str, target: Path, rate: str = "+0%") -> list[dict]:
+async def make_edge_voice(text: str, voice: str, target: Path, rate: str = "+0%", pitch: str = "+0Hz", volume: str = "+0%") -> list[dict]:
     """Stream Edge TTS audio and retain its genuine word-boundary timestamps."""
     import edge_tts
 
     words: list[dict] = []
-    communicate = edge_tts.Communicate(text, voice=voice, rate=rate, volume="+0%", pitch="+0Hz", boundary="WordBoundary")
+    communicate = edge_tts.Communicate(text, voice=voice, rate=rate, volume=volume, pitch=pitch, boundary="WordBoundary")
     with target.open("wb") as audio_file:
         async for chunk in communicate.stream():
             if chunk.get("type") == "audio":
@@ -224,9 +224,9 @@ async def make_edge_voice(text: str, voice: str, target: Path, rate: str = "+0%"
     return words
 
 
-def make_voice(text: str, voice: str, target: Path, rate: str = "+0%") -> tuple[str, list[dict]]:
+def make_voice(text: str, voice: str, target: Path, rate: str = "+0%", pitch: str = "+0Hz", volume: str = "+0%") -> tuple[str, list[dict]]:
     try:
-        words = asyncio.run(make_edge_voice(text, voice, target, rate))
+        words = asyncio.run(make_edge_voice(text, voice, target, rate, pitch, volume))
         if target.exists() and target.stat().st_size > 500 and words:
             return "edge-tts", words
         raise RuntimeError("Edge TTS returned audio without usable word-boundary events.")
