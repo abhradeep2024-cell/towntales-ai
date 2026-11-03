@@ -10,7 +10,7 @@ import { planProductionFromSource } from './planner.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const app = Fastify({logger: true, bodyLimit: 8_000_000});
+export const app = Fastify({logger: true, bodyLimit: 8_000_000});
 const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
@@ -519,4 +519,6 @@ app.get('/v1/jobs/:id/output', async (request, reply) => {
 });
 
 const port = Number(env('PORT') ?? 8080);
-app.listen({host:'0.0.0.0',port}).catch((error) => {app.log.error(error);process.exit(1);});
+if (env('NODE_ENV') !== 'test') {
+  app.listen({host:'0.0.0.0',port}).catch((error) => {app.log.error(error);process.exit(1);});
+}
