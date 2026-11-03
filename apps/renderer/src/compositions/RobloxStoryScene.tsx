@@ -302,7 +302,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     blackout: Math.max(8, localWordTime('out', 10.4) - 0.1),
     morningReveal: localWordTime('except', 4.0),
     windowReveal: localWordTime('window', 1.0),
-    windowWave: Math.max(0.4, localWordTime('waving', 2.0) - 0.15)
+    windowWave: Math.max(0.4, localWordTime('waving', 2.0) - 0.8)
   };
   const alexX = sceneIndex === 4 ? -0.8 - t * 0.28 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
   const alexZ = sceneIndex === 4 ? 0.2 - t * 0.5 : 0.2;
