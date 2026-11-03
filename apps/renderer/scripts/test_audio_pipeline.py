@@ -2,7 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audio_pipeline import make_effects, normalize_word_alignments, write_word_ass\nimport wave
+from audio_pipeline import make_effects, normalize_word_alignments, write_word_ass
+import wave
 
 
 class WordAlignmentTests(unittest.TestCase):
