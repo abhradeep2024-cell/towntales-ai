@@ -161,7 +161,7 @@ async function runJob(job: any, serveUrl: string) {
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
 
-    const probe = await execFileAsync('ffprobe', ['-v', 'error', '-count_frames', '-show_entries', 'format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames', '-of', 'json', outputPath]);
+    const probe = await execFileAsync('ffprobe', ['-v', 'error', '-count_frames', '-show_entries', 'format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames,duration,start_time', '-of', 'json', outputPath]);
     const metadata = JSON.parse(probe.stdout);
     const bytes = (await stat(outputPath)).size;
     if (!bytes || bytes < 1000) throw new Error('Rendered MP4 is unexpectedly small.');
