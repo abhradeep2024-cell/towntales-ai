@@ -71,7 +71,7 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   useFrame(() => {
     if (!root.current) return;
     root.current.position.set(mix(base[0],target[0],moveP), base[1] + jumpP * (jump?.intensity ?? 1) * 1.6, mix(base[2],target[2],moveP));
-    root.current.rotation.set(0, actor.rotationY + (turnP * (turn?.targetRotationY ?? actor.rotationY) - actor.rotationY), recoilP * .18);
+    root.current.rotation.set(0, mix(actor.rotationY, turn?.targetRotationY ?? actor.rotationY, turnP), recoilP * .18);
     root.current.scale.setScalar(scale * opacity);
     if (leftArm.current) leftArm.current.rotation.z = armSide === 'left' || armSide === 'both' ? armAngle : stride;
     if (rightArm.current) rightArm.current.rotation.z = armSide === 'right' || armSide === 'both' ? -armAngle : -stride;
@@ -113,7 +113,7 @@ function SceneProps({ scene }: { scene: Scene }) {
 export const DeclarativeScene: React.FC<{ scene: Scene; production: ProductionSpec }> = ({ scene, production }) => {
   const frame = useCurrentFrame(), { fps } = useVideoConfig();
   const time = frame / fps;
-  const characters = useMemo(() => new Map(production.characters.map(c => [c.id,c])), [production.characters]);
+  const characters = useMemo(() => new Map((production.characters ?? []).map(c => [c.id,c])), [production.characters]);
   const lighting = scene.lighting;
   const background = lighting?.background ?? scene.background;
   return <div style={{position:'absolute',inset:0,background}}>
