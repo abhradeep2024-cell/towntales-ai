@@ -270,11 +270,26 @@ components:
         durationSeconds: { type: number, exclusiveMinimum: 0, maximum: 90 }
         narration: { type: string, maxLength: 5000 }
         visualDirection: { type: string, maxLength: 4000 }
+        environmentId: { type: string, maxLength: 100 }
         onScreenText:
           type: array
           maxItems: 20
           items: { type: string, maxLength: 300 }
         background: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+    Environment:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        assetId: { type: string }
+        locationDescription: { type: string }
+        timeOfDay: { type: string }
+        weather: { type: string }
+        atmosphere: { type: string }
+        background: { type: string }
+        groundColor: { type: string }
+        continuityNotes: { type: array, items: { type: string } }
     ProductionSpec:
       type: object
       required: [schemaVersion, title, idea, styleId, durationSeconds, aspectRatio, scenes]
@@ -299,6 +314,14 @@ components:
             Must contain index.html implementing window.DUR, window.render(t), and window.READY.
             Use only local text files; keep the total below 1.8 MB. No remote scripts or assets.
           additionalProperties: { type: string }
+        environments:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/Environment' }
+        characters:
+          type: array
+          maxItems: 100
+          items: { type: object, required: [id, name, rig], properties: { id: { type: string }, name: { type: string }, rig: { type: string } } }
         scenes:
           type: array
           minItems: 1
