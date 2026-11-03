@@ -173,6 +173,7 @@ function Town({ night = true, frame, fps, sceneIndex, cues }: { night?: boolean;
   const doorClose = sceneIndex === 4 ? Math.max(0, Math.min(1, (seconds - doorCloseAt) / 0.22)) : 0;
   const alexHouseDoorAngle = sceneIndex === 4 ? -1.05 * doorOpen * (1 - doorClose) : 0;
   return <group>
+    {sceneIndex === 0 && <mesh position={[7.4, 3.1, -8]}><sphereGeometry args={[1.05, 24, 24]} /><meshBasicMaterial color="#e7a05d" /></mesh>}
     <ABlock position={[0, -0.18, 0]} scale={[18, 0.35, 10]} material={road} />
     {[-6, -3, 3, 6].map((x, i) => <group key={x} position={[x, 0, -4.1]}>
       <ABlock position={[0, 1.1, 0]} scale={[2.2, 2.2, 1.7]} material={house} />
