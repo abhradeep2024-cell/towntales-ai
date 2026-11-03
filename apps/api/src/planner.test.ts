@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {planProductionFromSource} from './planner.js';
+import {parseStructuredProductionSpec,planProductionFromSource} from './planner.js';
 
 const validPlan = {
   schemaVersion:2,title:'Test Story',idea:'A short test story',styleId:'cinematic-roblox',
@@ -14,6 +14,16 @@ const config = (content:unknown, status=200) => ({
 });
 
 describe('AI production planner', () => {
+
+  it('accepts a complete ProductionSpec JSON without an AI provider call', () => {
+    expect(parseStructuredProductionSpec(JSON.stringify(validPlan))?.title).toBe('Test Story');
+    expect(parseStructuredProductionSpec(JSON.stringify({production:validPlan}))?.title).toBe('Test Story');
+  });
+
+  it('does not mistake a JSON story brief for a complete ProductionSpec', () => {
+    expect(parseStructuredProductionSpec(JSON.stringify({title:'Story brief',beats:['begin','turn','end']}))).toBeNull();
+    expect(parseStructuredProductionSpec('{broken')).toBeNull();
+  });
   it('requests a structured plan and validates the returned manifest', async () => {
     const cfg=config(validPlan);
     const result=await planProductionFromSource('A character enters a room.',cfg);
