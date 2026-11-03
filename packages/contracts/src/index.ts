@@ -156,6 +156,37 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   if (spec.aspectRatio === '9:16' && spec.width >= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '9:16 output requires portrait dimensions.'});
   if (spec.aspectRatio === '16:9' && spec.width <= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '16:9 output requires landscape dimensions.'});
   if (spec.aspectRatio === '1:1' && spec.width !== spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '1:1 output requires equal dimensions.'});
+  const characterIds = new Set((spec.characters ?? []).map(character => character.id));
+  if (characterIds.size !== (spec.characters ?? []).length) {
+    ctx.addIssue({code:'custom',path:['characters'],message:'Character IDs must be unique within a production.'});
+  }
+  spec.scenes.forEach((scene, sceneIndex) => {
+    scene.actors.forEach((actor, actorIndex) => {
+      if (!characterIds.has(actor.characterId)) {
+        ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'characterId'],message:'Every scene actor must reference a declared reusable character asset.'});
+      }
+      actor.actions.forEach((action, actionIndex) => {
+        if (action.startSeconds + action.durationSeconds > scene.durationSeconds + 0.001) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex],message:'Actor actions must finish within their scene timeline.'});
+        }
+        if (action.type === 'move' && !action.targetPosition) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Move actions require a targetPosition.'});
+        }
+        if (action.type === 'turn' && action.targetRotationY === undefined) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetRotationY'],message:'Turn actions require targetRotationY.'});
+        }
+      });
+    });
+    const cameraKeys = scene.camera?.keyframes ?? [];
+    for (let i = 0; i < cameraKeys.length; i++) {
+      if (cameraKeys[i].atSeconds > scene.durationSeconds) {
+        ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'camera','keyframes',i,'atSeconds'],message:'Camera keyframes must fall within the scene timeline.'});
+      }
+      if (i > 0 && cameraKeys[i].atSeconds <= cameraKeys[i-1].atSeconds) {
+        ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'camera','keyframes',i,'atSeconds'],message:'Camera keyframes must be strictly chronological.'});
+      }
+    }
+  });
 }));
 
 export const CreateJobSchema = z.object({production: ProductionSpecSchema});
