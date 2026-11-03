@@ -2,6 +2,7 @@ import React from 'react';
 import {Composition} from 'remotion';
 import {FilmComposition} from './compositions/FilmComposition';
 import {FilmStudioSmoke} from './compositions/FilmStudioSmoke';
+import {episode01Production} from './compositions/episode01';
 
 const landscapeProduction = {
   schemaVersion: 1 as const, title: 'Film Studio', idea: 'Smoke render', styleId: 'swiss-motion',
@@ -42,4 +43,6 @@ export const FilmStudioRoot:React.FC = () => <>
     defaultProps={{production:multiSceneProduction}} />
   <Composition id="FilmStudioVerticalSmoke" component={FilmComposition} durationInFrames={150} fps={30} width={720} height={1280}
     defaultProps={{production:verticalProduction}} />
+  <Composition id="TownTalesEpisode01Preview" component={FilmComposition} durationInFrames={1800} fps={30} width={360} height={640}
+    defaultProps={{production:episode01Production}} />
 </>;

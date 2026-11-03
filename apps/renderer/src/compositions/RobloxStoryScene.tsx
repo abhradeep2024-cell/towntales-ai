@@ -34,7 +34,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
   const t = frame / fps;
   const isShadow = kind === 'shadow';
   const isDouble = kind === 'double';
-  const isVoid = isShadow || isDouble;
+  const isVoid = isShadow;
   const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || sceneIndex === 7;
   const running = sceneIndex === 4;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
@@ -47,7 +47,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
   const trousers = isVoid ? voidMat : black;
   const face = isVoid ? voidMat : skin;
   const shoe = isVoid ? voidMat : white;
-  const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || (kind === 'alex' && sceneIndex === 7)} />;
+  const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || isDouble || (kind === 'alex' && sceneIndex === 7)} />;
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
   return <group position={position} rotation={[0, sceneIndex === 8 ? -0.35 : 0.08, 0]}>
     <group position={[0, 1.12 + idle, 0]}>
