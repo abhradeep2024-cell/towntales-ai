@@ -276,7 +276,7 @@ function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneInd
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
       position={sceneIndex === 4 ? [0.95 - (frame / fps) * 1.4, 0, -0.1 - (frame / fps) * 1.1] : [0.95, 0, -0.1]} cues={cues} />}
     {sceneIndex === 1 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={1} position={[1.72, 0, 0.35]} scale={0.78} cues={cues} />}
-    {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.13]} scale={0.5} cues={cues} />}
+    {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.35]} scale={0.5} cues={cues} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - cues.doubleReveal) / 2.2)) * 0.45, 0, -3.05]} cues={cues} />}
     {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} cues={cues} />}
   </>;
