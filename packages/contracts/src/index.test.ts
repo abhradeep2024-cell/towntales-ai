@@ -41,6 +41,7 @@ describe('declarative animation production contract', () => {
       environments: [{ id: 'bedroom', name: 'Alex bedroom', assetId: 'bedroom-set', locationDescription: 'A small bedroom at dawn' }],
       shots: [{ id: 'shot-1', sceneId: 'scene-1', title: 'Wide reveal', startSeconds: 0, durationSeconds: 6, assetIds: ['bedroom-set'], transitionIn: 'cut', transitionOut: 'fade' }],
       tracks: [{ id: 'camera-main', name: 'Main camera', kind: 'camera', targetId: 'scene-1' }],
+      voiceProfiles: [{id:'alex-en',name:'Alex Voice',provider:'edge-tts',voice:'en-US-AriaNeural'}],
       dialogue: [{ id: 'line-1', sceneId: 'scene-1', characterId: 'ALEX', speaker: 'Alex', text: 'Did you see that?', startSeconds: 1, endSeconds: 2.5, voiceProfileId: 'alex-en' }],
       audioCues: [{ id: 'cue-1', sceneId: 'scene-1', type: 'sound-effect', assetId: 'bedroom-set', label: 'Door creak', startSeconds: 2, durationSeconds: 1, fadeInSeconds: 0.1, fadeOutSeconds: 0.2 }],
       captionCues: [{ id: 'caption-1', sceneId: 'scene-1', text: 'Did you see that?', startSeconds: 1, endSeconds: 2.5, kind: 'dialogue', speaker: 'Alex' }],
@@ -200,6 +201,25 @@ describe('declarative animation production contract', () => {
       environments:[{id:'small-set',name:'Small set',groundSize:5}]
     });
     expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
+
+  it('rejects dialogue lines that reference undeclared voice profiles', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      dialogue:[{id:'line-voice',sceneId:'scene-1',speaker:'Alex',text:'Hello',voiceProfileId:'missing-voice'}],
+      voiceProfiles:[]
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+  it('accepts reusable voice profiles with bounded delivery presets', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      voiceProfiles:[{id:'narrator',name:'Narrator',provider:'edge-tts',voice:'en-US-AriaNeural',rate:'+10%',pitch:'+0Hz',volume:'+0%'}],
+      dialogue:[{id:'line-voice',sceneId:'scene-1',speaker:'Narrator',text:'A new story begins.',voiceProfileId:'narrator',startSeconds:1,endSeconds:3}]
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
   });
 
 });
