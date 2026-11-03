@@ -294,8 +294,8 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   uniqueIds(spec.audioCues ?? [], 'audioCues');
   uniqueIds(spec.captionCues ?? [], 'captionCues');
   const sceneIds = new Set(spec.scenes.map(scene => scene.id));
+  const characterIds = new Set((spec.characters ?? []).map(character => character.id));
   const assetIds = new Set((spec.assets ?? []).map(asset => asset.id));
-  const environmentIds = new Set((spec.environments ?? []).map(environment => environment.id));
   (spec.environments ?? []).forEach((environment, index) => {
     if (environment.assetId && !assetIds.has(environment.assetId)) ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference a declared asset.'});
   });
@@ -329,7 +329,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
     if (profile.width / profile.height !== spec.width / spec.height) ctx.addIssue({code:'custom',path:['outputProfiles',index],message:'Output profile aspect ratio must match the production aspect ratio.'});
   });
 
-  const characterIds = new Set((spec.characters ?? []).map(character => character.id));
+
   if (characterIds.size !== (spec.characters ?? []).length) {
     ctx.addIssue({code:'custom',path:['characters'],message:'Character IDs must be unique within a production.'});
   }
