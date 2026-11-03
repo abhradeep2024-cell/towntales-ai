@@ -163,12 +163,14 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   </group>;
 }
 
-function Town({ night = true, frame, fps, sceneIndex }: { night?: boolean; frame: number; fps: number; sceneIndex: number }) {
+function Town({ night = true, frame, fps, sceneIndex, cues }: { night?: boolean; frame: number; fps: number; sceneIndex: number; cues: SceneCues }) {
   const house = material(night ? '#33415b' : '#e8c9a0');
   const road = material(night ? '#202735' : '#6d747b');
   const seconds = frame / fps;
-  const doorOpen = Math.max(0, Math.min(1, (seconds - 1.85) / 0.5));
-  const doorClose = Math.max(0, Math.min(1, (seconds - 2.75) / 0.18));
+  const doorOpenAt = cues.alexRun + 1.0;
+  const doorCloseAt = cues.alexRun + 2.15;
+  const doorOpen = sceneIndex === 4 ? Math.max(0, Math.min(1, (seconds - doorOpenAt) / 0.45)) : 0;
+  const doorClose = sceneIndex === 4 ? Math.max(0, Math.min(1, (seconds - doorCloseAt) / 0.22)) : 0;
   const alexHouseDoorAngle = sceneIndex === 4 ? -1.05 * doorOpen * (1 - doorClose) : 0;
   return <group>
     <ABlock position={[0, -0.18, 0]} scale={[18, 0.35, 10]} material={road} />
@@ -259,7 +261,7 @@ function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneInd
     <ambientLight intensity={isMorning ? 1.35 : blackoutApproach ? 0.06 : 0.72} />
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : blackoutApproach ? 0.05 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
-    {inTown ? <Town night={night} frame={frame} fps={fps} sceneIndex={sceneIndex} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} blackoutStart={cues.blackout} />}
+    {inTown ? <Town night={night} frame={frame} fps={fps} sceneIndex={sceneIndex} cues={cues} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} blackoutStart={cues.blackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-1.2, 0, 1.2].map((x, i) => {
       const residentRun = sceneIndex === 1 && i === 2 && frame / fps >= cues.residentRun;
       const travel = Math.max(0, frame / fps - cues.residentRun);
