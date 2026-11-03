@@ -107,7 +107,10 @@ export async function reviewProductionCreatively(
   const review = ModelReviewSchema.parse(parsed);
   const critical = review.findings.some(item=>item.severity==='critical');
   const high = review.findings.some(item=>item.severity==='high');
-  const status = critical || review.overallScore < 65 ? 'fail' : review.overallScore < 85 || high ? 'needs_repair' : 'pass';
+  const dimensionScores = [review.storyCoherenceScore,review.visualContinuityScore,review.compositionScore,review.performanceScore,review.captionScore,review.audioPlanScore];
+  const severeWeakness = dimensionScores.some(score=>score < 60);
+  const belowStandard = dimensionScores.some(score=>score < 75);
+  const status = critical || severeWeakness || review.overallScore < 65 ? 'fail' : review.overallScore < 85 || high || belowStandard ? 'needs_repair' : 'pass';
   return {
     ...review,
     status,
