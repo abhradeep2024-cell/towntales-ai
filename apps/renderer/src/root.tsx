@@ -2,7 +2,6 @@ import React from 'react';
 import {Composition} from 'remotion';
 import {FilmComposition} from './compositions/FilmComposition';
 import {FilmStudioSmoke} from './compositions/FilmStudioSmoke';
-import {episode01Production} from './compositions/episode01';
 
 const landscapeProduction = {
   schemaVersion: 1 as const, title: 'Film Studio', idea: 'Smoke render', styleId: 'swiss-motion',
@@ -65,11 +64,7 @@ const declarativeAnimationProduction = {
   subtitles: [], audio: { musicEnabled: false, voiceEnabled: false, burnSubtitles: false, voice: 'en-US-AriaNeural', musicVolume: 0.12, voiceVolume: 1, musicStyle: 'ambient' as const }
 };
 
-const episode01ProductionFullResolution = {
-  ...episode01Production,
-  width: 1080,
-  height: 1920
-};
+
 
 export const FilmStudioRoot:React.FC = () => <>
   <Composition id="FilmStudio" component={FilmComposition} durationInFrames={150} fps={30} width={1280} height={720}
@@ -81,8 +76,4 @@ export const FilmStudioRoot:React.FC = () => <>
     defaultProps={{production:declarativeAnimationProduction}} />
   <Composition id="FilmStudioVerticalSmoke" component={FilmComposition} durationInFrames={150} fps={30} width={720} height={1280}
     defaultProps={{production:verticalProduction}} />
-  <Composition id="TownTalesEpisode01Preview" component={FilmComposition} durationInFrames={1800} fps={30} width={360} height={640}
-    defaultProps={{production:episode01Production}} />
-  <Composition id="TownTalesEpisode01Production" component={FilmComposition} durationInFrames={1800} fps={30} width={1080} height={1920}
-    defaultProps={{production:episode01ProductionFullResolution}} />
 </>;
