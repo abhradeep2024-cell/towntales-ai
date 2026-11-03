@@ -58,7 +58,9 @@ export const CharacterAppearanceSchema = z.object({
 export const CharacterAssetSchema = z.object({
   id: z.string().min(1).max(80),
   name: z.string().min(1).max(120),
-  rig: z.enum(['block-humanoid']).default('block-humanoid'),
+  rig: z.enum(['block-humanoid','gltf-humanoid']).default('block-humanoid'),
+  assetId: z.string().min(1).max(100).optional(),
+  animationMap: z.record(z.string(),z.string().min(1).max(120)).optional(),
   appearance: CharacterAppearanceSchema
 });
 export const ActorActionSchema = z.object({
@@ -327,6 +329,14 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   const assetIds = new Set((spec.assets ?? []).map(asset => asset.id));
   let sceneTimelineCursor = 0;
   const sceneWindows = new Map<string,{start:number;end:number}>();
+  (spec.characters ?? []).forEach((character,index) => {
+    if (character.rig === 'gltf-humanoid' && !character.assetId) ctx.addIssue({code:'custom',path:['characters',index,'assetId'],message:'GLTF humanoid characters require a rig assetId.'});
+    if (character.assetId) {
+      const asset = (spec.assets ?? []).find(item => item.id === character.assetId);
+      if (!asset) ctx.addIssue({code:'custom',path:['characters',index,'assetId'],message:'Character assetId must reference a declared asset.'});
+      else if (!['rig','character'].includes(asset.type)) ctx.addIssue({code:'custom',path:['characters',index,'assetId'],message:'GLTF humanoid characters require a rig or character asset.'});
+    }
+  });
   spec.scenes.forEach((scene,index) => {
     sceneWindows.set(scene.id,{start:sceneTimelineCursor,end:sceneTimelineCursor + scene.durationSeconds});
     sceneTimelineCursor += scene.durationSeconds;
