@@ -307,6 +307,7 @@ async function runJob(job: any, serveUrl: string) {
       decodedFrames: actualFrames || expectedFrames, bytes,
       sha256: createHash('sha256').update(file).digest('hex'),
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
+      preview: {width:previewProduction.width,height:previewProduction.height,fps:previewProduction.fps,durationSeconds:previewDuration,bytes:previewBytes},
       visualSignalAnalysis: {blackSegments, frozenSegments, warningCount:blackSegments.length + frozenSegments.length},
       audioVideoDurationDeltaSeconds: audioRequested ? audioVideoDurationDelta : null,
       audioMode: {
