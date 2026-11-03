@@ -11,7 +11,7 @@
     "dev:renderer": "npm --workspace apps/renderer run dev",
     "build": "npm --workspace packages/contracts run build && npm run build --workspaces --if-present",
     "typecheck": "npm --workspace packages/contracts run typecheck && npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && python3 -m unittest discover -s apps/renderer/scripts -p 'test_*.py'",
     "render:smoke": "npm --workspace apps/renderer run render:smoke",
     "render:smoke:multi": "remotion render apps/renderer/src/index.tsx FilmStudioMultiSceneSmoke /tmp/film-studio-multi-scene.mp4 --log=error",
     "render:smoke:vertical": "remotion render apps/renderer/src/index.tsx FilmStudioVerticalSmoke /tmp/film-studio-vertical.mp4 --log=error",
