@@ -35,19 +35,26 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const isShadow = kind === 'shadow';
   const isDouble = kind === 'double';
   const isVoid = isShadow;
+  const residentPanics = kind === 'resident' && sceneIndex === 1 && t >= 3.4;
   const walking = sceneIndex === 1 || sceneIndex === 2 || sceneIndex === 4 || sceneIndex === 7;
-  const running = sceneIndex === 4;
+  const running = sceneIndex === 4 || residentPanics;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
   const idle = Math.sin(t * 2.1) * 0.025;
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8);
-  // Three deliberate, finite wave cycles; the envelope eases the arm in and out.
-  const waveStart = 0.35;
+  // In the incident, Alex raises his right arm first. Shadow Alex waits, then
+  // performs three complete left-arm waves and finally turns toward him.
+  const waveStart = sceneIndex === 3 ? 1.15 : 0.35;
   const waveDuration = 1.8;
   const wavePhase = (t - waveStart) / waveDuration;
   const waveEnvelope = wavePhase >= 0 && wavePhase <= 1 ? Math.sin(Math.PI * wavePhase) ** 2 : 0;
   const waveArm = Math.sin(wavePhase * Math.PI * 6) * 0.62 * waveEnvelope;
+  const alexRaise = Math.max(0, Math.min(1, t / 0.72));
   const armLeft = wave ? waveArm : (walking ? stride * 0.45 : 0.04);
-  const armRight = sceneIndex === 3 && kind === 'alex' ? -1.05 : (walking ? -stride * 0.45 : -0.04);
+  const armRight = sceneIndex === 3 && kind === 'alex' ? -1.05 * alexRaise : (walking ? -stride * 0.45 : -0.04);
+  const headYaw = isShadow && sceneIndex === 3 ? Math.max(0, Math.min(1, (t - 3.05) / 0.55)) * 0.72 : 0;
+  const mouthOpen = kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
+    ? Math.max(0.035, Math.min(0.12, 0.035 + Math.sin(t * 5) * 0.025 + (sceneIndex === 3 ? alexRaise * 0.045 : 0.025)))
+    : 0.035;
   const leg = walking ? stride * (running ? 0.62 : 0.4) : 0.025;
   const torso = isVoid ? voidMat : kind === 'resident' ? material('#64845b') : hoodie;
   const trousers = isVoid ? voidMat : black;
@@ -55,17 +62,17 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const shoe = isVoid ? voidMat : white;
   const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || isDouble || (kind === 'alex' && sceneIndex === 7)} />;
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
-  return <group position={position} scale={scale} rotation={[0, sceneIndex === 8 ? -0.35 : 0.08, 0]}>
+  return <group position={position} scale={scale} rotation={[0, sceneIndex === 8 ? -0.55 : 0.08, kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
-      <ActorBlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, 0, headTilt]} />
+      <ActorBlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
       {!isVoid && <>
         <ActorBlock position={[0, 1.02, -0.02]} scale={[0.63, 0.16, 0.62]} material={hair} />
         <ActorBlock position={[-0.22, 1.08, 0.02]} scale={[0.2, 0.19, 0.52]} material={hair} rotation={[0, 0, -0.22]} />
         <ActorBlock position={[0.12, 1.1, -0.03]} scale={[0.22, 0.2, 0.5]} material={hair} rotation={[0, 0, 0.25]} />
         <ActorBlock position={[-0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
         <ActorBlock position={[0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
-        <ActorBlock position={[0, 0.59, 0.27]} scale={[0.16, 0.035, 0.02]} material={material('#914d43')} />
+        <ActorBlock position={[0, 0.59, 0.27]} scale={[0.16, mouthOpen, 0.02]} material={material('#914d43')} />
         <ActorBlock position={[0, 0.22, -0.25]} scale={[0.42, 0.44, 0.18]} material={hoodie} />
       </>}
       {isShadow && <>
@@ -167,7 +174,10 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
   const night = sceneIndex !== 7;
   const inTown = !isBedroom;
   const shadowWave = sceneIndex === 0 || sceneIndex === 3;
-  const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2] : [sceneIndex === 4 ? -1.5 + (frame / fps) * 0.2 : -0.8, 0, 0.2];
+  const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2]
+    : sceneIndex === 4 ? [-1.5 + (frame / fps) * 0.38, 0, 0.2]
+    : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
+    : [-0.8, 0, 0.2];
   return <>
     <color attach="background" args={[scene.background]} />
     <fog attach="fog" args={[scene.background, 9, 22]} />
@@ -175,9 +185,19 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-3.7, 4.4, -1.4]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
-    {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, i === 1 ? 1.2 : 0.8]} />)}
+    {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => {
+      const residentRun = sceneIndex === 1 && i === 2 && frame / fps > 3.4;
+      const travel = Math.max(0, frame / fps - 3.4);
+      const residentPosition: [number, number, number] = [
+        x + (sceneIndex === 1 ? frame / fps * 0.12 + (residentRun ? travel * 0.55 : 0) : 0),
+        0,
+        (i === 1 ? 1.2 : 0.8) - (residentRun ? travel * 0.65 : 0)
+      ];
+      return <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={residentPosition} />;
+    })}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
-    {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={[0.95, 0, -0.1]} />}
+    {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
+      position={sceneIndex === 4 ? [0.95 + (frame / fps) * 0.72, 0, -0.1] : [0.95, 0, -0.1]} />}
     {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.45]} scale={0.5} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
     {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
@@ -192,12 +212,18 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
   const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 3.5 - push * 1.1, 11 - push * 2.1]
     : sceneIndex === 4 ? [0, 2.5, 9 - push * 1.3]
     : sceneIndex === 5 || sceneIndex === 6 ? [0, 2.2, 8.2 - push * 0.8]
-    : sceneIndex === 8 ? [0, 2.4, 10 - push * 1.4] : [0, 2.6, 9.5];
+    : sceneIndex === 7 ? [0, 3.5 - Math.min(1, frame / Math.max(1, fps * 5)) * 1.45, 9.5]
+    : sceneIndex === 8 ? [-2.2, 2.7, 6.1] : [0, 2.6, 9.5];
   const blackout = sceneIndex === 6 && frame / fps > 10.4;
   return <div style={{ position: 'absolute', inset: 0, background: blackout ? '#000' : undefined }}>
-    {!blackout && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: 34 }} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
+    {!blackout && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
+      onCreated={({ camera }) => { if (sceneIndex === 8) camera.lookAt(-3, 2.1, -3.12); }}
+      gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
       <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} />
     </Canvas>}
+    {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - 10.4) / 0.85) }}>
+      {[0, 1].map((eye) => <div key={eye} style={{ width: 12 * scale, height: 7 * scale, borderRadius: '50%', background: '#bceaff', boxShadow: '0 0 18px 7px rgba(188,234,255,.75)' }} />)}
+    </div>}
     <div style={{ position: 'absolute', top: '5%', left: '6%', color: 'rgba(255,255,255,.58)', fontFamily: 'Arial', fontSize: 18 * scale, letterSpacing: 5 * scale }}>
       TOWNTALES  /  {String(sceneIndex + 1).padStart(2, '0')}
     </div>
