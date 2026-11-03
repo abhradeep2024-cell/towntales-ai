@@ -60,6 +60,42 @@ class PreparedAudioTests(unittest.TestCase):
             self.assertEqual([word["sceneIndex"] for word in json.loads((Path(directory) / "word-alignments.json").read_text())["words"]], [0, 0, 1, 1])
             self.assertTrue(all(track["sha256"] and track["bytes"] > 100 for track in manifest["tracks"]))
 
+    def test_character_dialogue_uses_voice_profile_and_absolute_word_timing(self):
+        spec = {
+            "durationSeconds": 5,
+            "scenes": [{"id":"scene-1","durationSeconds":5,"narration":""}],
+            "dialogue": [{
+                "id":"line-1","sceneId":"scene-1","characterId":"ALEX","speaker":"Alex",
+                "text":"We should leave now.","startSeconds":1.0,"endSeconds":4.0,"voiceProfileId":"alex-voice"
+            }],
+            "voiceProfiles": [{
+                "id":"alex-voice","name":"Alex","provider":"edge-tts","voice":"en-US-GuyNeural",
+                "rate":"+10%","pitch":"+0Hz","volume":"+0%"
+            }],
+            "subtitles": [],
+            "audio": {"musicEnabled":False,"voiceEnabled":True,"effectsEnabled":False,"voiceVolume":1}
+        }
+        def fake_voice(text, voice, target, rate="+0%", pitch="+0Hz", volume="+0%"):
+            target.write_bytes(b"dialogue-track-" * 80)
+            return "edge-tts", [
+                {"text":"We","start":0.1,"end":0.2},
+                {"text":"should","start":0.25,"end":0.5},
+                {"text":"leave","start":0.55,"end":0.8},
+                {"text":"now.","start":0.9,"end":1.2}
+            ]
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("audio_pipeline.make_voice", side_effect=fake_voice) as voice_mock, patch("audio_pipeline.media_duration", return_value=2.0):
+                manifest = prepare_audio(spec, Path(directory), require_word_alignment=True)
+            self.assertEqual(voice_mock.call_args.kwargs["voice"], "en-US-GuyNeural")
+            self.assertEqual(voice_mock.call_args.kwargs["pitch"], "+0Hz")
+            self.assertEqual(manifest["tracks"][0]["kind"], "dialogue")
+            self.assertEqual(manifest["tracks"][0]["delayMs"], 1000)
+            self.assertEqual(manifest["tracks"][0]["speaker"], "Alex")
+            words = json.loads((Path(directory) / "word-alignments.json").read_text())["words"]
+            self.assertEqual(words[0]["start"], 1.1)
+            self.assertEqual(words[-1]["end"], 2.2)
+            self.assertEqual(manifest["report"]["wordAlignmentAudit"]["coverage"], 1.0)
+
     def test_episode_narration_retries_at_faster_rates_until_it_fits(self):
         spec = {
             "durationSeconds": 60,
