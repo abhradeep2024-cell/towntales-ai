@@ -120,6 +120,12 @@ jobs:
             --reuse-prepared --require-word-alignment
           ffmpeg -v error -i /tmp/towntales-episode-01-preview.mp4 -f null -
           ffprobe -v error -show_entries format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate -of json /tmp/towntales-episode-01-preview.mp4
+      - name: Create the nine-scene low-resolution preview contact sheet
+        run: |
+          ffmpeg -y -v error -i /tmp/towntales-episode-01-preview.mp4 \
+            -vf "select='eq(n,75)+eq(n,240)+eq(n,420)+eq(n,615)+eq(n,825)+eq(n,1050)+eq(n,1350)+eq(n,1605)+eq(n,1740)',scale=180:320,tile=3x3" \
+            -vsync 0 -frames:v 1 /tmp/towntales-episode-01-preview-contact-sheet.jpg
+          test -s /tmp/towntales-episode-01-preview-contact-sheet.jpg
       - name: Render and mux full-resolution TownTales Episode 01 master using the same prepared narration
         working-directory: apps/renderer
         run: |
@@ -209,6 +215,7 @@ jobs:
             /tmp/film-studio-lemo-smoke.mp4
             /tmp/film-studio-lemo-art-deco.mp4
             /tmp/towntales-episode-01-preview.mp4
+            /tmp/towntales-episode-01-preview-contact-sheet.jpg
             /tmp/towntales-episode-01.mp4
             /tmp/towntales-episode-01-word-alignments.json
             /tmp/towntales-episode-01-audio/audio-manifest.json
