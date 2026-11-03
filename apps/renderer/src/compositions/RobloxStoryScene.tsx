@@ -6,7 +6,7 @@ import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
 type WordAlignmentCue = { text: string; start: number; end: number; sceneIndex: number; source?: string };
-type SceneCues = { openingPunch: number; residentNotice: number; residentRun: number; dismissStart: number; alexRaise: number; shadowWave: number; alexRun: number; doubleReveal: number; blackout: number; morningReveal: number; windowReveal: number; windowWave: number };
+type SceneCues = { openingPunch: number; residentNotice: number; residentRun: number; dismissStart: number; alexRaise: number; shadowWave: number; alexRun: number; alexTurn: number; doubleReveal: number; blackout: number; morningReveal: number; windowReveal: number; windowWave: number };
 type ActorKind = 'alex' | 'shadow' | 'resident' | 'double';
 export const CHARACTER_IDS = {
   alex: 'CHAR_ALEX_001',
@@ -75,7 +75,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const residentWitness = kind === 'resident' && sceneIndex === 1 && position[0] > 0.9;
   const residentNotices = residentWitness && t >= cues.residentNotice && t < cues.residentRun;
   const residentPanics = residentWitness && t >= cues.residentRun;
-  const alexFleesBedroom = sceneIndex === 6 && kind === 'alex' && t >= 4;
+  const alexFleesBedroom = sceneIndex === 6 && kind === 'alex' && t >= cues.alexTurn;
   const walking = (sceneIndex === 1 && (!residentWitness || (!residentNotices && !residentPanics))) || sceneIndex === 2 || sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || alexFleesBedroom;
   const running = sceneIndex === 4 || (sceneIndex === 7 && kind === 'alex') || residentPanics || alexFleesBedroom;
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
@@ -118,7 +118,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
     : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
   const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
-  return <group name={CHARACTER_IDS[kind]} userData={{ characterId: CHARACTER_IDS[kind], sceneIndex }} position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : sceneIndex === 6 && kind === 'alex' ? Math.max(0, Math.min(1, (t - 4) / 0.8)) * 1.15 : 0.08, bodyLean]}>
+  return <group name={CHARACTER_IDS[kind]} userData={{ characterId: CHARACTER_IDS[kind], sceneIndex }} position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : sceneIndex === 6 && kind === 'alex' ? Math.max(0, Math.min(1, (t - cues.alexTurn) / 0.8)) * 1.15 : 0.08, bodyLean]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock shadowless={actorShadowless} position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
       <ActorBlock shadowless={actorShadowless} position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
@@ -239,23 +239,24 @@ function World({ scene, sceneIndex, frame, fps, wordAlignments, sceneStartSecond
   const isMorning = sceneIndex === 7;
   const isBedroom = sceneIndex === 5 || sceneIndex === 6;
   const isBlackout = sceneIndex === 6;
+  const blackoutApproach = isBlackout && frame / fps > cues.blackout - 2.2;
   const night = sceneIndex !== 7;
   const inTown = !isBedroom;
   const shadowWave = sceneIndex === 0 || sceneIndex === 3;
   const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2]
     : sceneIndex === 7 ? [-2.8 + Math.min(1, (frame / fps) / 2.2) * 2.0, 0, 0.2]
     : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.28, 0, 0.2 - (frame / fps) * 0.5]
-    : sceneIndex === 6 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 4) / 2)) * 0.65, 0, 0.2 + Math.max(0, Math.min(1, (frame / fps - 4) / 2)) * 0.3]
+     : sceneIndex === 6 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - cues.alexTurn) / 2)) * 0.65, 0, 0.2 + Math.max(0, Math.min(1, (frame / fps - cues.alexTurn) / 2)) * 0.3]
     : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.22, 0, 0.2]
     : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
     : [-0.8, 0, 0.2];
   return <>
     <color attach="background" args={[scene.background]} />
     <fog attach="fog" args={[scene.background, 9, 22]} />
-    <ambientLight intensity={isMorning ? 1.35 : isBlackout && frame / fps > 8 ? 0.06 : 0.72} />
-    <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : isBlackout && frame / fps > 8 ? 0.05 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
+    <ambientLight intensity={isMorning ? 1.35 : blackoutApproach ? 0.06 : 0.72} />
+    <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : blackoutApproach ? 0.05 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
-    {inTown ? <Town night={night} frame={frame} fps={fps} sceneIndex={sceneIndex} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
+    {inTown ? <Town night={night} frame={frame} fps={fps} sceneIndex={sceneIndex} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} blackoutStart={cues.blackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-1.2, 0, 1.2].map((x, i) => {
       const residentRun = sceneIndex === 1 && i === 2 && frame / fps >= cues.residentRun;
       const travel = Math.max(0, frame / fps - cues.residentRun);
@@ -295,6 +296,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     alexRaise: localWordTime('raised', 0.72),
     shadowWave: Math.max(0.2, localWordTime('waved', 3.2) - 0.25),
     alexRun: localWordTime('ran', 0.1),
+    alexTurn: localWordTime('turned', 4.0),
     doubleReveal: localWordTime('inside', 1.2),
     blackout: Math.max(8, localWordTime('out', 10.4) - 0.1),
     morningReveal: localWordTime('except', 4.0),
@@ -342,8 +344,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     else { cameraPosition = [-0.8, 2.1, 3.2]; cameraTarget = [-0.8, 1.9, 0.2]; }
   } else if (sceneIndex === 6) {
     if (t < 2.0) { cameraPosition = [-1.25, 0.65, 0.8]; cameraTarget = [-1.25, 0.1, -3.05]; }
-    else if (t < 4.0) { cameraPosition = [-1.25, 2.2, 1.2]; cameraTarget = [-1.25, 2.1, -3.05]; }
-    else if (t < 6.5) { cameraPosition = [0, 2.3, 6.5]; cameraTarget = [-0.3, 1.1, 0.3]; }
+    else if (t < cues.alexTurn) { cameraPosition = [-1.25, 2.2, 1.2]; cameraTarget = [-1.25, 2.1, -3.05]; }
+    else if (t < cues.alexTurn + 2.5) { cameraPosition = [0, 2.3, 6.5]; cameraTarget = [-0.3, 1.1, 0.3]; }
     else { cameraPosition = [0, 2.8, 8.2]; cameraTarget = [-0.5, 1, 0]; }
   } else if (sceneIndex === 7) {
     if (t < 1.6) { cameraPosition = [0, 2.5, 9.5]; cameraTarget = [0, 1, 0]; }
