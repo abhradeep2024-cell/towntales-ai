@@ -167,8 +167,8 @@ function Town({ night = true, frame, fps, sceneIndex, cues }: { night?: boolean;
   const house = material(night ? '#33415b' : '#e8c9a0');
   const road = material(night ? '#202735' : '#6d747b');
   const seconds = frame / fps;
-  const doorOpenAt = cues.alexRun + 1.0;
-  const doorCloseAt = cues.alexRun + 2.15;
+  const doorOpenAt = cues.alexRun + 5.0;
+  const doorCloseAt = cues.alexRun + 6.15;
   const doorOpen = sceneIndex === 4 ? Math.max(0, Math.min(1, (seconds - doorOpenAt) / 0.45)) : 0;
   const doorClose = sceneIndex === 4 ? Math.max(0, Math.min(1, (seconds - doorCloseAt) / 0.22)) : 0;
   const alexHouseDoorAngle = sceneIndex === 4 ? -1.05 * doorOpen * (1 - doorClose) : 0;
@@ -276,7 +276,7 @@ function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneInd
     })}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} cues={cues} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
-      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 1.4, 0, -0.1 - (frame / fps) * 1.1] : [0.95, 0, -0.1]} cues={cues} />}
+      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1 - (frame / fps) * 0.55] : [0.95, 0, -0.1]} cues={cues} />}
     {sceneIndex === 1 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={1} position={[1.72, 0, 0.35]} scale={0.78} cues={cues} />}
     {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.35]} scale={0.5} cues={cues} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - cues.doubleReveal) / 2.2)) * 0.45, 0, -3.05]} cues={cues} />}
@@ -313,8 +313,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     windowReveal: localWordTime('window', 1.0),
     windowWave: Math.max(0.4, localWordTime('waving', 4.8) - 0.5)
   };
-  const alexX = sceneIndex === 4 ? -0.8 - t * 0.73 : sceneIndex === 2 ? -0.4 - t * 0.62 : -0.8;
-  const alexZ = sceneIndex === 4 ? 0.2 - t * 1.13 : 0.2;
+  const alexX = sceneIndex === 4 ? -0.8 - t * 0.32 : sceneIndex === 2 ? -0.4 - t * 0.62 : -0.8;
+  const alexZ = sceneIndex === 4 ? 0.2 - t * 0.5 : 0.2;
   let cameraPosition: [number, number, number] = [0, 2.6, 9.5];
   let cameraTarget: [number, number, number] = [0, 1, 0];
   if (sceneIndex === 0) {
@@ -341,15 +341,18 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     else if (t < wideShot) { cameraPosition = [-0.8, 2.2, 4.0]; cameraTarget = [-0.8, 2.0, 0.2]; }
     else { cameraPosition = [0, 2.6, 9.5]; cameraTarget = [0, 1, 0]; }
   } else if (sceneIndex === 4) {
-    if (t < 1.4) {
+    if (t < 2.4) {
       const shake = Math.sin(t * 24) * 0.035;
       cameraPosition = [alexX + shake, 2.7 + Math.abs(shake), alexZ + 5.5 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.5];
-    } else if (t < 2.1) {
+    } else if (t < 4.8) {
       cameraPosition = [alexX + 3.8, 2.2, alexZ + 1.8];
       cameraTarget = [alexX, 1.1, alexZ - 0.8];
+    } else if (t < 5.6) {
+      cameraPosition = [alexX + 2.6, 2.0, alexZ + 1.2];
+      cameraTarget = [alexX, 1.1, alexZ - 0.8];
     } else {
-      const whip = smooth((t - 2.1) / 0.22);
-      cameraPosition = mix3([alexX + 3.8, 2.2, alexZ + 1.8], [-0.6, 2.1, 1.6], whip);
+      const whip = smooth((t - 5.6) / 0.22);
+      cameraPosition = mix3([alexX + 2.6, 2.0, alexZ + 1.2], [-0.6, 2.1, 1.6], whip);
       cameraTarget = mix3([alexX, 1.1, alexZ - 0.8], [-3, 1.2, -3.2], whip);
     }
   } else if (sceneIndex === 5) {
