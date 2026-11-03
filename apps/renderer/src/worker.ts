@@ -154,10 +154,24 @@ async function runJob(job: any, serveUrl: string) {
     const file = await readFile(outputPath);
     const { error: uploadError } = await supabase.storage.from(bucket).upload(objectKey, file, { contentType: 'video/mp4', upsert: false, cacheControl: '3600' });
     if (uploadError) throw uploadError;
+
+    // Verify that the private object can be retrieved through a short-lived signed URL.
+    const { data: signedObject, error: signedUrlError } = await supabase.storage.from(bucket).createSignedUrl(objectKey, 300);
+    if (signedUrlError || !signedObject?.signedUrl) throw signedUrlError ?? new Error('Could not create a signed URL for the uploaded MP4.');
+    const signedDownload = await fetch(signedObject.signedUrl, { signal: AbortSignal.timeout(30000) });
+    if (!signedDownload.ok) throw new Error(`Signed MP4 download failed (HTTP ${signedDownload.status}).`);
+    const downloadedFile = Buffer.from(await signedDownload.arrayBuffer());
+    if (downloadedFile.length !== bytes || !downloadedFile.equals(file)) {
+      throw new Error('Signed MP4 download did not match the uploaded file byte-for-byte.');
+    }
+    const downloadedPath = join(workDir, 'signed-download-verification.mp4');
+    await writeFile(downloadedPath, downloadedFile);
+    await execFileAsync('ffmpeg', ['-v', 'error', '-i', downloadedPath, '-f', 'null', '-']);
+
     const qcReport = {
       passed: true,
       renderer,
-      checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true, audioPresent: audioRequested ? audioPresent : true },
+      checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true, audioPresent: audioRequested ? audioPresent : true, privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true },
       durationSeconds: duration, width: video.width, height: video.height, fps: actualFps, bytes,
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
       audioMode: { musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled, burnSubtitles: production.audio.burnSubtitles, musicStyle: production.audio.musicStyle },
