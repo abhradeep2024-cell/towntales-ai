@@ -10,6 +10,7 @@ export interface ExtractedProductionInput {
 }
 
 const MAX_SOURCE_BYTES = 5 * 1024 * 1024;
+const MAX_EXTRACTED_CHARACTERS = 60_000;
 
 export async function extractProductionInput(filename: string, bytes: Buffer): Promise<ExtractedProductionInput> {
   if (!filename || filename.length > 180 || /[\\/\\\\]/.test(filename) || filename.includes('..')) {
@@ -23,6 +24,7 @@ export async function extractProductionInput(filename: string, bytes: Buffer): P
     const decoded = new TextDecoder('utf-8', {fatal:true}).decode(bytes);
     const text = (decoded.charCodeAt(0) === 0xFEFF ? decoded.slice(1) : decoded).trim();
     if (!text) throw new Error('The text file contains no readable content.');
+    if (text.length > MAX_EXTRACTED_CHARACTERS) throw new Error('Extracted text exceeds the 60,000-character planning limit.');
     return {format:'txt',text,warnings:[]};
   }
   if (extension === 'json') {
@@ -32,12 +34,14 @@ export async function extractProductionInput(filename: string, bytes: Buffer): P
     catch { throw new Error('The JSON source is malformed.'); }
     const text = JSON.stringify(structuredData, null, 2);
     if (!text || text === 'null') throw new Error('The JSON source must contain a production brief or script.');
+    if (text.length > MAX_EXTRACTED_CHARACTERS) throw new Error('Extracted JSON exceeds the 60,000-character planning limit.');
     return {format:'json',text,structuredData,warnings:[]};
   }
   if (extension === 'docx') {
     const result = await mammoth.extractRawText({buffer:bytes});
     const text = result.value.replaceAll(String.fromCharCode(13), '').trim();
     if (!text) throw new Error('The DOCX file contains no extractable text.');
+    if (text.length > MAX_EXTRACTED_CHARACTERS) throw new Error('Extracted DOCX text exceeds the 60,000-character planning limit.');
     return {
       format:'docx',
       text,
