@@ -121,7 +121,7 @@ async function runJob(job: any, serveUrl: string) {
     }
 
     await writeFile(specPath, JSON.stringify(production), 'utf8');
-    const audioScript = join(rendererDir, 'scripts', 'audio_pipeline.py');
+    const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
     await execFileAsync(pythonExecutable, [
       audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
       ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : [])
