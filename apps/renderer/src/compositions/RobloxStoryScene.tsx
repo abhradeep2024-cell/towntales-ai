@@ -177,7 +177,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, i === 1 ? 1.2 : 0.8]} />)}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
-    {(shadowWave || sceneIndex === 4) && <Actor frame={frame + (sceneIndex === 0 ? 45 : 24)} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={[0.95, 0, -0.1]} />}
+    {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={[0.95, 0, -0.1]} />}
     {sceneIndex === 8 && <Actor frame={frame + 24} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 0.95, -3.45]} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
     {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
