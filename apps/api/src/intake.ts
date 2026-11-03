@@ -20,7 +20,8 @@ export async function extractProductionInput(filename: string, bytes: Buffer): P
 
   const extension = filename.split('.').pop()?.toLowerCase();
   if (extension === 'txt') {
-    const text = new TextDecoder('utf-8', {fatal:true}).decode(bytes).replace(/^\\uFEFF/, '').trim();
+    const decoded = new TextDecoder('utf-8', {fatal:true}).decode(bytes);
+    const text = (decoded.charCodeAt(0) === 0xFEFF ? decoded.slice(1) : decoded).trim();
     if (!text) throw new Error('The text file contains no readable content.');
     return {format:'txt',text,warnings:[]};
   }
@@ -35,7 +36,7 @@ export async function extractProductionInput(filename: string, bytes: Buffer): P
   }
   if (extension === 'docx') {
     const result = await mammoth.extractRawText({buffer:bytes});
-    const text = result.value.replace(/\\r/g, '').trim();
+    const text = result.value.replaceAll(String.fromCharCode(13), '').trim();
     if (!text) throw new Error('The DOCX file contains no extractable text.');
     return {
       format:'docx',
