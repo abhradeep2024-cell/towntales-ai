@@ -56,7 +56,9 @@ PR: [#2](https://github.com/abhradeep2024-cell/towntales-ai/pull/2) (draft; do n
 - The Render API/database live health step is skipped on pull-request runs. Live Render/Supabase API health is therefore not verified by this successful run.
 - CI's Episode 01 output is a validation artifact, **not** the Stage B example-video deliverable. Stage B remains blocked until Stage A software acceptance.
 
-## What is implemented so far (not yet production accepted)
+- Production intake implementation started on the branch: authenticated `POST /v1/intake` accepts base64-encoded DOCX, TXT or JSON (5 MB limit), validates/extracts source content, creates a project, stores the original and extracted text in private Supabase storage, and records both as project assets. Added extraction tests and OpenAPI documentation (commits `e9dc2912`, `ed57523f`, `18eacbbf`, `2e9cbcc0`, `8a29176e`, `a0514b21`). This is an API intake foundation, not yet the complete operator intake/planning workflow; DOCX integration, API persistence and deployment remain unverified until CI and live tests pass.
+- Latest active CI run at this checkpoint: [#41701629159](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41701629159), still rendering the low-resolution Episode 01 preview; all completed steps so far passed, with Render API/database verification skipped on this PR run. Latest branch head after intake work: `a0514b212f1f2de90b37ae6c87b6f1f0065b4599`; its CI run is queued behind the active run.
+\n## What is implemented so far (not yet production accepted)
 
 - Versioned reusable-character/actor/scene contract foundation and validation tests.
 - Data-driven declarative React Three Fiber/Remotion scene renderer foundation.
