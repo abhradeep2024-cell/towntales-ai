@@ -396,7 +396,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
 
     if audio.get("voiceEnabled", True) and narration_lines:
         voice_name = audio.get("voice", "en-US-AriaNeural")
-        # One continuous narration master preserves natural pacing across the Bible's fixed scene boundaries.
+        # One continuous narration master preserves natural pacing across the production's fixed scene boundaries.
         voice_text = "\n\n".join(narration_lines)
         target = workdir / "voice-master.mp3"
         expected_word_count = len(re.findall(r"\b[\w]+(?:['’][\w]+)?\b", voice_text))
@@ -415,7 +415,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
                 break
             if provider != "edge-tts":
                 break
-            print(f"[audio] Narration at {candidate_rate} is {clip_duration:.2f}s; retrying faster to preserve the approved 60-second timeline.", file=sys.stderr)
+            print(f"[audio] Narration at {candidate_rate} is {clip_duration:.2f}s; retrying faster to preserve the configured production timeline.", file=sys.stderr)
         if require_word_alignment and (provider != "edge-tts" or not word_events):
             raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
         alignment_coverage = compare_word_alignment_coverage(voice_text, word_events)
