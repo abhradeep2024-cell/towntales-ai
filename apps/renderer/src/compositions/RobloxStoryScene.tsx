@@ -204,7 +204,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
-    {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => {
+    {(sceneIndex === 1 || sceneIndex === 7) && [-1.2, 0, 1.2].map((x, i) => {
       const residentRun = sceneIndex === 1 && i === 2 && frame / fps > 3.4;
       const travel = Math.max(0, frame / fps - 3.4);
       const residentPosition: [number, number, number] = [
