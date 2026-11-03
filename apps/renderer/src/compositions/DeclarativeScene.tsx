@@ -18,21 +18,25 @@ function CameraTrack({ scene, time }: { scene: Scene; time: number }) {
     { atSeconds: 0, position: [0, 3, 9] as [number,number,number], target: [0, 1, 0] as [number,number,number], fov: 40 },
     { atSeconds: scene.durationSeconds, position: [0, 3, 9] as [number,number,number], target: [0, 1, 0] as [number,number,number], fov: 40 }
   ];
-  const sample = (field: 'position' | 'target') => {
-    let left = keys[0], right = keys[keys.length - 1];
+  const segment = () => {
+    if (time <= keys[0].atSeconds) return [keys[0], keys[0]] as const;
     for (let i = 0; i < keys.length - 1; i++) {
-      if (time >= keys[i].atSeconds && time <= keys[i + 1].atSeconds) { left = keys[i]; right = keys[i + 1]; break; }
-      if (time < keys[0].atSeconds) { left = right = keys[0]; break; }
+      if (time <= keys[i + 1].atSeconds) return [keys[i], keys[i + 1]] as const;
     }
+    return [keys[keys.length - 1], keys[keys.length - 1]] as const;
+  };
+  const sample = (field: 'position' | 'target') => {
+    const [left, right] = segment();
     const p = left === right ? 0 : smooth((time - left.atSeconds) / Math.max(0.001, right.atSeconds - left.atSeconds));
     return [0,1,2].map(i => mix(left[field][i], right[field][i], p)) as [number,number,number];
   };
   useFrame(() => {
     const pos = sample('position'), target = sample('target');
     camera.position.set(...pos); camera.lookAt(...target);
-    const first = keys[0], last = keys[keys.length - 1];
-    const fov = time <= first.atSeconds ? first.fov : time >= last.atSeconds ? last.fov : mix(first.fov, last.fov, clamp((time-first.atSeconds)/Math.max(.001,last.atSeconds-first.atSeconds)));
-    if ('fov' in camera && camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    const [left, right] = segment();
+    const p = left === right ? 0 : smooth((time-left.atSeconds)/Math.max(.001,right.atSeconds-left.atSeconds));
+    const fov = mix(left.fov, right.fov, p);
+    if (camera instanceof THREE.PerspectiveCamera && camera.fov !== fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
   });
   return null;
 }
@@ -63,7 +67,9 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const jumpP = jump ? Math.sin(Math.PI * clamp((time-jump.startSeconds)/jump.durationSeconds)) : 0;
   const recoilP = recoil ? Math.sin(Math.PI * clamp((time-recoil.startSeconds)/recoil.durationSeconds)) : 0;
   const turnP = turn ? smooth((time-turn.startSeconds)/turn.durationSeconds) : 0;
-  const opacity = actions.some(a => a.type === 'disappear' && time >= a.startSeconds) ? 0 : 1;
+  const appear = actions.filter(a => a.type === 'appear').sort((a,b) => a.startSeconds-b.startSeconds)[0];
+  const disappear = actions.filter(a => a.type === 'disappear' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
+  const opacity = disappear ? 1 - smooth((time-disappear.startSeconds)/disappear.durationSeconds) : appear ? smooth((time-appear.startSeconds)/appear.durationSeconds) : 1;
   const stride = movement ? Math.sin(walkPhase) * (movement.type === 'run' ? .62 : .38) * movement.intensity : 0;
   const waveRotation = waveActive ? Math.sin(waveP * Math.PI * 2 * wave.repeat) * .55 * Math.sin(Math.PI * waveP) : 0;
   const armAngle = waveActive ? -1.9 + waveRotation : point ? -1.4 * gestureP : 0;
@@ -102,11 +108,10 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
 function SceneProps({ scene }: { scene: Scene }) {
   return <group>{scene.props.map(prop => {
     const common = { position: prop.position as [number,number,number], scale: prop.scale as [number,number,number], rotation: prop.rotation as [number,number,number] };
-    const mat = <meshStandardMaterial color={prop.color}/>;
-    if (prop.type === 'sphere') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><sphereGeometry args={[.5,24,16]}/>{mat}</mesh>;
-    if (prop.type === 'cylinder') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><cylinderGeometry args={[.5,.5,1,20]}/>{mat}</mesh>;
-    if (prop.type === 'plane') return <mesh key={prop.id} {...common} receiveShadow><planeGeometry args={[1,1]}/>{mat}</mesh>;
-    return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><boxGeometry args={[1,1,1]}/>{mat}</mesh>;
+    if (prop.type === 'sphere') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><sphereGeometry args={[.5,24,16]}/><meshStandardMaterial color={prop.color}/></mesh>;
+    if (prop.type === 'cylinder') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><cylinderGeometry args={[.5,.5,1,20]}/><meshStandardMaterial color={prop.color}/></mesh>;
+    if (prop.type === 'plane') return <mesh key={prop.id} {...common} receiveShadow><planeGeometry args={[1,1]}/><meshStandardMaterial color={prop.color}/></mesh>;
+    return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><boxGeometry args={[1,1,1]}/><meshStandardMaterial color={prop.color}/></mesh>;
   })}</group>;
 }
 
