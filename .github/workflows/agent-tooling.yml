@@ -1,0 +1,122 @@
+name: Real Factory Agent Tooling
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Run public reference research, renderer diagnostics, or both
+        required: true
+        type: choice
+        options:
+          - research
+          - diagnostics
+          - both
+      query:
+        description: Story, animation style, or technical topic to research
+        required: false
+        type: string
+      youtube_url:
+        description: Optional public YouTube reference to read subtitles from
+        required: false
+        type: string
+      target:
+        description: Local application directory for REA analysis
+        required: false
+        default: apps/renderer
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  agent-reach-research:
+    if: inputs.mode == 'research' || inputs.mode == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Agent Reach from its official GitHub repository
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          uv tool install --from git+https://github.com/Panniantong/Agent-Reach.git agent-reach
+      - name: Verify Agent Reach capabilities
+        run: |
+          agent-reach channels > agent-reach-channels.json
+          python - <<'PY'
+          import json
+          data=json.load(open('agent-reach-channels.json',encoding='utf-8'))
+          names={channel['name'] for channel in data.get('channels',[])}
+          required={'web','youtube','github'}
+          missing=required-names
+          if missing:
+              raise SystemExit('Agent Reach missing expected channels: '+', '.join(sorted(missing)))
+          PY
+      - name: Research public story and animation references
+        if: inputs.query != ''
+        env:
+          QUERY: ${{ inputs.query }}
+        run: |
+          agent-reach web search "$QUERY" --backend public-web --timeout 60 > agent-reach-web.json
+          agent-reach youtube search "$QUERY" --limit 5 --timeout 90 > agent-reach-youtube.json
+          python - <<'PY'
+          import json
+          for name in ('agent-reach-web.json','agent-reach-youtube.json'):
+              data=json.load(open(name,encoding='utf-8'))
+              if not data.get('ok'):
+                  error=data.get('error') or {}
+                  raise SystemExit(f'{name}: {error.get("code","ERROR")} {error.get("message","search failed")}')
+          PY
+      - name: Read optional public YouTube reference subtitles
+        if: inputs.youtube_url != ''
+        env:
+          YOUTUBE_URL: ${{ inputs.youtube_url }}
+        run: |
+          agent-reach youtube subtitle "$YOUTUBE_URL" --lang en --timeout 180 > agent-reach-subtitles.json
+          python - <<'PY'
+          import json
+          data=json.load(open('agent-reach-subtitles.json',encoding='utf-8'))
+          if not data.get('ok'):
+              error=data.get('error') or {}
+              raise SystemExit(f'{error.get("code","ERROR")}: {error.get("message","subtitle extraction failed")}')
+          PY
+      - name: Upload Agent Reach research evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-factory-agent-reach-research
+          path: |
+            agent-reach-channels.json
+            agent-reach-web.json
+            agent-reach-youtube.json
+            agent-reach-subtitles.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  rea-renderer-diagnostics:
+    if: inputs.mode == 'diagnostics' || inputs.mode == 'both'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install and run REA against the renderer application
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          test -d "$TARGET"
+          npx --yes rea-agents@6.8.0 analyze-javascript-application "$TARGET" --json > rea-renderer-analysis.json
+          node -e "const r=require('./rea-renderer-analysis.json'); if(r.ok===false || r.error) process.exit(1);"
+      - name: Upload REA renderer diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-factory-rea-renderer-diagnostics
+          path: rea-renderer-analysis.json
+          if-no-files-found: ignore
+          retention-days: 14
