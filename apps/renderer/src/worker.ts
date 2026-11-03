@@ -215,7 +215,7 @@ async function runJob(job: any, serveUrl: string) {
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
       audioMode: {
         musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled,
-        burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle,
+        burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle, effectsEnabled: production.styleId === 'roblox-cinematic-horror',
         captionTiming: narrationRequested ? 'edge-tts-word-boundary' : null
       },
       validatedAt: new Date().toISOString()

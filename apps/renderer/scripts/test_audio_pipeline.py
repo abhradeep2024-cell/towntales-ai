@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audio_pipeline import normalize_word_alignments, write_word_ass
+from audio_pipeline import make_effects, normalize_word_alignments, write_word_ass\nimport wave
 
 
 class WordAlignmentTests(unittest.TestCase):
@@ -26,6 +26,16 @@ class WordAlignmentTests(unittest.TestCase):
     def test_zero_length_word_is_rejected(self):
         with self.assertRaisesRegex(RuntimeError, "zero-length"):
             normalize_word_alignments([{"text": "empty", "start": 0.5, "end": 0.5}])
+
+    def test_original_effects_render_as_stereo_24khz_audio(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "effects.wav"
+            make_effects(target, 2.0)
+            with wave.open(str(target), "rb") as audio:
+                self.assertEqual(audio.getnchannels(), 2)
+                self.assertEqual(audio.getframerate(), 24000)
+                self.assertEqual(audio.getnframes(), 48000)
+                self.assertGreater(max(abs(value) for value in audio.readframes(1000)), 0)
 
     def test_ass_captions_use_actual_word_timestamps_and_red_emphasis(self):
         words = [

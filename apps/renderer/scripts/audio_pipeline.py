@@ -75,6 +75,80 @@ def make_music(path: Path, duration: float, mood: str) -> None:
         wav.writeframes(samples.tobytes())
 
 
+def make_effects(path: Path, duration: float) -> None:
+    """Create a deterministic, original suspense SFX bed aligned to Episode 01 story beats."""
+    sr = 24000
+    frame_count = max(1, int(duration * sr))
+    mono = array.array("h", [0]) * frame_count
+
+    def add_event(start: float, seconds: float, kind: str, frequency: float, amplitude: float) -> None:
+        first = max(0, int(start * sr))
+        count = min(int(seconds * sr), frame_count - first)
+        if count <= 0:
+            return
+        for offset in range(count):
+            t = offset / sr
+            progress = t / max(seconds, 0.001)
+            if kind == "boom":
+                envelope = math.exp(-5.5 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.32 * math.sin(2 * math.pi * frequency * 0.5 * t)
+            elif kind == "click":
+                envelope = math.exp(-48 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.28 * math.sin(2 * math.pi * frequency * 2.3 * t)
+            elif kind == "step":
+                envelope = math.exp(-20 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.24 * math.sin(2 * math.pi * frequency * 2.1 * t)
+            elif kind == "creak":
+                envelope = math.sin(math.pi * min(1.0, progress)) ** 1.4
+                swept = frequency - 170 * progress
+                wave_value = math.sin(2 * math.pi * swept * t) + 0.2 * math.sin(2 * math.pi * swept * 2 * t)
+            elif kind == "buzz":
+                envelope = 0.62 + 0.38 * math.sin(2 * math.pi * 7 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 3 * t)
+            elif kind == "bird":
+                envelope = math.sin(math.pi * min(1.0, progress)) ** 2
+                swept = frequency + 420 * math.sin(math.pi * progress)
+                wave_value = math.sin(2 * math.pi * swept * t)
+            elif kind == "breath":
+                envelope = math.sin(math.pi * min(1.0, progress)) ** 2
+                wave_value = 0.55 * math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 1.37 * t)
+            else:  # soft wind bed
+                envelope = 0.7 + 0.3 * math.sin(2 * math.pi * 0.11 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 0.73 * t) + 0.12 * math.sin(2 * math.pi * frequency * 1.8 * t)
+            index = first + offset
+            value = mono[index] + int(amplitude * envelope * wave_value * 32767)
+            mono[index] = max(-32768, min(32767, value))
+
+    add_event(0.0, min(51.0, duration), "wind", 92, 0.035)
+    add_event(0.0, 0.95, "boom", 48, 0.26)
+    add_event(1.45, 0.32, "click", 1250, 0.12)
+    for tick in (5.35, 6.35, 7.35, 8.35, 9.35, 10.35):
+        add_event(tick, 0.075, "click", 1750, 0.10)
+    for index in range(14):
+        add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
+    add_event(31.35, 1.25, "creak", 310, 0.10)
+    for beat in range(5):
+        add_event(33.0 + beat * 0.92, 0.20, "boom", 58, 0.09)
+        add_event(33.24 + beat * 0.92, 0.16, "boom", 66, 0.075)
+    add_event(40.2, 2.4, "buzz", 60, 0.075)
+    add_event(43.0, 0.9, "breath", 145, 0.065)
+    add_event(48.2, 1.7, "buzz", 54, 0.065)
+    for chirp in (51.25, 52.05, 53.1, 54.0, 55.0):
+        add_event(chirp, 0.32, "bird", 1850, 0.045)
+    add_event(57.35, 1.15, "breath", 110, 0.085)
+    add_event(59.25, 0.72, "boom", 42, 0.22)
+
+    stereo = array.array("h")
+    for sample in mono:
+        stereo.append(sample)
+        stereo.append(int(sample * 0.97))
+    with wave.open(str(path), "wb") as wav:
+        wav.setnchannels(2)
+        wav.setsampwidth(2)
+        wav.setframerate(sr)
+        wav.writeframes(stereo.tobytes())
+
+
 async def make_edge_voice(text: str, voice: str, target: Path) -> list[dict]:
     """Stream Edge TTS audio and retain its genuine word-boundary timestamps."""
     import edge_tts
@@ -250,6 +324,18 @@ def main() -> int:
         labels.append("[music]")
         next_input += 1
         report["musicGenerated"] = True
+
+    effects_enabled = bool(audio.get("effectsEnabled", spec.get("styleId") == "roblox-cinematic-horror"))
+    if effects_enabled:
+        effects = workdir / "effects.wav"
+        make_effects(effects, duration)
+        input_args += ["-i", str(effects)]
+        filters.append(f"[{next_input}:a]volume=0.18[effects]")
+        labels.append("[effects]")
+        next_input += 1
+        report["effectsGenerated"] = True
+    else:
+        report["effectsGenerated"] = False
 
     if audio.get("voiceEnabled", True):
         voice_name = audio.get("voice", "en-US-AriaNeural")
