@@ -355,39 +355,49 @@ def write_srt(subtitles: list[dict], path: Path) -> None:
 def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> dict:
     audio = spec.get("audio") or {}
     duration = float(spec["durationSeconds"])
-    report: dict = {"voiceProvider": None, "voiceLines": 0, "musicGenerated": False, "effectsGenerated": False, "wordAlignmentProvider": None, "alignedWordCount": 0}
+    report: dict = {"voiceProvider": None, "voiceLines": 0, "voiceSegments": 0, "voiceDurationSeconds": 0.0, "musicGenerated": False, "effectsGenerated": False, "wordAlignmentProvider": None, "alignedWordCount": 0}
     aligned_words: list[dict] = []
     voice_tracks: list[dict] = []
-    scene_start = 0.0
-    voice_cursor = 0.0
-    providers: set[str] = set()
+    scene_boundaries: list[tuple[int, float, float]] = []
+    scene_cursor = 0.0
+    narration_lines: list[str] = []
+    for idx, scene in enumerate(spec.get("scenes", [])):
+        scene_duration = float(scene["durationSeconds"])
+        scene_boundaries.append((idx, scene_cursor, scene_cursor + scene_duration))
+        narration = (scene.get("narration") or "").strip()
+        if narration:
+            narration_lines.append(narration)
+        scene_cursor += scene_duration
+    if abs(scene_cursor - duration) > 0.001:
+        raise RuntimeError(f"Storyboard scene timecodes total {scene_cursor:.3f}s, not the required {duration:.3f}s.")
 
-    if audio.get("voiceEnabled", True):
+    if audio.get("voiceEnabled", True) and narration_lines:
         voice_name = audio.get("voice", "en-US-AriaNeural")
-        for idx, scene in enumerate(spec.get("scenes", [])):
-            narration = (scene.get("narration") or "").strip()
-            scene_duration = float(scene["durationSeconds"])
-            if narration:
-                if voice_cursor > scene_start + 0.03:
-                    raise RuntimeError(f"Scene {idx - 1} narration overruns the next scene by {voice_cursor - scene_start:.2f}s; keep approved narration inside its own scene.")
-                target = workdir / f"voice-{idx:02d}.mp3"
-                provider, word_events = make_voice(narration, voice_name, target)
-                providers.add(provider)
-                if require_word_alignment and (provider != "edge-tts" or not word_events):
-                    raise RuntimeError(f"Production word alignment required, but scene {idx} used {provider} without real word boundaries.")
-                voice_start = scene_start
-                clip_duration = media_duration(target)
-                if clip_duration <= 0:
-                    raise RuntimeError(f"Scene {idx} narration produced an empty audio track.")
-                if clip_duration > scene_duration + 0.03:
-                    raise RuntimeError(f"Scene {idx} narration takes {clip_duration:.2f}s but its approved scene duration is {scene_duration:.2f}s; revise timing or narration rather than letting dialogue spill into the next shot.")
-                for event in word_events:
-                    aligned_words.append({**event, "sceneIndex": idx, "start": round(voice_start + float(event["start"]), 6), "end": round(voice_start + float(event["end"]), 6)})
-                voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": max(0, round(voice_start * 1000)), "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest(), "sceneIndex": idx})
-                report["voiceLines"] += 1
-                voice_cursor = voice_start + clip_duration
-            scene_start += scene_duration
-        report["voiceProvider"] = "+".join(sorted(providers)) if providers else None
+        # One continuous narration master preserves natural pacing across the Bible's fixed scene boundaries.
+        voice_text = "\n\n".join(narration_lines)
+        target = workdir / "voice-master.mp3"
+        provider, word_events = make_voice(voice_text, voice_name, target)
+        if require_word_alignment and (provider != "edge-tts" or not word_events):
+            raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
+        clip_duration = media_duration(target)
+        if clip_duration <= 0:
+            raise RuntimeError("Continuous narration master produced an empty audio track.")
+        if clip_duration > duration + 0.03:
+            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s but the Bible allows {duration:.2f}s. Adjust the narration delivery without changing the approved scene timecodes.")
+        for event in word_events:
+            word_start = float(event["start"])
+            scene_index = next((idx for idx, start, end in scene_boundaries if start <= word_start < end), None)
+            if scene_index is None:
+                raise RuntimeError(f"Narration word {event['text']!r} at {word_start:.3f}s falls outside the nine-scene Bible timeline.")
+            aligned_words.append({**event, "sceneIndex": scene_index, "start": round(word_start, 6), "end": round(float(event["end"]), 6)})
+        providers = {provider}
+        report["voiceProvider"] = provider
+        report["voiceLines"] = 1
+        report["voiceSegments"] = len(narration_lines)
+        report["voiceDurationSeconds"] = round(clip_duration, 3)
+        voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": 0, "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
+    elif require_word_alignment:
+        raise RuntimeError("Production word alignment required, but the specification contains no narration.")
 
     if aligned_words:
         aligned_words = normalize_word_alignments(aligned_words)
@@ -403,7 +413,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
 
     word_at = lambda scene_index, token: next((item for item in aligned_words if item.get("sceneIndex") == scene_index and str(item["text"]).strip(".,!?;:").lower() == token), None)
     waved_word = word_at(3, "waved")
-    shadow_wave_start = max(0.0, float(waved_word["start"]) - 0.25) if waved_word else 20.0
+    shadow_wave_start = max(0.0, float(waved_word["start"]) - 0.25) if waved_word else 18.5
     shadow_reveal_word = word_at(6, "shadow")
     shadow_reveal_start = float(shadow_reveal_word["start"]) if shadow_reveal_word else 40.5
     blackout_word = word_at(6, "out")
