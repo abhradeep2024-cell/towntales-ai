@@ -320,6 +320,7 @@ def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> No
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
     ]
     rows = []
+    key_words = {"never", "shadow", "alone", "waved", "replace", "take", "9", "pm", "ran", "inside", "same", "face", "no", "except", "window", "waving", "again"}
     for index, item in enumerate(words):
         start = float(item["start"])
         end = float(item["end"])
@@ -329,12 +330,15 @@ def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> No
                 end = min(end, next_start)
         if end <= start:
             continue
-        current = ass_escape(str(item["text"]))
+        current_text = str(item["text"])
+        current = ass_escape(current_text)
+        normalized = re.sub(r"[^a-z0-9]+", "", current_text.lower())
+        current_colour = "&H000040FF&" if normalized in key_words else "&H00FFFFFF&"
         if index:
             previous = ass_escape(str(words[index - 1]["text"]))
-            caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H00FFFFFF&}}{previous} {{\\1c&H000040FF&}}{current}"
+            caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H00FFFFFF&}}{previous} {{\\1c{current_colour}}}{current}"
         else:
-            caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H000040FF&}}{current}"
+            caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c{current_colour}}}{current}"
         rows.append(f"Dialogue: 0,{ass_time(start)},{ass_time(end)},Default,,0,0,0,,{caption}")
     path.write_text("\n".join(header + rows) + "\n", encoding="utf-8")
 
