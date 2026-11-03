@@ -5,6 +5,7 @@ The former text-card presentation is replaced with deterministic Three.js scenes
 ## Implemented
 
 - Reusable R6-inspired Alex and Shadow Alex procedural character rigs with persistent wardrobe and materials.
+- Stable scene-graph character IDs: `CHAR_ALEX_001`, `CHAR_SHADOW_ALEX_001`, `CHAR_ALEX_DOUBLE_001` and `CHAR_TOWN_RESIDENT_001`.
 - Scene-driven shadow choreography: delayed independent movement, three-wave gesture, head turn, chase movement, shadowless double and daylight missing-shadow reveal.
 - Animated bedroom door, bedroom-double entrance, Alex recoil, blackout and brief glowing-eye reveal; the town front door opens and slams as Alex reaches home.
 - Final over-the-shoulder window shot with the original shadow behind the glass, Bible on-screen text overlays and a hard cut to black.
