@@ -186,7 +186,8 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
 
 export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = ({ scene, sceneIndex }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
+  const scale = width / 360;
   const push = Math.min(1, frame / Math.max(1, fps * 2));
   const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 3.5 - push * 1.1, 11 - push * 2.1]
     : sceneIndex === 4 ? [0, 2.5, 9 - push * 1.3]
@@ -197,7 +198,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
     {!blackout && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: 34 }} gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
       <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} />
     </Canvas>}
-    <div style={{ position: 'absolute', top: '5%', left: '6%', color: 'rgba(255,255,255,.58)', fontFamily: 'Arial', fontSize: 18, letterSpacing: 5 }}>
+    <div style={{ position: 'absolute', top: '5%', left: '6%', color: 'rgba(255,255,255,.58)', fontFamily: 'Arial', fontSize: 18 * scale, letterSpacing: 5 * scale }}>
       TOWNTALES  /  {String(sceneIndex + 1).padStart(2, '0')}
     </div>
   </div>;
