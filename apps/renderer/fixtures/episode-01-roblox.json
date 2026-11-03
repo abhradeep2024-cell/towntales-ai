@@ -92,6 +92,7 @@
     "musicStyle": "suspense",
     "musicVolume": 0.12,
     "voiceVolume": 1,
-    "voice": "en-US-AriaNeural"
+    "voice": "en-US-AriaNeural",
+    "burnSubtitles": true
   }
 }
