@@ -289,6 +289,14 @@ components:
         atmosphere: { type: string }
         background: { type: string }
         groundColor: { type: string }
+        groundSize: { type: number, minimum: 10, maximum: 500 }
+        fog:
+          type: object
+          required: [color, near, far]
+          properties:
+            color: { type: string }
+            near: { type: number, minimum: 0 }
+            far: { type: number, exclusiveMinimum: 0, maximum: 1000 }
         continuityNotes: { type: array, items: { type: string } }
     ProductionSpec:
       type: object
