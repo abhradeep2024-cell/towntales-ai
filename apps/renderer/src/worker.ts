@@ -154,7 +154,7 @@ async function runJob(job: any, serveUrl: string) {
       }
       const lemoEntry = join(repositoryRoot, 'vendor', 'lemo-opuscar', 'core', 'render', 'video.mjs');
       try { await stat(lemoEntry); } catch { throw new Error('The pinned Lemo-Opuscar submodule is missing. Check out the repository with submodules and install vendor/lemo-opuscar dependencies.'); }
-      await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 8 });
+      await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 25 });
       await execFileAsync('node', [lemoEntry, projectDir, '--fps', String(production.fps), '--workers', String(concurrency), '--out', silentPath, '--size', `${production.width}x${production.height}`], { timeout: 12 * 60 * 1000, maxBuffer: 2_000_000 });
       await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 82 });
     } else {
@@ -177,7 +177,7 @@ async function runJob(job: any, serveUrl: string) {
           composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 23, x264Preset: 'veryfast',
           inputProps: { production, wordAlignments }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
           onProgress: ({ progress }) => {
-            const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));
+            const pct = Math.max(25, Math.min(82, 25 + Math.round(progress * 57));
             progressWrites = progressWrites.then(async () => {
               if (!renderingActive) return;
               const now = Date.now();
