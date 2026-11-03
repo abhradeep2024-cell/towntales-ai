@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
+type WordAlignmentCue = { text: string; start: number; end: number; sceneIndex: number; source?: string };
 type ActorKind = 'alex' | 'shadow' | 'resident' | 'double';
 export const CHARACTER_IDS = {
   alex: 'CHAR_ALEX_001',
@@ -232,7 +233,7 @@ function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number;
   </group>;
 }
 
-function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: number; frame: number; fps: number }) {
+function World({ scene, sceneIndex, frame, fps, wordAlignments, sceneStartSeconds }: { scene: Scene; sceneIndex: number; frame: number; fps: number; wordAlignments: WordAlignmentCue[]; sceneStartSeconds: number }) {
   const isMorning = sceneIndex === 7;
   const isBedroom = sceneIndex === 5 || sceneIndex === 6;
   const isBlackout = sceneIndex === 6;
@@ -272,7 +273,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
   </>;
 }
 
-export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = ({ scene, sceneIndex }) => {
+export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; sceneStartSeconds: number; wordAlignments: WordAlignmentCue[] }> = ({ scene, sceneIndex, sceneStartSeconds, wordAlignments }) => {
   const frame = useCurrentFrame();
   const { fps, width } = useVideoConfig();
   const scale = width / 360;
@@ -330,7 +331,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
     {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
       <CameraRig position={cameraPosition} target={cameraTarget} />
-      <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} />
+      <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} wordAlignments={wordAlignments} sceneStartSeconds={sceneStartSeconds} />
     </Canvas>}
     {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - 10.4) / 0.85) }}>
       {[0, 1].map((eye) => <div key={eye} style={{ width: 12 * scale, height: 7 * scale, borderRadius: '50%', background: '#bceaff', boxShadow: '0 0 18px 7px rgba(188,234,255,.75)' }} />)}
