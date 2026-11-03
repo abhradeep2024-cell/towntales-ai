@@ -363,6 +363,11 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   (spec.audioCues ?? []).forEach((cue, index) => {
     if (!sceneIds.has(cue.sceneId)) ctx.addIssue({code:'custom',path:['audioCues',index,'sceneId'],message:'Audio cue sceneId must reference a declared scene.'});
     if (cue.assetId && !assetIds.has(cue.assetId)) ctx.addIssue({code:'custom',path:['audioCues',index,'assetId'],message:'Audio cue assetId must reference a declared asset.'});
+    if (cue.assetId) {
+      const asset = (spec.assets ?? []).find(item => item.id === cue.assetId);
+      const expectedTypes = cue.type === 'music' ? ['music'] : cue.type === 'dialogue' || cue.type === 'narration' ? ['voice'] : ['sound-effect'];
+      if (asset && !expectedTypes.includes(asset.type)) ctx.addIssue({code:'custom',path:['audioCues',index,'assetId'],message:`Audio cue type ${cue.type} requires an asset of type ${expectedTypes.join(' or ')}.`});
+    }
     if (cue.startSeconds + (cue.durationSeconds ?? 0) > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['audioCues',index],message:'Audio cue must finish within the production timeline.'});
     if (cue.fadeInSeconds + cue.fadeOutSeconds > (cue.durationSeconds ?? spec.durationSeconds)) ctx.addIssue({code:'custom',path:['audioCues',index],message:'Audio cue fades cannot exceed cue duration.'});
   });
