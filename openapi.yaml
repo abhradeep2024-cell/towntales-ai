@@ -276,6 +276,26 @@ components:
           maxItems: 20
           items: { type: string, maxLength: 300 }
         background: { type: string, pattern: '^#[0-9a-fA-F]{6}$' }
+    AssetReference:
+      type: object
+      required: [id, type]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [character, rig, environment, prop, material, texture, animation, music, voice, sound-effect, font, image, video, other] }
+        uri: { type: string }
+        version: { type: string }
+        libraryAssetKey: { type: string }
+        libraryVersion: { type: integer, minimum: 1 }
+        required: { type: boolean }
+        metadata: { type: object }
+    Character:
+      type: object
+      required: [id, name, rig]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        rig: { type: string, enum: [block-humanoid] }
+        appearance: { type: object }
     Environment:
       type: object
       required: [id, name]
@@ -290,6 +310,7 @@ components:
         background: { type: string }
         groundColor: { type: string }
         groundSize: { type: number, minimum: 10, maximum: 500 }
+        props: { type: array, items: { type: object } }
         fog:
           type: object
           required: [color, near, far]
@@ -302,7 +323,7 @@ components:
       type: object
       required: [schemaVersion, title, idea, styleId, durationSeconds, aspectRatio, scenes]
       properties:
-        schemaVersion: { const: 1 }
+        schemaVersion: { type: integer, enum: [1, 2] }
         title: { type: string, minLength: 1, maxLength: 160 }
         idea: { type: string, minLength: 1, maxLength: 8000 }
         styleId: { type: string, minLength: 1, maxLength: 120 }
@@ -322,6 +343,47 @@ components:
             Must contain index.html implementing window.DUR, window.render(t), and window.READY.
             Use only local text files; keep the total below 1.8 MB. No remote scripts or assets.
           additionalProperties: { type: string }
+        assets:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/AssetReference' }
+        shots:
+          type: array
+          maxItems: 300
+          items: { type: object, required: [id, sceneId, startSeconds, durationSeconds], properties: { id: { type: string }, sceneId: { type: string }, startSeconds: { type: number }, durationSeconds: { type: number }, assetIds: { type: array, items: { type: string } } } }
+        tracks:
+          type: array
+          maxItems: 500
+          items: { type: object }
+        dialogue:
+          type: array
+          maxItems: 1000
+          items: { type: object, required: [id, sceneId, speaker, text], properties: { id: { type: string }, sceneId: { type: string }, characterId: { type: string }, speaker: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
+        audioCues:
+          type: array
+          maxItems: 1000
+          items: { type: object, required: [id, sceneId, type, label, startSeconds], properties: { id: { type: string }, sceneId: { type: string }, type: { type: string }, label: { type: string }, startSeconds: { type: number }, durationSeconds: { type: number } } }
+        captionCues:
+          type: array
+          maxItems: 2000
+          items: { type: object, required: [id, sceneId, text, startSeconds, endSeconds], properties: { id: { type: string }, sceneId: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
+        outputProfiles:
+          type: array
+          maxItems: 20
+          items: { type: object, required: [id, width, height, fps], properties: { id: { type: string }, width: { type: integer }, height: { type: integer }, fps: { type: integer }, codec: { type: string }, container: { type: string }, quality: { type: string } } }
+        qaRules:
+          type: array
+          maxItems: 200
+          items: { type: object, required: [id, category, description], properties: { id: { type: string }, category: { type: string }, severity: { type: string }, description: { type: string }, enabled: { type: boolean } } }
+        projectMetadata:
+          type: object
+          properties:
+            projectId: { type: string }
+            episodeId: { type: string }
+            language: { type: string }
+            locale: { type: string }
+            targetPlatform: { type: string }
+            notes: { type: array, items: { type: string } }
         environments:
           type: array
           maxItems: 100
@@ -329,7 +391,7 @@ components:
         characters:
           type: array
           maxItems: 100
-          items: { type: object, required: [id, name, rig], properties: { id: { type: string }, name: { type: string }, rig: { type: string } } }
+          items: { $ref: '#/components/schemas/Character' }
         scenes:
           type: array
           minItems: 1
