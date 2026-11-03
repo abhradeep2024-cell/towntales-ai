@@ -15,8 +15,8 @@ export const episode01Production: ProductionSpec = {
   durationSeconds: 60,
   aspectRatio: '9:16',
   fps: 30,
-  width: 360,
-  height: 640,
+  width: 1080,
+  height: 1920,
   scenes: [
     { id: 's01-hook', title: 'The Shadow Waves', durationSeconds: 5, visualDirection: 'Sunset town establishing shot. Push toward Alex as his shadow raises an arm and waves independently while Alex remains still.', narration: 'In this town, your shadow must NEVER move differently from you after sunset.', onScreenText: ['NEVER TRUST YOUR SHADOW'], background: '#171b2a' },
     { id: 's02-rule', title: 'The Town Rule', durationSeconds: 6, visualDirection: 'Three residents cross the street with normal shadows. One resident notices a strange movement, panics and runs indoors. Show a clear 9 PM clock insert.', narration: 'Everyone knows the rule. Because once your shadow moves on its own, it means something is coming to take your place.', onScreenText: ['THE RULE'], background: '#20263a' },
