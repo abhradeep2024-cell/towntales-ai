@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { extractProductionInput } from './intake.js';
+import { planProductionFromSource } from './planner.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -241,6 +242,49 @@ app.post('/v1/intake', async (request, reply) => {
     try { if (uploadedKeys.length) await db.storage.from(bucket).remove(uploadedKeys); } catch { /* best-effort rollback */ }
     try { if (projectId) await db.from('film_studio_projects').delete().eq('id',projectId); } catch { /* best-effort rollback */ }
     return reply.code(503).send({error:'production_intake_persistence_failed'});
+  }
+});
+
+
+app.post('/v1/projects/:id/plan', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const {id} = request.params as {id:string};
+  const aiKey = env('AI_API_KEY') || env('OPENAI_API_KEY') || env('OPENROUTER_API_KEY');
+  const aiModel = env('AI_MODEL');
+  const aiBaseUrl = env('AI_BASE_URL') || (env('OPENROUTER_API_KEY') ? 'https://openrouter.ai/api/v1' : 'https://api.openai.com/v1');
+  if (!aiKey || !aiModel) return reply.code(503).send({error:'ai_planner_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['AI_BASE_URL']});
+  try {
+    const db = requireDb();
+    const {data:assets,error:assetError} = await db.from('film_studio_assets')
+      .select('storage_key,metadata').eq('project_id',id);
+    if (assetError) throw assetError;
+    const sourceAsset = (assets ?? []).find((asset:any) => asset.metadata?.role === 'extracted-production-text');
+    if (!sourceAsset?.storage_key) return reply.code(404).send({error:'extracted_project_source_not_found'});
+    const {data:sourceBlob,error:downloadError} = await db.storage.from(bucket).download(sourceAsset.storage_key);
+    if (downloadError || !sourceBlob) throw downloadError ?? new Error('Could not download extracted production source.');
+    const sourceText = await sourceBlob.text();
+    const production = await planProductionFromSource(sourceText,{apiKey:aiKey,baseUrl:aiBaseUrl,model:aiModel});
+    const validated = CreateJobSchema.safeParse({production:{
+      ...production,
+      projectMetadata:{...(production.projectMetadata ?? {}),projectId:id}
+    }});
+    if (!validated.success) return reply.code(422).send({error:'planned_production_failed_validation',details:validated.error.flatten()});
+    const {data:project,error:projectError} = await db.from('film_studio_projects').select('id,title').eq('id',id).maybeSingle();
+    if (projectError) throw projectError;
+    if (!project) return reply.code(404).send({error:'project_not_found'});
+    const {data:job,error:jobError} = await db.from('film_studio_jobs').insert({
+      project_id:id,title:validated.data.production.title || project.title,
+      idea:validated.data.production.idea,status:'queued',progress:0,
+      production_specification:validated.data.production
+    }).select('id,status,progress,created_at').single();
+    if (jobError) throw jobError;
+    const renderDispatch = await dispatchRenderer(request.log);
+    return reply.code(202).send({ ...job, projectId:id, renderDispatch, plan:{sceneCount:validated.data.production.scenes.length,durationSeconds:validated.data.production.durationSeconds,aspectRatio:validated.data.production.aspectRatio} });
+  } catch (error) {
+    request.log.error(error,'Story interpretation and planning failed');
+    const message = error instanceof Error ? error.message : 'Unknown planning error';
+    const providerFailure = /AI planner request failed|AI planner returned|AI planner output/i.test(message);
+    return reply.code(providerFailure ? 502 : 503).send({error:'story_planning_failed',message:message.slice(0,1000)});
   }
 });
 
