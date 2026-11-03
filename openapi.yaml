@@ -373,6 +373,18 @@ components:
         libraryVersion: { type: integer, minimum: 1 }
         required: { type: boolean }
         metadata: { type: object }
+    VoiceProfile:
+      type: object
+      required: [id, name, provider, voice]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        provider: { type: string, enum: [edge-tts, espeak-ng] }
+        voice: { type: string }
+        language: { type: string }
+        rate: { type: string }
+        pitch: { type: string }
+        volume: { type: string }
     Character:
       type: object
       required: [id, name, rig]
@@ -440,10 +452,14 @@ components:
           type: array
           maxItems: 500
           items: { type: object }
+        voiceProfiles:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/VoiceProfile' }
         dialogue:
           type: array
           maxItems: 1000
-          items: { type: object, required: [id, sceneId, speaker, text], properties: { id: { type: string }, sceneId: { type: string }, characterId: { type: string }, speaker: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
+          items: { type: object, required: [id, sceneId, speaker, text], properties: { id: { type: string }, sceneId: { type: string }, characterId: { type: string }, voiceProfileId: { type: string }, speaker: { type: string }, text: { type: string }, startSeconds: { type: number }, endSeconds: { type: number } } }
         audioCues:
           type: array
           maxItems: 1000
