@@ -182,6 +182,12 @@ app.get('/v1/styles/:slug/engine', async (request, reply) => {
 
 
 const libraryAssetTypes = ['character','rig','environment','prop','material','texture','animation','music','voice','sound-effect','font','image','video','other'] as const;
+const libraryMimeTypes = new Set([
+  'application/json','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain',
+  'image/png','image/jpeg','image/webp','image/svg+xml',
+  'audio/mpeg','audio/wav','audio/ogg','audio/mp4',
+  'video/mp4','font/woff','font/woff2'
+]);
 
 app.post('/v1/assets', async (request, reply) => {
   if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
@@ -190,7 +196,7 @@ app.post('/v1/assets', async (request, reply) => {
       !Number.isSafeInteger(body.version) || (body.version ?? 0) < 1 ||
       !libraryAssetTypes.includes(body.assetType as typeof libraryAssetTypes[number]) ||
       typeof body.displayName !== 'string' || !body.displayName.trim() || body.displayName.length > 160 ||
-      typeof body.filename !== 'string' || typeof body.mimeType !== 'string' || typeof body.contentBase64 !== 'string') {
+      typeof body.filename !== 'string' || typeof body.mimeType !== 'string' || !libraryMimeTypes.has(body.mimeType) || typeof body.contentBase64 !== 'string') {
     return reply.code(400).send({error:'invalid_asset_metadata'});
   }
   if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.contentBase64)) return reply.code(400).send({error:'invalid_base64_content'});
