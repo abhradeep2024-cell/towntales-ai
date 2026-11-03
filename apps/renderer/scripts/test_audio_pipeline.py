@@ -86,7 +86,7 @@ class PreparedAudioTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             with patch("audio_pipeline.make_voice", side_effect=fake_voice) as voice_mock, patch("audio_pipeline.media_duration", return_value=2.0):
                 manifest = prepare_audio(spec, Path(directory), require_word_alignment=True)
-            self.assertEqual(voice_mock.call_args.kwargs["voice"], "en-US-GuyNeural")
+            self.assertEqual(voice_mock.call_args.args[1], "en-US-GuyNeural")
             self.assertEqual(voice_mock.call_args.kwargs["pitch"], "+0Hz")
             self.assertEqual(manifest["tracks"][0]["kind"], "dialogue")
             self.assertEqual(manifest["tracks"][0]["delayMs"], 1000)
