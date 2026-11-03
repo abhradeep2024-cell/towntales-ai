@@ -37,13 +37,13 @@ describe('declarative animation production contract', () => {
   it('accepts a complete provider-neutral manifest with assets, shots, dialogue, audio and captions', () => {
     const rich = structuredClone(base);
     Object.assign(rich, {
-      assets: [{ id: 'bedroom-set', type: 'environment', uri: 'supabase://assets/bedroom.glb', version: '1', required: true }],
+      assets: [{ id: 'bedroom-set', type: 'environment', uri: 'supabase://assets/bedroom.glb', version: '1', required: true }, {id:'door-creak',type:'sound-effect',libraryAssetKey:'door-creak',libraryVersion:1,required:true}],
       environments: [{ id: 'bedroom', name: 'Alex bedroom', assetId: 'bedroom-set', locationDescription: 'A small bedroom at dawn' }],
       shots: [{ id: 'shot-1', sceneId: 'scene-1', title: 'Wide reveal', startSeconds: 0, durationSeconds: 6, assetIds: ['bedroom-set'], transitionIn: 'cut', transitionOut: 'fade' }],
       tracks: [{ id: 'camera-main', name: 'Main camera', kind: 'camera', targetId: 'scene-1' }],
       voiceProfiles: [{id:'alex-en',name:'Alex Voice',provider:'edge-tts',voice:'en-US-AriaNeural'}],
       dialogue: [{ id: 'line-1', sceneId: 'scene-1', characterId: 'ALEX', speaker: 'Alex', text: 'Did you see that?', startSeconds: 1, endSeconds: 2.5, voiceProfileId: 'alex-en' }],
-      audioCues: [{ id: 'cue-1', sceneId: 'scene-1', type: 'sound-effect', assetId: 'bedroom-set', label: 'Door creak', startSeconds: 2, durationSeconds: 1, fadeInSeconds: 0.1, fadeOutSeconds: 0.2 }],
+      audioCues: [{ id: 'cue-1', sceneId: 'scene-1', type: 'sound-effect', assetId: 'door-creak', label: 'Door creak', startSeconds: 2, durationSeconds: 1, fadeInSeconds: 0.1, fadeOutSeconds: 0.2 }],
       captionCues: [{ id: 'caption-1', sceneId: 'scene-1', text: 'Did you see that?', startSeconds: 1, endSeconds: 2.5, kind: 'dialogue', speaker: 'Alex' }],
       outputProfiles: [{ id: 'vertical-master', width: 1280, height: 720, fps: 30, codec: 'h264', container: 'mp4', quality: 'master' }],
       qaRules: [{ id: 'caption-safe-area', category: 'caption', severity: 'blocking', description: 'Captions must remain inside mobile safe areas.' }],
@@ -238,6 +238,16 @@ describe('declarative animation production contract', () => {
     production.scenes[0].actors[0].actions = [{type:'move',startSeconds:0,durationSeconds:2}];
     expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
     production.scenes[0].actors[0].actions = [{type:'wave',startSeconds:5,durationSeconds:2}];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+
+  it('rejects audio cue asset references with incompatible asset types', () => {
+    const production = structuredClone(base);
+    Object.assign(production,{
+      assets:[{id:'bedroom-set',type:'environment',required:true}],
+      audioCues:[{id:'bad-cue',sceneId:'scene-1',type:'sound-effect',assetId:'bedroom-set',label:'Wrong type',startSeconds:1,durationSeconds:1}]
+    });
     expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
   });
 
