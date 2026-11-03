@@ -15,6 +15,8 @@ API_TOKEN="YOUR_API_TOKEN" npm run submit -- ../path/to/story.docx --title "My s
 ```
 Optional flags: `--description "..." `, `--style <style-id>`, and `--aspect-ratio 16:9|9:16|1:1`. The command uploads the source, extracts it, asks the configured AI planner for a validated production manifest, and queues a render job. Set `API_BASE_URL` if the API is not hosted at the default Render URL. Keep `API_TOKEN` private; never put it in source control.
 
+Story planning requires `AI_API_KEY` and `AI_MODEL`. Automated creative QA requires a vision-capable model configured as `CREATIVE_QA_MODEL` (or a vision-capable `AI_MODEL`). Set `AI_BASE_URL` when using an OpenAI-compatible provider other than the default.
+
 ## Free-tier architecture
 - Render free web service hosts only the authenticated API.
 - Public GitHub Actions standard runners render videos and are free for public repositories. Render's free API instance sleeps after 15 minutes without inbound traffic.
