@@ -6,6 +6,12 @@ import type { ProductionSpec } from '@film-studio/contracts';
 
 type Scene = ProductionSpec['scenes'][number];
 type ActorKind = 'alex' | 'shadow' | 'resident' | 'double';
+export const CHARACTER_IDS = {
+  alex: 'CHAR_ALEX_001',
+  shadow: 'CHAR_SHADOW_ALEX_001',
+  double: 'CHAR_ALEX_DOUBLE_001',
+  resident: 'CHAR_TOWN_RESIDENT_001',
+} as const;
 const materialCache = new Map<string, THREE.MeshStandardMaterial>();
 const material = (color: string, roughness = 0.86) => {
   const key = `${color}:${roughness}`;
@@ -97,7 +103,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
     : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
   const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
-  return <group position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : sceneIndex === 6 && kind === 'alex' ? Math.max(0, Math.min(1, (t - 4) / 0.8)) * 1.15 : 0.08, bodyLean]}>
+  return <group name={CHARACTER_IDS[kind]} userData={{ characterId: CHARACTER_IDS[kind], sceneIndex }} position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : sceneIndex === 6 && kind === 'alex' ? Math.max(0, Math.min(1, (t - 4) / 0.8)) * 1.15 : 0.08, bodyLean]}>
     <group position={[0, 1.12 + idle, 0]}>
       <ActorBlock shadowless={actorShadowless} position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
       <ActorBlock shadowless={actorShadowless} position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
