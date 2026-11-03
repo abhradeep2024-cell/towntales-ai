@@ -51,7 +51,7 @@ def midi_hz(note: int) -> float:
     return 440.0 * (2.0 ** ((note - 69) / 12.0))
 
 
-def make_music(path: Path, duration: float, mood: str) -> None:
+def make_music(path: Path, duration: float, mood: str, duck_intervals: list[tuple[float, float]] | None = None) -> None:
     sr = 24000
     # Four restrained, slowly changing harmonic pads; no copyrighted melody or samples.
     progressions = {
@@ -77,8 +77,12 @@ def make_music(path: Path, duration: float, mood: str) -> None:
             amp = (0.020 if voice == 0 else 0.014) * (1.0 if voice < 2 else 0.78)
             value += amp * (math.sin(2 * math.pi * hz * t) + 0.18 * math.sin(4 * math.pi * hz * t))
         if mood == "suspense":
-            if 17 <= t < 24:
+            if 17 <= t < 19.8:
                 section_gain = 1.08
+            elif 19.8 <= t < 22.2:
+                section_gain = 0.02
+            elif 22.2 <= t < 24:
+                section_gain = 0.92
             elif 24 <= t < 31:
                 section_gain = 1.16
             elif 31 <= t < 39:
@@ -94,6 +98,8 @@ def make_music(path: Path, duration: float, mood: str) -> None:
             value += 0.018 * heartbeat * math.sin(2 * math.pi * bass_hz * t)
             tension = min(1.0, max(0.0, (t - 16) / 8))
             value += 0.004 * tension * math.sin(2 * math.pi * freqs[chord_idx][0] * 1.05946 * t)
+        if duck_intervals and any(start <= t <= end for start, end in duck_intervals):
+            section_gain = 0.0
         value *= max(0.0, edge_fade) * change_fade * pulse * section_gain
         value = max(-0.2, min(0.2, value))
         sample = int(value * 32767)
@@ -106,7 +112,7 @@ def make_music(path: Path, duration: float, mood: str) -> None:
         wav.writeframes(samples.tobytes())
 
 
-def make_effects(path: Path, duration: float) -> None:
+def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, float]] | None = None) -> None:
     """Create a deterministic, original suspense SFX bed aligned to Episode 01 story beats."""
     sr = 24000
     frame_count = max(1, int(duration * sr))
@@ -152,7 +158,9 @@ def make_effects(path: Path, duration: float) -> None:
                 envelope = 0.7 + 0.3 * math.sin(2 * math.pi * 0.11 * t)
                 wave_value = noise_state * 1.8 + 0.18 * math.sin(2 * math.pi * frequency * t)
             index = first + offset
-            value = mono[index] + int(amplitude * envelope * wave_value * 32767)
+            global_time = start + t
+            duck_gain = 0.0 if duck_intervals and any(left <= global_time <= right for left, right in duck_intervals) else 1.0
+            value = mono[index] + int(amplitude * envelope * wave_value * duck_gain * 32767)
             mono[index] = max(-32768, min(32767, value))
 
     add_event(0.0, min(51.0, duration), "wind", 92, 0.035)
@@ -162,10 +170,12 @@ def make_effects(path: Path, duration: float) -> None:
         add_event(tick, 0.075, "click", 1750, 0.10)
     add_event(8.7, 0.8, "breath", 180, 0.04)
     for wave_index in range(3):
-        add_event(18.0 + wave_index * 0.92, 0.26, "boom", 52, 0.12)
-    add_event(21.0, 1.1, "breath", 72, 0.06)
+        add_event(20.0 + wave_index * 0.92, 0.26, "boom", 52, 0.12)
+    add_event(22.9, 1.1, "breath", 72, 0.06)
     for index in range(14):
         add_event(24.25 + index * 0.46, 0.16, "step", 72 if index % 2 == 0 else 88, 0.12)
+    for breath in (26.4, 28.1, 29.7):
+        add_event(breath, 0.65, "breath", 105, 0.06)
     add_event(30.75, 0.32, "boom", 60, 0.18)
     add_event(31.35, 1.25, "creak", 310, 0.10)
     for beat in range(5):
