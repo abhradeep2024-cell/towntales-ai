@@ -97,20 +97,44 @@ jobs:
         run: npm run render:lemo:smoke
       - name: Render a new film with the native Art Deco engine modules
         run: npm run render:lemo:art-deco
-      - name: Render and mux full-resolution TownTales Episode 01 master
+      - name: Prepare approved Episode 01 narration, word timing, music and sound effects
         run: |
-          npx remotion render apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-production-silent.mp4 --log=error
           PYTHON_EXECUTABLE=.venv/bin/python .venv/bin/python apps/renderer/scripts/audio_pipeline.py \
             --spec apps/renderer/fixtures/episode-01-roblox.json \
+            --workdir /tmp/towntales-episode-01-audio \
+            --prepare-only --require-word-alignment
+          test -s /tmp/towntales-episode-01-audio/audio-manifest.json
+          test -s /tmp/towntales-episode-01-audio/word-alignments.json
+          cp /tmp/towntales-episode-01-audio/word-alignments.json /tmp/towntales-episode-01-word-alignments.json
+      - name: Render and mux low-resolution Episode 01 preview before master
+        working-directory: apps/renderer
+        run: |
+          node --import tsx scripts/render-episode.mjs TownTalesEpisode01Preview \
+            /tmp/towntales-episode-01-audio/word-alignments.json \
+            /tmp/towntales-episode-01-preview-silent.mp4
+          PYTHON_EXECUTABLE=../../.venv/bin/python ../../.venv/bin/python scripts/audio_pipeline.py \
+            --spec fixtures/episode-01-roblox.json \
+            --video /tmp/towntales-episode-01-preview-silent.mp4 \
+            --output /tmp/towntales-episode-01-preview.mp4 \
+            --workdir /tmp/towntales-episode-01-audio \
+            --reuse-prepared --require-word-alignment
+          ffmpeg -v error -i /tmp/towntales-episode-01-preview.mp4 -f null -
+          ffprobe -v error -show_entries format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate -of json /tmp/towntales-episode-01-preview.mp4
+      - name: Render and mux full-resolution TownTales Episode 01 master using the same prepared narration
+        working-directory: apps/renderer
+        run: |
+          node --import tsx scripts/render-episode.mjs TownTalesEpisode01Production \
+            /tmp/towntales-episode-01-audio/word-alignments.json \
+            /tmp/towntales-episode-01-production-silent.mp4
+          PYTHON_EXECUTABLE=../../.venv/bin/python ../../.venv/bin/python scripts/audio_pipeline.py \
+            --spec fixtures/episode-01-roblox.json \
             --video /tmp/towntales-episode-01-production-silent.mp4 \
             --output /tmp/towntales-episode-01.mp4 \
             --workdir /tmp/towntales-episode-01-audio \
-            --require-word-alignment
-          test -s /tmp/towntales-episode-01-audio/word-alignments.json
-          cp /tmp/towntales-episode-01-audio/word-alignments.json /tmp/towntales-episode-01-word-alignments.json
+            --reuse-prepared --require-word-alignment
       - name: Validate all MP4 outputs
         run: |
-          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4 /tmp/towntales-episode-01.mp4; do
+          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4 /tmp/towntales-episode-01-preview.mp4 /tmp/towntales-episode-01.mp4; do
             test -s "$f"
             ffmpeg -v error -i "$f" -f null -
             ffprobe -v error -show_entries format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate -of json "$f"
@@ -172,8 +196,11 @@ jobs:
             /tmp/film-studio-vertical.mp4
             /tmp/film-studio-lemo-smoke.mp4
             /tmp/film-studio-lemo-art-deco.mp4
+            /tmp/towntales-episode-01-preview.mp4
             /tmp/towntales-episode-01.mp4
             /tmp/towntales-episode-01-word-alignments.json
+            /tmp/towntales-episode-01-audio/audio-manifest.json
+            /tmp/towntales-episode-01-audio/word-captions.ass
             /tmp/towntales-episode-01-master-frame.png
             /tmp/towntales-episode-01-contact-sheet.jpg
           if-no-files-found: error
