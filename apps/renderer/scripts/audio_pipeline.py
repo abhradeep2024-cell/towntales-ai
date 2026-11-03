@@ -71,11 +71,30 @@ def make_music(path: Path, duration: float, mood: str) -> None:
         change_fade = min(1.0, local / 0.8, (8.0 - local) / 0.8)
         edge_fade = min(1.0, t / fade, (duration - t) / fade) if fade else 1.0
         pulse = 0.90 + 0.10 * math.sin(2 * math.pi * 0.075 * t)
+        section_gain = 1.0
         value = 0.0
         for voice, hz in enumerate(freqs[chord_idx]):
             amp = (0.020 if voice == 0 else 0.014) * (1.0 if voice < 2 else 0.78)
             value += amp * (math.sin(2 * math.pi * hz * t) + 0.18 * math.sin(4 * math.pi * hz * t))
-        value *= max(0.0, edge_fade) * change_fade * pulse
+        if mood == "suspense":
+            if 17 <= t < 24:
+                section_gain = 1.08
+            elif 24 <= t < 31:
+                section_gain = 1.16
+            elif 31 <= t < 39:
+                section_gain = 0.88
+            elif 39 <= t < 51:
+                section_gain = 0.72
+            elif 51 <= t < 56:
+                section_gain = 0.18
+            elif t >= 56:
+                section_gain = 0.9 + 0.25 * min(1.0, (t - 56) / 4)
+            bass_hz = freqs[chord_idx][0] * 0.5
+            heartbeat = max(0.0, math.sin(2 * math.pi * 0.82 * t)) ** 8
+            value += 0.018 * heartbeat * math.sin(2 * math.pi * bass_hz * t)
+            tension = min(1.0, max(0.0, (t - 16) / 8))
+            value += 0.004 * tension * math.sin(2 * math.pi * freqs[chord_idx][0] * 1.05946 * t)
+        value *= max(0.0, edge_fade) * change_fade * pulse * section_gain
         value = max(-0.2, min(0.2, value))
         sample = int(value * 32767)
         samples.append(sample)
