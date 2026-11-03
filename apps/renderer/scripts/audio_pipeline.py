@@ -98,35 +98,40 @@ def make_effects(path: Path, duration: float) -> None:
         count = min(int(seconds * sr), frame_count - first)
         if count <= 0:
             return
+        noise_state = 0.0
         for offset in range(count):
             t = offset / sr
             progress = t / max(seconds, 0.001)
+            absolute_index = first + offset
+            seed = (absolute_index * 1664525 + 1013904223) & 0xFFFFFFFF
+            noise_sample = (seed / 0xFFFFFFFF) * 2.0 - 1.0
+            noise_state = noise_state * 0.94 + noise_sample * 0.06
             if kind == "boom":
                 envelope = math.exp(-5.5 * t)
-                wave_value = math.sin(2 * math.pi * frequency * t) + 0.32 * math.sin(2 * math.pi * frequency * 0.5 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.32 * math.sin(2 * math.pi * frequency * 0.5 * t) + noise_sample * 0.18
             elif kind == "click":
                 envelope = math.exp(-48 * t)
-                wave_value = math.sin(2 * math.pi * frequency * t) + 0.28 * math.sin(2 * math.pi * frequency * 2.3 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.28 * math.sin(2 * math.pi * frequency * 2.3 * t) + noise_sample * 0.55
             elif kind == "step":
                 envelope = math.exp(-20 * t)
-                wave_value = math.sin(2 * math.pi * frequency * t) + 0.24 * math.sin(2 * math.pi * frequency * 2.1 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.24 * math.sin(2 * math.pi * frequency * 2.1 * t) + noise_sample * 0.42
             elif kind == "creak":
                 envelope = math.sin(math.pi * min(1.0, progress)) ** 1.4
                 swept = frequency - 170 * progress
-                wave_value = math.sin(2 * math.pi * swept * t) + 0.2 * math.sin(2 * math.pi * swept * 2 * t)
+                wave_value = math.sin(2 * math.pi * swept * t) + 0.2 * math.sin(2 * math.pi * swept * 2 * t) + noise_sample * 0.28
             elif kind == "buzz":
                 envelope = 0.62 + 0.38 * math.sin(2 * math.pi * 7 * t)
-                wave_value = math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 3 * t)
+                wave_value = math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 3 * t) + noise_sample * 0.08
             elif kind == "bird":
                 envelope = math.sin(math.pi * min(1.0, progress)) ** 2
                 swept = frequency + 420 * math.sin(math.pi * progress)
-                wave_value = math.sin(2 * math.pi * swept * t)
+                wave_value = math.sin(2 * math.pi * swept * t) + 0.18 * math.sin(2 * math.pi * swept * 2.01 * t)
             elif kind == "breath":
                 envelope = math.sin(math.pi * min(1.0, progress)) ** 2
-                wave_value = 0.55 * math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 1.37 * t)
-            else:  # soft wind bed
+                wave_value = noise_state * 1.6 + 0.25 * math.sin(2 * math.pi * frequency * t)
+            else:  # filtered, low-frequency wind texture
                 envelope = 0.7 + 0.3 * math.sin(2 * math.pi * 0.11 * t)
-                wave_value = math.sin(2 * math.pi * frequency * t) + 0.25 * math.sin(2 * math.pi * frequency * 0.73 * t) + 0.12 * math.sin(2 * math.pi * frequency * 1.8 * t)
+                wave_value = noise_state * 1.8 + 0.18 * math.sin(2 * math.pi * frequency * t)
             index = first + offset
             value = mono[index] + int(amplitude * envelope * wave_value * 32767)
             mono[index] = max(-32768, min(32767, value))
