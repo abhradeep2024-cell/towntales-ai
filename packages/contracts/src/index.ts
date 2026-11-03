@@ -126,11 +126,15 @@ export const SceneSchema = z.object({
  * existing queued jobs remain readable while intake migrates to the richer contract. */
 export const AssetReferenceSchema = z.object({
   id: z.string().min(1).max(100),
-  type: z.enum(['character','rig','environment','prop','material','texture','animation','music','voice','sound-effect','font','image','video']),
+  type: z.enum(['character','rig','environment','prop','material','texture','animation','music','voice','sound-effect','font','image','video','other']),
   uri: z.string().min(1).max(2000).optional(),
   version: z.string().max(80).optional(),
+  libraryAssetKey: z.string().min(1).max(120).optional(),
+  libraryVersion: z.number().int().positive().optional(),
   required: z.boolean().default(true),
   metadata: z.record(z.string(), z.unknown()).default({})
+}).superRefine((asset,ctx) => {
+  if ((asset.libraryAssetKey === undefined) !== (asset.libraryVersion === undefined)) ctx.addIssue({code:'custom',path:['libraryVersion'],message:'Library asset references require both libraryAssetKey and libraryVersion.'});
 });
 export const EnvironmentSchema = z.object({
   id: z.string().min(1).max(100),
