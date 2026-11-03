@@ -7,6 +7,9 @@ describe('production source intake extraction', () => {
     expect(result.format).toBe('txt');
     expect(result.text).toContain('A character enters.');
   });
+  it('rejects malformed DOCX packages instead of storing them as extracted text', async () => {
+    await expect(extractProductionInput('story.docx', Buffer.from('not-a-docx-package'))).rejects.toThrow();
+  });
   it('parses JSON and preserves its structured data', async () => {
     const result = await extractProductionInput('brief.json', Buffer.from(JSON.stringify({title:'Test',scenes:[{id:'one'}]})));
     expect(result.format).toBe('json');
