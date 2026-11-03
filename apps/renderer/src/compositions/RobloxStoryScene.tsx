@@ -247,7 +247,7 @@ function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneInd
   const shadowWave = sceneIndex === 0 || sceneIndex === 3;
   const alexPosition: [number, number, number] = sceneIndex === 8 ? [-2.2, 0, 1.2]
     : sceneIndex === 7 ? [-2.8 + Math.min(1, (frame / fps) / 2.2) * 2.0, 0, 0.2]
-    : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.28, 0, 0.2 - (frame / fps) * 0.5]
+    : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.73, 0, 0.2 - (frame / fps) * 1.13]
      : sceneIndex === 6 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - cues.alexTurn) / 2)) * 0.65, 0, 0.2 + Math.max(0, Math.min(1, (frame / fps - cues.alexTurn) / 2)) * 0.3]
     : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.22, 0, 0.2]
     : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
@@ -271,7 +271,7 @@ function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneInd
     })}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} cues={cues} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
-      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1 - (frame / fps) * 0.52] : [0.95, 0, -0.1]} cues={cues} />}
+      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 1.4, 0, -0.1 - (frame / fps) * 1.1] : [0.95, 0, -0.1]} cues={cues} />}
     {sceneIndex === 1 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={1} position={[1.72, 0, 0.35]} scale={0.78} cues={cues} />}
     {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.13]} scale={0.5} cues={cues} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - cues.doubleReveal) / 2.2)) * 0.45, 0, -3.05]} cues={cues} />}
@@ -307,8 +307,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     windowReveal: localWordTime('window', 1.0),
     windowWave: Math.max(0.4, localWordTime('waving', 2.0) - 0.8)
   };
-  const alexX = sceneIndex === 4 ? -0.8 - t * 0.28 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
-  const alexZ = sceneIndex === 4 ? 0.2 - t * 0.5 : 0.2;
+  const alexX = sceneIndex === 4 ? -0.8 - t * 0.73 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
+  const alexZ = sceneIndex === 4 ? 0.2 - t * 1.13 : 0.2;
   let cameraPosition: [number, number, number] = [0, 2.6, 9.5];
   let cameraTarget: [number, number, number] = [0, 1, 0];
   if (sceneIndex === 0) {
@@ -335,14 +335,13 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     else if (t < wideShot) { cameraPosition = [-0.8, 2.2, 4.0]; cameraTarget = [-0.8, 2.0, 0.2]; }
     else { cameraPosition = [0, 2.6, 9.5]; cameraTarget = [0, 1, 0]; }
   } else if (sceneIndex === 4) {
-    if (t < 2.4) {
+    if (t < 1.4) {
       const shake = Math.sin(t * 24) * 0.035;
       cameraPosition = [alexX + shake, 2.7 + Math.abs(shake), alexZ + 5.5 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.5];
-    } else if (t < 4.8) {
+    } else if (t < 2.1) {
       const shake = Math.sin(t * 24) * 0.05;
       cameraPosition = [alexX - 0.8 + shake, 2.3, alexZ + 4.2 + shake]; cameraTarget = [alexX, 1.1, alexZ - 1.1];
-    } else if (t < 5.6) { cameraPosition = [alexX + 3.8, 2.2, alexZ + 1.8]; cameraTarget = [alexX, 1.1, alexZ - 0.8]; }
-    else { cameraPosition = [-0.6, 2.1, 1.6]; cameraTarget = [-3, 1.2, -3.2]; }
+    } else { cameraPosition = [-0.6, 2.1, 1.6]; cameraTarget = [-3, 1.2, -3.2]; }
   } else if (sceneIndex === 5) {
     if (t < cues.doubleReveal) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.7, 1.3, -3.05]; }
     else if (t < cues.alexRecoil - 0.55) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - cues.doubleReveal) / Math.max(0.5, cues.alexRecoil - cues.doubleReveal - 0.55)) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
