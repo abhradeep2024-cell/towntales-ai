@@ -377,8 +377,11 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         voice_text = "\n\n".join(narration_lines)
         target = workdir / "voice-master.mp3"
         provider, word_events = make_voice(voice_text, voice_name, target, rate="+5%")
+        expected_word_count = len(re.findall(r"\b[\w]+(?:['’][\w]+)?\b", voice_text))
         if require_word_alignment and (provider != "edge-tts" or not word_events):
             raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
+        if require_word_alignment and len(word_events) < expected_word_count * 0.9:
+            raise RuntimeError(f"Edge TTS returned only {len(word_events)} word boundaries for {expected_word_count} narration words; the caption and choreography alignment is incomplete.")
         clip_duration = media_duration(target)
         if clip_duration <= 0:
             raise RuntimeError("Continuous narration master produced an empty audio track.")
@@ -396,6 +399,8 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         report["voiceSegments"] = len(narration_lines)
         report["voiceDurationSeconds"] = round(clip_duration, 3)
         report["voiceRate"] = "+5%"
+        report["expectedWordCount"] = expected_word_count
+        report["alignedWordCoverage"] = round(len(word_events) / max(1, expected_word_count), 4)
         voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": 0, "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
     elif require_word_alignment:
         raise RuntimeError("Production word alignment required, but the specification contains no narration.")
