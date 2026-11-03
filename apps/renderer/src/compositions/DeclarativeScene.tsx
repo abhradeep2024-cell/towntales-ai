@@ -8,6 +8,7 @@ import type { ProductionSpec } from '@film-studio/contracts';
 type Scene = ProductionSpec['scenes'][number];
 type Character = NonNullable<ProductionSpec['characters']>[number];
 type Actor = NonNullable<Scene['actors']>[number];
+type LibraryAsset = NonNullable<ProductionSpec['assets']>[number];
 
 const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
 const smooth = (v: number) => { const p = clamp(v); return p * p * (3 - 2 * p); };
@@ -42,7 +43,61 @@ function CameraTrack({ scene, time }: { scene: Scene; time: number }) {
   return null;
 }
 
-function AnimatedActor({ actor, character, time }: { actor: Actor; character?: Character; time: number }) {
+function AnimatedActor({actor,character,time,assets}:{
+  actor:Actor;character?:Character;time:number;assets:LibraryAsset[];
+}) {
+  if (character?.rig === 'gltf-humanoid' && character.assetId) {
+    const asset = assets.find(item=>item.id===character.assetId);
+    if (asset?.uri) return <GltfAnimatedActor actor={actor} character={character} asset={asset} time={time}/>;
+  }
+  return <BlockAnimatedActor actor={actor} character={character} time={time}/>;
+}
+
+function GltfAnimatedActor({actor,character,asset,time}:{
+  actor:Actor;character:Character;asset:LibraryAsset;time:number;
+}) {
+  const gltf = useLoader(GLTFLoader,asset.uri!);
+  const model = useMemo(()=>{
+    const clone = gltf.scene.clone(true);
+    clone.traverse(node=>{
+      if (node instanceof THREE.Mesh) {
+        node.castShadow = character.appearance.castShadow;
+        node.receiveShadow = character.appearance.receiveShadow;
+      }
+    });
+    return clone;
+  },[gltf.scene,character.appearance.castShadow,character.appearance.receiveShadow]);
+  const mixer = useMemo(()=>new THREE.AnimationMixer(model),[model]);
+  const actionMap = useMemo(()=>new Map(gltf.animations.map(clip=>[clip.name,mixer.clipAction(clip)])),[gltf.animations,mixer]);
+  const currentAction = useRef<THREE.AnimationAction|null>(null);
+  const {fps} = useVideoConfig();
+  const active = actor.actions.filter(action=>time>=action.startSeconds && time<=action.startSeconds+action.durationSeconds);
+  const priorities = ['talk','wave','point','gesture','jump','recoil','dance','clap','crouch','run','walk','idle'];
+  const actionType = priorities.find(type=>active.some(action=>action.type===type)) ?? 'idle';
+  const requestedName = character.animationMap?.[actionType] ?? actionType;
+  const clipName = gltf.animations.find(clip=>clip.name.toLowerCase()===requestedName.toLowerCase())?.name ?? gltf.animations[0]?.name;
+  const nextAction = clipName ? actionMap.get(clipName) ?? null : null;
+  const move = [...actor.actions].filter(action=>action.type==='move' && time>=action.startSeconds).sort((a,b)=>b.startSeconds-a.startSeconds)[0];
+  const moveProgress = move ? smooth((time-move.startSeconds)/Math.max(0.001,move.durationSeconds)) : 0;
+  const target = move?.targetPosition ?? actor.position;
+  const position = actor.position.map((value,index)=>mix(value,target[index],moveProgress)) as [number,number,number];
+  const turn = [...actor.actions].filter(action=>action.type==='turn' && time>=action.startSeconds).sort((a,b)=>b.startSeconds-a.startSeconds)[0];
+  const turnProgress = turn ? smooth((time-turn.startSeconds)/Math.max(0.001,turn.durationSeconds)) : 0;
+  const rotationY = turn ? mix(actor.rotationY,turn.targetRotationY ?? actor.rotationY,turnProgress) : actor.rotationY;
+  useFrame(()=>{
+    if (nextAction && currentAction.current !== nextAction) {
+      currentAction.current?.fadeOut(0.12);
+      nextAction.reset().fadeIn(0.12).play();
+      currentAction.current = nextAction;
+    }
+    mixer.update(1/fps);
+  });
+  return <group position={position} rotation={[0,rotationY,0]} scale={character.appearance.scale}>
+    <primitive object={model}/>
+  </group>;
+}
+
+function BlockAnimatedActor({ actor, character, time }: { actor: Actor; character?: Character; time: number }) {
   const root = useRef<THREE.Group>(null);
   const leftArm = useRef<THREE.Group>(null), rightArm = useRef<THREE.Group>(null);
   const leftLeg = useRef<THREE.Group>(null), rightLeg = useRef<THREE.Group>(null);
@@ -131,8 +186,6 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   </group>;
 }
 
-type LibraryAsset = NonNullable<ProductionSpec['assets']>[number];
-
 function ModelAsset({asset,position,scale,rotation,castShadow=true}:{
   asset:LibraryAsset;
   position:[number,number,number];
@@ -201,7 +254,7 @@ export const DeclarativeScene: React.FC<{ scene: Scene; production: ProductionSp
       <mesh rotation={[-Math.PI/2,0,0]} position={[0,-.06,0]} receiveShadow><planeGeometry args={[groundSize,groundSize]}/><meshStandardMaterial color={groundColor}/></mesh>
       {environmentModel ? <ModelAsset asset={environmentModel} position={[0,0,0]} scale={[1,1,1]} rotation={[0,0,0]}/> : null}
       <SceneProps props={props} assets={libraryAssets}/>
-      {(scene.actors ?? []).map((actor,index)=><AnimatedActor key={actor.characterId+index} actor={actor} character={characters.get(actor.characterId)} time={time}/>)}
+      {(scene.actors ?? []).map((actor,index)=><AnimatedActor key={actor.characterId+index} actor={actor} character={characters.get(actor.characterId)} time={time} assets={libraryAssets}/>)}
     </Canvas>
     {scene.onScreenText.map((line,index)=><div key={index} style={{position:'absolute',top:`${14+index*6}%`,left:'50%',transform:'translateX(-50%)',maxWidth:'88%',color:'#fff',fontSize:36,fontWeight:900,textAlign:'center',textShadow:'0 3px 12px #000',fontFamily:'Arial'}}>{line}</div>)}
   </div>;
