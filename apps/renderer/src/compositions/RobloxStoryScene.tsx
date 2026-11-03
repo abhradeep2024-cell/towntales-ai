@@ -38,6 +38,13 @@ function ABlock({ shadowless = false, ...props }: { position: [number, number, n
   return <Block {...props} shadowless={shadowless} />;
 }
 
+function ActorBlock({ shadowless = false, ...props }: {
+  position: [number, number, number]; scale: [number, number, number];
+  material: THREE.Material; rotation?: [number, number, number]; shadowless?: boolean;
+}) {
+  return <ABlock {...props} shadowless={shadowless} />;
+}
+
 function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }: {
   frame: number; fps: number; kind: ActorKind; sceneIndex: number; position?: [number, number, number]; scale?: number;
 }) {
@@ -83,48 +90,48 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }
   const trousers = isVoid ? voidMat : black;
   const face = isVoid ? voidMat : skin;
   const shoe = isVoid ? voidMat : white;
-  const ActorBlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || isDouble || (kind === 'alex' && sceneIndex === 7)} />;
+  const actorShadowless = isVoid || isDouble || (kind === 'alex' && sceneIndex === 7);
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
     : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - 3) / 1.1)) * 0.18 : 0;
   const shadowStretch = isShadow && sceneIndex === 4 ? 1.15 + 0.08 * Math.sin(t * 2.2) ** 2 : 1;
   return <group position={position} scale={[scale * shadowStretch, scale, scale]} rotation={[0, sceneIndex === 8 && kind === 'alex' ? Math.PI : 0.08, bodyLean]}>
     <group position={[0, 1.12 + idle, 0]}>
-      <ActorBlock position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
-      <ActorBlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
+      <ActorBlock shadowless={actorShadowless} position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
+      <ActorBlock shadowless={actorShadowless} position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, headYaw, headTilt]} />
       {!isVoid && <>
-        <ActorBlock position={[0, 1.02, -0.02]} scale={[0.63, 0.16, 0.62]} material={hair} />
-        <ActorBlock position={[-0.22, 1.08, 0.02]} scale={[0.2, 0.19, 0.52]} material={hair} rotation={[0, 0, -0.22]} />
-        <ActorBlock position={[0.12, 1.1, -0.03]} scale={[0.22, 0.2, 0.5]} material={hair} rotation={[0, 0, 0.25]} />
-        <ActorBlock position={[-0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
-        <ActorBlock position={[0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
-        <ActorBlock position={[0, 0.59, 0.27]} scale={[0.16, mouthOpen, 0.02]} material={material('#914d43')} />
-        <ActorBlock position={[0, 0.22, -0.25]} scale={[0.42, 0.44, 0.18]} material={hoodie} />
+        <ActorBlock shadowless={actorShadowless} position={[0, 1.02, -0.02]} scale={[0.63, 0.16, 0.62]} material={hair} />
+        <ActorBlock shadowless={actorShadowless} position={[-0.22, 1.08, 0.02]} scale={[0.2, 0.19, 0.52]} material={hair} rotation={[0, 0, -0.22]} />
+        <ActorBlock shadowless={actorShadowless} position={[0.12, 1.1, -0.03]} scale={[0.22, 0.2, 0.5]} material={hair} rotation={[0, 0, 0.25]} />
+        <ActorBlock shadowless={actorShadowless} position={[-0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
+        <ActorBlock shadowless={actorShadowless} position={[0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
+        <ActorBlock shadowless={actorShadowless} position={[0, 0.59, 0.27]} scale={[0.16, mouthOpen, 0.02]} material={material('#914d43')} />
+        <ActorBlock shadowless={actorShadowless} position={[0, 0.22, -0.25]} scale={[0.42, 0.44, 0.18]} material={hoodie} />
       </>}
       {isShadow && <>
-        <ActorBlock position={[-0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
-        <ActorBlock position={[0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
+        <ActorBlock shadowless={actorShadowless} position={[-0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
+        <ActorBlock shadowless={actorShadowless} position={[0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
       </>}
       {kind === 'alex' && sceneIndex === 2 && <group position={[-0.5, -0.35, 0.34]} rotation={[0.15, 0, -0.18]}>
-        <ActorBlock position={[0, 0, 0]} scale={[0.2, 0.34, 0.045]} material={black} />
-        <ActorBlock position={[0, 0.015, 0.026]} scale={[0.16, 0.27, 0.008]} material={material('#78a9c8')} />
-        <ActorBlock position={[0, -0.13, 0.032]} scale={[0.035, 0.018, 0.008]} material={white} />
+        <ActorBlock shadowless={actorShadowless} position={[0, 0, 0]} scale={[0.2, 0.34, 0.045]} material={black} />
+        <ActorBlock shadowless={actorShadowless} position={[0, 0.015, 0.026]} scale={[0.16, 0.27, 0.008]} material={material('#78a9c8')} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.13, 0.032]} scale={[0.035, 0.018, 0.008]} material={white} />
       </group>}
       <group position={[-0.47, 0.23, 0]} rotation={leftArmRotation}>
-        <ActorBlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
-        <ActorBlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
       </group>
       <group position={[0.47, 0.23, 0]} rotation={rightArmRotation}>
-        <ActorBlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
-        <ActorBlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
       </group>
       <group position={[-0.19, -0.46, 0]} rotation={[leg, 0, 0]}>
-        <ActorBlock position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
-        <ActorBlock position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
       </group>
       <group position={[0.19, -0.46, 0]} rotation={[-leg, 0, 0]}>
-        <ActorBlock position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
-        <ActorBlock position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
+        <ActorBlock shadowless={actorShadowless} position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
       </group>
     </group>
   </group>;
