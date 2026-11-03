@@ -272,7 +272,7 @@ app.post('/v1/intake', async (request, reply) => {
   const textKey = `intake/${id}/extracted.txt`;
   const mime = extracted.format === 'docx'
     ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    : extracted.format === 'json' ? 'application/json' : 'text/plain; charset=utf-8';
+    : extracted.format === 'json' ? 'application/json' : 'text/plain';
   let projectId: string | undefined;
   const uploadedKeys: string[] = [];
   try {
@@ -291,12 +291,12 @@ app.post('/v1/intake', async (request, reply) => {
     if (sourceError) throw sourceError;
     uploadedKeys.push(sourceKey);
     const extractedBytes = Buffer.from(extracted.text,'utf8');
-    const {error:textError} = await db.storage.from(bucket).upload(textKey,extractedBytes,{contentType:'text/plain; charset=utf-8',upsert:false});
+    const {error:textError} = await db.storage.from(bucket).upload(textKey,extractedBytes,{contentType:'text/plain',upsert:false});
     if (textError) throw textError;
     uploadedKeys.push(textKey);
     const {error:assetError} = await db.from('film_studio_assets').insert([
       {project_id:projectId,asset_type:'data',storage_key:sourceKey,mime_type:mime,byte_size:bytes.byteLength,metadata:{role:'original-production-input',filename:safeName,format:extracted.format}},
-      {project_id:projectId,asset_type:'data',storage_key:textKey,mime_type:'text/plain; charset=utf-8',byte_size:extractedBytes.byteLength,metadata:{role:'extracted-production-text',sourceFilename:safeName,format:extracted.format}}
+      {project_id:projectId,asset_type:'data',storage_key:textKey,mime_type:'text/plain',byte_size:extractedBytes.byteLength,metadata:{role:'extracted-production-text',sourceFilename:safeName,format:extracted.format}}
     ]);
     if (assetError) throw assetError;
     return reply.code(201).send({
