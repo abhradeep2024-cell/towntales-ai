@@ -70,7 +70,7 @@ async def make_edge_voice(text: str, voice: str, target: Path) -> list[dict]:
     import edge_tts
 
     words: list[dict] = []
-    communicate = edge_tts.Communicate(text, voice=voice, rate="+0%", volume="+0%", pitch="+0Hz")
+    communicate = edge_tts.Communicate(text, voice=voice, rate="+0%", volume="+0%", pitch="+0Hz", boundary="WordBoundary")
     with target.open("wb") as audio_file:
         async for chunk in communicate.stream():
             if chunk.get("type") == "audio":
