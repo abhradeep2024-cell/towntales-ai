@@ -17,6 +17,73 @@ The former text-card presentation is replaced with deterministic Three.js scenes
 - The private `towntales-assets` bucket must allow `video/mp4` and `application/json` (50 MB per-object limit); CI verifies both content types with signed-download byte comparisons.
 - Sidecar delivery for the production manifest, word alignments, technical QA and pending creative review.
 
+## Reusable declarative animation engine
+
+The core renderer must be story-agnostic. Episode-specific story logic belongs in input production data, never in the shared renderer.
+
+Structured production specifications can now define:
+
+- A reusable character library with stable character IDs, block-humanoid rig selection and per-character appearance.
+- Per-scene actor instances referencing those character IDs.
+- Time-based actor actions: idle, walk, run, wave, point, turn, jump, recoil, gesture, move, disappear and appear.
+- Independent actors in the same scene, allowing a character and a separately animated shadow/double to move on different timelines.
+- Environment props (box, sphere, cylinder and plane) with transforms and materials.
+- Camera keyframes with position, target and field-of-view interpolation.
+- Scene lighting and background settings.
+- Scene-level action timing independent of narration, with word alignment available to coordinate cues.
+
+Example production data shape:
+
+```json
+{
+  "characters": [
+    {
+      "id": "CHAR_ALEX_001",
+      "name": "Alex",
+      "rig": "block-humanoid",
+      "appearance": {
+        "bodyColor": "#2369a8",
+        "skinColor": "#e9b58d",
+        "hairColor": "#101116",
+        "pantsColor": "#11151e",
+        "shoeColor": "#f1f2f4",
+        "scale": 1
+      }
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene-01",
+      "title": "The reveal",
+      "durationSeconds": 6,
+      "visualDirection": "A character reacts as a second actor waves independently.",
+      "narration": "",
+      "actors": [
+        {
+          "characterId": "CHAR_ALEX_001",
+          "position": [0, 0, 0],
+          "actions": [
+            { "type": "idle", "startSeconds": 0, "durationSeconds": 6 },
+            { "type": "turn", "startSeconds": 2, "durationSeconds": 0.6, "targetRotationY": 1.2 }
+          ]
+        }
+      ],
+      "props": [],
+      "camera": {
+        "keyframes": [
+          { "atSeconds": 0, "position": [0, 3, 9], "target": [0, 1, 0], "fov": 40 },
+          { "atSeconds": 6, "position": [1, 2, 6], "target": [0, 1, 0], "fov": 32 }
+        ]
+      }
+    }
+  ]
+}
+```
+
+The declarative runtime is selected whenever a scene contains structured actors, props or camera keyframes. The original Episode 01 composition remains a legacy reference implementation until its full storyboard is migrated to the generic scene/action format.
+
+CI includes a dedicated declarative renderer smoke test so the generic animation path is validated independently of the Episode 01 fixture.
+
 ## Remaining production gates
 
 - Characters are still procedural R6-inspired placeholders; approved custom character assets and final facial/rig polish remain outstanding.
