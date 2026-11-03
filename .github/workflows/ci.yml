@@ -6,7 +6,9 @@ on:
     branches: [main]
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Never interrupt an active validation/render job because a newer commit arrived.
+  # New runs wait in the same PR/ref concurrency group and replace only older pending runs.
+  cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
