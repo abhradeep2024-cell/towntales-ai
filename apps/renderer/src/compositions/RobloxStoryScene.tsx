@@ -116,7 +116,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const trousers = isVoid ? voidMat : black;
   const face = isVoid ? voidMat : skin;
   const shoe = isVoid ? voidMat : white;
-  const actorShadowless = isVoid || isDouble || (kind === 'alex' && sceneIndex === 7);
+  const actorShadowless = isVoid || isDouble || (kind === 'alex' && [0, 3, 4, 7, 8].includes(sceneIndex));
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : residentNotices ? 0.22 : 0;
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
     : kind === 'alex' && sceneIndex === 5 ? Math.max(0, Math.min(1, (t - cues.alexRecoil) / 0.65)) * 0.24 : 0;
