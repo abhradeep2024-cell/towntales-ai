@@ -1,5 +1,5 @@
 import React from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame as useThreeFrame, useThree } from '@react-three/fiber';
 import { useCurrentFrame, useVideoConfig } from 'remotion';
 import * as THREE from 'three';
 import type { ProductionSpec } from '@film-studio/contracts';
@@ -49,6 +49,18 @@ function ActorBlock({ shadowless = false, ...props }: {
   material: THREE.Material; rotation?: [number, number, number]; shadowless?: boolean;
 }) {
   return <ABlock {...props} shadowless={shadowless} />;
+}
+
+function CameraRig({ position, target }: {
+  position: [number, number, number]; target: [number, number, number];
+}) {
+  const { camera } = useThree();
+  useThreeFrame(() => {
+    camera.position.set(position[0], position[1], position[2]);
+    camera.lookAt(target[0], target[1], target[2]);
+    camera.updateMatrixWorld();
+  });
+  return null;
 }
 
 function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1 }: {
@@ -264,21 +276,60 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
   const frame = useCurrentFrame();
   const { fps, width } = useVideoConfig();
   const scale = width / 360;
-  const push = Math.min(1, frame / Math.max(1, fps * 2));
-  const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 5.5 - push * 2.8, 11 - push * 2.1]
-    : sceneIndex === 3 ? [0, 2.6, 9.5 - push * 2.1]
-    : sceneIndex === 4 ? [-0.2 - (frame / fps) * 0.12, 2.5, 9 - (frame / fps) * 0.45]
-    : sceneIndex === 5 ? [0, 2.2, 8.2 - push * 0.8]
-    : sceneIndex === 6 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 3)) * 1.0, 8.2 - push * 0.8]
-    : sceneIndex === 7 ? [0, 2.2 + Math.min(1, frame / Math.max(1, fps * 5)) * 1.4, 9.5]
-    : sceneIndex === 8 ? [-2.2, 2.7, 6.1] : [0, 2.6, 9.5];
+  const t = frame / fps;
+  const smooth = (value: number) => { const v = Math.max(0, Math.min(1, value)); return v * v * (3 - 2 * v); };
+  const alexX = sceneIndex === 4 ? -0.8 - t * 0.28 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
+  const alexZ = sceneIndex === 4 ? 0.2 - t * 0.5 : 0.2;
+  let cameraPosition: [number, number, number] = [0, 2.6, 9.5];
+  let cameraTarget: [number, number, number] = [0, 1, 0];
+  if (sceneIndex === 0) {
+    cameraPosition = t < 2.7 ? [0, 5.5 - smooth(t / 2) * 2.8, 11 - smooth(t / 2) * 2.1] : [0.95, 2.1, 4.8];
+    cameraTarget = t < 2.7 ? [0, 1, 0] : [0.95, 1.2, -0.1];
+  } else if (sceneIndex === 1) {
+    if (t < 3.2) { cameraPosition = [-0.5 + t * 0.12, 2.6, 9.5]; cameraTarget = [0, 1, 0.8]; }
+    else if (t < 4.3) { cameraPosition = [1.2, 2.1, 5.5]; cameraTarget = [1.2, 1.2, 0.8]; }
+    else { cameraPosition = [3.45, 3.65, 4.2]; cameraTarget = [3.45, 3.65, -1.48]; }
+  } else if (sceneIndex === 2) {
+    if (t < 3.5) { cameraPosition = [alexX - 0.2, 2.6, 9.5]; cameraTarget = [alexX, 1.2, 0.2]; }
+    else if (t < 4.6) { cameraPosition = [alexX, 2.1, 4.0]; cameraTarget = [alexX, 2.0, 0.2]; }
+    else { cameraPosition = [-1.8, 2.0, 4.5]; cameraTarget = [-1.8, 1.85, 1.35]; }
+  } else if (sceneIndex === 3) {
+    if (t < 1.1) { cameraPosition = [-0.8, 2.0, 4.5]; cameraTarget = [-0.8, 1.65, 0.2]; }
+    else if (t < 3.0) { cameraPosition = [0.95, 2.2, 4.4]; cameraTarget = [0.95, 1.3, -0.1]; }
+    else if (t < 4.0) { cameraPosition = [-0.8, 2.2, 4.0]; cameraTarget = [-0.8, 2.0, 0.2]; }
+    else { cameraPosition = [0, 2.6, 9.5]; cameraTarget = [0, 1, 0]; }
+  } else if (sceneIndex === 4) {
+    if (t < 4.8) {
+      const shake = Math.sin(t * 24) * 0.035;
+      cameraPosition = [alexX + shake, 2.7 + Math.abs(shake), alexZ + 5.5 + shake];
+      cameraTarget = [alexX, 1.1, alexZ - 1.5];
+    } else if (t < 5.6) { cameraPosition = [alexX + 3.8, 2.2, alexZ + 1.8]; cameraTarget = [alexX, 1.1, alexZ - 0.8]; }
+    else { cameraPosition = [-0.6, 2.1, 1.6]; cameraTarget = [-3, 1.2, -3.2]; }
+  } else if (sceneIndex === 5) {
+    if (t < 1.8) { cameraPosition = [-0.8, 2.1, 5.0]; cameraTarget = [-1.7, 1.3, -3.05]; }
+    else if (t < 5.0) { cameraPosition = [-1.7, 2.0, 2.3 - smooth((t - 1.8) / 3.2) * 0.6]; cameraTarget = [-1.55, 1.4, -3.05]; }
+    else { cameraPosition = [-0.8, 2.1, 3.2]; cameraTarget = [-0.8, 1.9, 0.2]; }
+  } else if (sceneIndex === 6) {
+    if (t < 2.0) { cameraPosition = [-1.25, 0.65, 0.8]; cameraTarget = [-1.25, 0.1, -3.05]; }
+    else if (t < 4.0) { cameraPosition = [-1.25, 2.2, 1.2]; cameraTarget = [-1.25, 2.1, -3.05]; }
+    else if (t < 6.5) { cameraPosition = [0, 2.3, 6.5]; cameraTarget = [-0.3, 1.1, 0.3]; }
+    else { cameraPosition = [0, 2.8, 8.2]; cameraTarget = [-0.5, 1, 0]; }
+  } else if (sceneIndex === 7) {
+    if (t < 1.6) { cameraPosition = [0, 2.5, 9.5]; cameraTarget = [0, 1, 0]; }
+    else if (t < 3.8) { cameraPosition = [0, 3.4, 7.0]; cameraTarget = [-0.8, 0.1, 0.2]; }
+    else { cameraPosition = [-0.8, 0.85, 2.6]; cameraTarget = [-0.8, 0.1, 0.2]; }
+  } else if (sceneIndex === 8) {
+    const push = smooth((t - 1.5) / 2.15);
+    cameraPosition = t < 1.5 ? [-2.2, 2.7, 6.1] : [-2.2 - 0.4 * push, 2.7 - 0.3 * push, 6.1 - 3.6 * push];
+    cameraTarget = [-3, 2.1, -3.12];
+  }
   const blackout = sceneIndex === 6 && frame / fps > 10.4;
   const finalCut = sceneIndex === 8 && frame / fps > 3.65;
   const hideScene = blackout || finalCut;
   return <div style={{ position: 'absolute', inset: 0, background: hideScene ? '#000' : undefined }}>
     {!hideScene && <Canvas shadows dpr={1} camera={{ position: cameraPosition, fov: sceneIndex === 8 ? 29 : 34 }}
-      onCreated={({ camera }) => { if (sceneIndex === 8) camera.lookAt(-3, 2.1, -3.12); }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}>
+      <CameraRig position={cameraPosition} target={cameraTarget} />
       <World scene={scene} sceneIndex={sceneIndex} frame={frame} fps={fps} />
     </Canvas>}
     {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - 10.4) / 0.85) }}>
