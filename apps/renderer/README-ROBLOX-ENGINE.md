@@ -1,21 +1,25 @@
 # TownTales 3D Story Renderer
 
-The former text-card presentation is replaced with a deterministic Three.js scene rendered through React Three Fiber inside Remotion.
+The former text-card presentation is replaced with deterministic Three.js scenes rendered through React Three Fiber inside Remotion.
 
 ## Implemented
-- Procedural, block-proportioned R6-inspired Alex character with reusable proportions and materials.
-- Independently positioned Shadow Alex counterpart with dark silhouette and glowing eyes.
-- Deterministic frame-based idle and walk cycles.
-- Bedroom set dressing for bedroom, morning, sleep, wake and room scene directions.
-- Cinematic lighting, fog, atmospheric particles and scene-specific backgrounds.
-- Word-by-word karaoke-style subtitle emphasis across each existing subtitle cue.
-- Existing narration/music muxing, Supabase queue, upload verification and worker path retained.
 
-## Not yet production-complete
-- Characters are procedural placeholders, not final custom-sculpted assets or licensed Roblox avatar exports.
-- Scene blocking is heuristic; exact shot list, camera moves, props, Shadow Alex independent choreography and bedroom double still need to be authored from the Episode 01 Bible.
-- Word highlighting is evenly distributed within each subtitle cue. It is not forced alignment against actual speech audio. True word timestamps must be generated or supplied.
-- Chromium WebGL compatibility must pass the GitHub Actions smoke render before deployment.
-- A real Episode 01 job must be rendered, visually reviewed, downloaded and validated before production readiness.
+- Reusable R6-inspired Alex and Shadow Alex procedural character rigs with persistent wardrobe and materials.
+- Scene-driven shadow choreography: delayed independent movement, three-wave gesture, head turn, chase movement, shadowless double and daylight missing-shadow reveal.
+- Dedicated bedroom-double blocking, recoil beat, blackout and brief glowing-eye reveal.
+- Final window-focused camera shot with the original shadow positioned behind the glass.
+- Scene-specific camera movement, legible 9 PM clock insert, town/bedroom environments and day/night lighting.
+- Edge TTS word-boundary extraction, serialized narration scheduling and strict word-timing validation.
+- Word-synchronized, two-word kinetic captions burned from actual narration timestamps after audio assembly.
+- Production worker checks for H.264/AAC, target dimensions, frame rate, decoded frame count, file size and full decode.
+- Private Supabase upload verification with byte-for-byte signed-download checks.
+- Sidecar delivery for the production manifest, word alignments, technical QA and pending creative review.
 
-All animation is driven by Remotion frame values for deterministic rendering.
+## Remaining production gates
+
+- Characters are still procedural R6-inspired placeholders; approved custom character assets and final facial/rig polish remain outstanding.
+- The GitHub Actions episode render is a low-resolution preview. A single 1080 × 1920 master frame is checked separately; the complete 1080 × 1920, 60-second worker render must still pass the production job and 50 MB storage limit.
+- The CI contact sheet enables visual review, but final playback and listening review are still required to certify continuity, animation, sound design and story comprehension.
+- Original scene-specific sound effects (wind, clock ticks, footsteps, door creak, electrical flicker, birds and impact cues) still need to be integrated and reviewed.
+
+All scene animation remains frame-driven and deterministic. A successful render alone is not a release approval.

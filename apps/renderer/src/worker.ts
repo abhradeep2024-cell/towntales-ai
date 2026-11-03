@@ -107,7 +107,7 @@ async function runJob(job: any, serveUrl: string) {
       let progressWrites: Promise<void> = Promise.resolve();
       try {
         await renderMedia({
-          composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 28, x264Preset: 'veryfast',
+          composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 23, x264Preset: 'veryfast',
           inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
           onProgress: ({ progress }) => {
             const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));

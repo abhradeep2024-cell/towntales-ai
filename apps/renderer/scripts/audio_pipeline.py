@@ -334,7 +334,7 @@ def main() -> int:
 
     filter_args = ["-filter_complex", ";".join(filters)] if has_audio else []
     command = ["ffmpeg", "-y", "-v", "error", *input_args, *filter_args, *vf_args, "-map", "0:v:0", *map_audio,
-               "-t", str(duration), "-c:v", "libx264", "-preset", "veryfast", "-crf", "27",
+               "-t", str(duration), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
                "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output_path)]
     run(command)
     if not output_path.exists() or output_path.stat().st_size < 1000:
