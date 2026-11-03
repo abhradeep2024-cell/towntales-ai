@@ -55,6 +55,12 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const point = active.find(a => a.type === 'point' || a.type === 'gesture');
   const jump = active.find(a => a.type === 'jump');
   const recoil = active.find(a => a.type === 'recoil');
+  const crouch = active.find(a => a.type === 'crouch');
+  const clap = active.find(a => a.type === 'clap');
+  const dance = active.find(a => a.type === 'dance');
+  const talk = active.find(a => a.type === 'talk');
+  const lookAt = active.find(a => a.type === 'look-at');
+  const fall = [...actions].filter(a => a.type === 'fall' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const turn = [...actions].filter(a => a.type === 'turn' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const expression = active.find(a => a.type === 'expression');
   const move = [...actions].filter(a => a.type === 'move' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
@@ -67,25 +73,35 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   const gestureP = point ? Math.sin(Math.PI * clamp((time-point.startSeconds)/point.durationSeconds)) : 0;
   const jumpP = jump ? Math.sin(Math.PI * clamp((time-jump.startSeconds)/jump.durationSeconds)) : 0;
   const recoilP = recoil ? Math.sin(Math.PI * clamp((time-recoil.startSeconds)/recoil.durationSeconds)) : 0;
+  const crouchP = crouch ? Math.sin(Math.PI * clamp((time-crouch.startSeconds)/crouch.durationSeconds)) : 0;
+  const fallP = fall ? smooth(clamp((time-fall.startSeconds)/fall.durationSeconds)) : 0;
+  const dancePhase = time * 5.5;
   const turnP = turn ? smooth((time-turn.startSeconds)/turn.durationSeconds) : 0;
   const appear = actions.filter(a => a.type === 'appear').sort((a,b) => a.startSeconds-b.startSeconds)[0];
   const disappear = actions.filter(a => a.type === 'disappear' && time >= a.startSeconds).sort((a,b) => b.startSeconds-a.startSeconds)[0];
   const opacity = disappear ? 1 - smooth((time-disappear.startSeconds)/disappear.durationSeconds) : appear ? smooth((time-appear.startSeconds)/appear.durationSeconds) : 1;
-  const stride = movement ? Math.sin(walkPhase) * (movement.type === 'run' ? .62 : .38) * movement.intensity : 0;
+  const stride = movement ? Math.sin(walkPhase) * (movement.type === 'run' ? .62 : .38) * movement.intensity : dance ? Math.sin(dancePhase) * .55 : 0;
   const waveRotation = wave && waveActive ? Math.sin(waveP * Math.PI * 2 * wave.repeat) * .55 * Math.sin(Math.PI * waveP) : 0;
   const armAngle = waveActive ? -1.9 + waveRotation : point ? -1.4 * gestureP : 0;
+  const performanceArm = clap ? Math.sin(time * 18) * .65 : dance ? Math.sin(dancePhase * 1.7) * .9 : 0;
   const armSide = wave?.arm ?? point?.arm ?? 'right';
   useFrame(() => {
     if (!root.current) return;
-    root.current.position.set(mix(base[0],target[0],moveP), base[1] + jumpP * (jump?.intensity ?? 1) * 1.6, mix(base[2],target[2],moveP));
-    root.current.rotation.set(0, mix(actor.rotationY, turn?.targetRotationY ?? actor.rotationY, turnP), recoilP * .18);
-    root.current.scale.setScalar(scale * opacity);
-    if (leftArm.current) leftArm.current.rotation.z = armSide === 'left' || armSide === 'both' ? armAngle : stride;
-    if (rightArm.current) rightArm.current.rotation.z = armSide === 'right' || armSide === 'both' ? -armAngle : -stride;
+    root.current.position.set(mix(base[0],target[0],moveP), base[1] + jumpP * (jump?.intensity ?? 1) * 1.6 - crouchP * .22 - fallP * .42, mix(base[2],target[2],moveP));
+    root.current.rotation.set(0, mix(actor.rotationY, turn?.targetRotationY ?? actor.rotationY, turnP), recoilP * .18 + fallP * 1.35);
+    root.current.scale.set(scale * opacity, scale * opacity * (1 - crouchP * .2), scale * opacity);
+    if (leftArm.current) leftArm.current.rotation.z = waveActive || point ? (armSide === 'left' || armSide === 'both' ? armAngle : stride) : performanceArm + stride;
+    if (rightArm.current) rightArm.current.rotation.z = waveActive || point ? (armSide === 'right' || armSide === 'both' ? -armAngle : -stride) : -performanceArm - stride;
     if (leftLeg.current) leftLeg.current.rotation.x = stride;
     if (rightLeg.current) rightLeg.current.rotation.x = -stride;
-    if (head.current) head.current.rotation.y = turnP * .7;
-    if (mouth.current) { const emotion = expression?.emotion ?? 'neutral'; mouth.current.scale.y = emotion === 'shock' || emotion === 'fear' ? 2.6 : emotion === 'smile' ? 0.7 : 1; }
+    if (head.current) {
+      const targetYaw = lookAt?.targetPosition ? Math.atan2(lookAt.targetPosition[0] - root.current.position.x, lookAt.targetPosition[2] - root.current.position.z) - root.current.rotation.y : 0;
+      head.current.rotation.y = lookAt ? targetYaw : turnP * .7;
+    }
+    if (mouth.current) {
+      const emotion = expression?.emotion ?? 'neutral';
+      mouth.current.scale.y = talk ? .8 + Math.abs(Math.sin(time * 14)) * 1.4 : emotion === 'shock' || emotion === 'fear' ? 2.6 : emotion === 'smile' ? 0.7 : 1;
+    }
   });
   const body = appearance?.bodyColor ?? '#2563a6';
   const skin = appearance?.skinColor ?? '#e8b58e';
