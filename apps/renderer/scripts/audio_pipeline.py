@@ -412,7 +412,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     elif require_word_alignment:
         raise RuntimeError("Production word alignment required, but no word-boundary events were captured.")
 
-    word_at = lambda scene_index, token: next((item for item in aligned_words if item.get("sceneIndex") == scene_index and str(item["text"]).strip(".,!?;:").lower() == token), None)
+    word_at = lambda scene_index, token: next((item for item in aligned_words if item.get("sceneIndex") == scene_index and str(item["text"]).strip().strip(".,!?;:").lower() == token), None)
     waved_word = word_at(3, "waved")
     shadow_wave_start = max(0.0, float(waved_word["start"]) - 0.25) if waved_word else 18.5
     shadow_reveal_word = word_at(6, "shadow")
