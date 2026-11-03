@@ -227,8 +227,9 @@ async function runJob(job: any, serveUrl: string) {
         h264Video: true, aacAudio: audioRequested ? true : null,
         audioPresent: audioRequested ? audioPresent : true,
         narrationPreparedBeforeRender: true,
-        narrationFitsSceneWindows: true,
+        narrationWithinBibleWindow: !narrationRequested || Number(preparedAudio.report?.voiceDurationSeconds ?? Infinity) <= production.durationSeconds - 0.45,
         wordAlignment: narrationRequested ? wordAlignments.length > 0 : null,
+        wordAlignmentCoverage: narrationRequested ? Number(preparedAudio.report?.alignedWordCoverage ?? 0) >= 0.9 : null,
         wordSynchronizedCaptions: narrationRequested ? wordCaptionsReady : null,
         audioManifest: audioManifestReady,
         privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true
