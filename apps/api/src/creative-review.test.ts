@@ -52,6 +52,16 @@ describe('multimodal creative QA',()=>{
     expect(review.releaseApproved).toBe(false);
   });
 
+
+  it('requires minimum scores across all creative dimensions',async()=>{
+    const fetchImpl=vi.fn(async()=>providerResponse({...validReview,captionScore:72}));
+    const review=await reviewProductionCreatively(
+      {title:'Test story'},[{sceneId:'scene-1',timeSeconds:1,imageBase64:'aGVsbG8='}],{},
+      {apiKey:'test',baseUrl:'https://api.example.test/v1',model:'vision-model',fetchImpl:fetchImpl as typeof fetch}
+    );
+    expect(review.status).toBe('needs_repair');
+    expect(review.releaseApproved).toBe(false);
+  });
   it('rejects malformed model review output',async()=>{
     const fetchImpl=vi.fn(async()=>new Response(JSON.stringify({choices:[{message:{content:'not json'}}]}),{status:200}));
     await expect(reviewProductionCreatively(
