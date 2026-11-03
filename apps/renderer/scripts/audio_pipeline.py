@@ -189,7 +189,7 @@ def make_effects(path: Path, duration: float, duck_intervals: list[tuple[float, 
     add_event(43.0, 0.9, "breath", 145, 0.065)
     for flicker_time in (blackout_start - 2.0, blackout_start - 1.15, blackout_start - 0.45):
         add_event(flicker_time, 0.22, "buzz", 54, 0.07)
-    for chirp in (48.25, 49.05, 50.1, 51.0, 52.0):
+    for chirp in (51.25, 52.05, 53.1, 54.0, 55.0):
         add_event(chirp, 0.32, "bird", 1850, 0.045)
     add_event(57.35, 1.15, "breath", 110, 0.085)
     add_event(59.6, 0.2, "boom", 42, 0.22)
