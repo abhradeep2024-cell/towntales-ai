@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}
   # Never interrupt an active validation/render job because a newer commit arrived.
   # New runs wait in the same PR/ref concurrency group and replace only older pending runs.
   cancel-in-progress: false
