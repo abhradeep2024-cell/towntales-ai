@@ -40,7 +40,13 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
   const stride = Math.sin(t * (running ? 12 : 7) + sceneIndex);
   const idle = Math.sin(t * 2.1) * 0.025;
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 3 || sceneIndex === 8);
-  const armLeft = wave ? Math.sin(t * 8) * 0.62 : (walking ? stride * 0.45 : 0.04);
+  // Three deliberate, finite wave cycles; the envelope eases the arm in and out.
+  const waveStart = 0.35;
+  const waveDuration = 1.8;
+  const wavePhase = (t - waveStart) / waveDuration;
+  const waveEnvelope = wavePhase >= 0 && wavePhase <= 1 ? Math.sin(Math.PI * wavePhase) ** 2 : 0;
+  const waveArm = Math.sin(wavePhase * Math.PI * 6) * 0.62 * waveEnvelope;
+  const armLeft = wave ? waveArm : (walking ? stride * 0.45 : 0.04);
   const armRight = sceneIndex === 3 && kind === 'alex' ? -1.05 : (walking ? -stride * 0.45 : -0.04);
   const leg = walking ? stride * (running ? 0.62 : 0.4) : 0.025;
   const torso = isVoid ? voidMat : kind === 'resident' ? material('#64845b') : hoodie;
