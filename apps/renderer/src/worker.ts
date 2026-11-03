@@ -90,6 +90,58 @@ async function runJob(job: any, serveUrl: string) {
     const wordAlignments = Array.isArray(wordAlignmentData.words) ? wordAlignmentData.words : [];
     if (narrationRequested && !wordAlignments.length) throw new Error('Prepared narration has no word-level alignment for visual synchronization.');
 
+    const previewScale = production.aspectRatio === '9:16'
+      ? {width:360,height:640}
+      : production.aspectRatio === '16:9' ? {width:640,height:360} : {width:480,height:480};
+    const previewProduction = ProductionSpecSchema.parse({...production,...previewScale,fps:24});
+    const previewSilentPath = join(workDir,'preview-picture-only.mp4');
+    const previewPath = join(workDir,'preview.mp4');
+    await api(`/internal/jobs/${jobId}/progress`,{status:'rendering',progress:8});
+
+    if (previewProduction.projectFiles) {
+      const previewProjectDir = join(workDir,'lemo-preview-project');
+      await mkdir(previewProjectDir,{recursive:true});
+      for (const [relativePath,contents] of Object.entries(previewProduction.projectFiles)) {
+        const target = join(previewProjectDir,relativePath);
+        await mkdir(join(target,'..'),{recursive:true});
+        await writeFile(target,contents,'utf8');
+      }
+      const lemoEntry = join(repositoryRoot,'vendor','lemo-opuscar','core','render','video.mjs');
+      await execFileAsync('node',[lemoEntry,previewProjectDir,'--fps','24','--workers',String(concurrency),'--out',previewSilentPath,'--size',`${previewProduction.width}x${previewProduction.height}`],{timeout:8*60*1000,maxBuffer:2_000_000});
+    } else {
+      const previewCompositions = await getCompositions(serveUrl,{inputProps:{production:previewProduction,wordAlignments},...(browserExecutable ? {browserExecutable} : {})});
+      const previewComposition = previewCompositions.find(item => item.id === 'FilmStudio');
+      if (!previewComposition) throw new Error('FilmStudio composition was not registered for preview rendering.');
+      await renderMedia({
+        composition:{...previewComposition,width:previewProduction.width,height:previewProduction.height,fps:previewProduction.fps,durationInFrames:Math.round(previewProduction.durationSeconds*previewProduction.fps)},
+        serveUrl,codec:'h264',outputLocation:previewSilentPath,crf:30,x264Preset:'veryfast',
+        inputProps:{production:previewProduction,wordAlignments},concurrency,...(browserExecutable ? {browserExecutable} : {})
+      });
+    }
+
+    await execFileAsync(pythonExecutable,[
+      audioScript,'--spec',specPath,'--video',previewSilentPath,'--output',previewPath,'--workdir',workDir,'--reuse-prepared',
+      ...(production.audio?.burnSubtitles ? ['--burn-subtitles'] : []),
+      ...(narrationRequested ? ['--require-word-alignment'] : [])
+    ],{timeout:8*60*1000,maxBuffer:2_000_000});
+    await execFileAsync('ffmpeg',['-v','error','-i',previewPath,'-f','null','-']);
+    const previewProbe = await execFileAsync('ffprobe',['-v','error','-count_frames','-show_entries','format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,nb_read_frames','-of','json',previewPath]);
+    const previewMetadata = JSON.parse(previewProbe.stdout);
+    const previewVideo = (previewMetadata.streams ?? []).find((stream:any) => stream.codec_type === 'video');
+    const previewAudio = (previewMetadata.streams ?? []).find((stream:any) => stream.codec_type === 'audio');
+    const previewDuration = Number(previewMetadata.format?.duration ?? 0);
+    const previewBytes = Number(previewMetadata.format?.size ?? 0);
+    if (!previewVideo || previewVideo.width !== previewProduction.width || previewVideo.height !== previewProduction.height) throw new Error('Preview dimensions do not match the preview profile.');
+    if (previewVideo.codec_name !== 'h264' || previewVideo.r_frame_rate !== '24/1') throw new Error('Preview must be H.264 at 24 FPS.');
+    if (Math.abs(previewDuration - production.durationSeconds) > 1) throw new Error('Preview duration does not match the production runtime.');
+    if (Number(previewVideo.nb_read_frames ?? 0) !== Math.round(production.durationSeconds * 24)) throw new Error('Preview frame count does not match the preview profile.');
+    if ((production.audio?.musicEnabled || narrationRequested) && (!previewAudio || previewAudio.codec_name !== 'aac')) throw new Error('Preview is missing the requested AAC audio track.');
+    if (!previewBytes || previewBytes > 20 * 1024 * 1024) throw new Error('Preview is empty or exceeds the 20 MB preview budget.');
+    await api(`/internal/jobs/${jobId}/progress`,{status:'rendering',progress:22});
+    const {data:previewJob,error:previewJobError} = await supabase.from('film_studio_jobs').select('status').eq('id',jobId).single();
+    if (previewJobError) throw previewJobError;
+    if (previewJob.status === 'cancelled') throw new Error('JOB_CANCELLED');
+
     let renderer: 'lemo-opuscar' | 'remotion' = 'remotion';
     if (production.projectFiles) {
       renderer = 'lemo-opuscar';
