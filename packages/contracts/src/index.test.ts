@@ -147,7 +147,7 @@ describe('declarative animation production contract', () => {
     const invalid = structuredClone(base);
     Object.assign(invalid, {
       environments:[{
-        id:'bad-set',name:'Invalid set',groundSize:5,
+        id:'bad-set',name:'Invalid set',groundSize:80,
         fog:{color:'#111827',near:90,far:10}
       }]
     });
@@ -191,6 +191,15 @@ describe('declarative animation production contract', () => {
       assets:[{id:'hero-rig',type:'rig',libraryAssetKey:'hero-rig',required:true}]
     });
     expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+
+  it('rejects environment ground sizes below the supported minimum', () => {
+    const invalid = structuredClone(base);
+    Object.assign(invalid, {
+      environments:[{id:'small-set',name:'Small set',groundSize:5}]
+    });
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
   });
 
 });
