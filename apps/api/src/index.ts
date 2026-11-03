@@ -329,6 +329,9 @@ app.post('/v1/projects/:id/plan', async (request, reply) => {
   if (!aiKey || !aiModel) return reply.code(503).send({error:'ai_planner_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['AI_BASE_URL']});
   try {
     const db = requireDb();
+    const {data:project,error:projectError} = await db.from('film_studio_projects').select('id,title,default_style_id,default_aspect_ratio').eq('id',id).maybeSingle();
+    if (projectError) throw projectError;
+    if (!project) return reply.code(404).send({error:'project_not_found'});
     const {data:assets,error:assetError} = await db.from('film_studio_assets')
       .select('storage_key,metadata').eq('project_id',id);
     if (assetError) throw assetError;
@@ -337,15 +340,12 @@ app.post('/v1/projects/:id/plan', async (request, reply) => {
     const {data:sourceBlob,error:downloadError} = await db.storage.from(bucket).download(sourceAsset.storage_key);
     if (downloadError || !sourceBlob) throw downloadError ?? new Error('Could not download extracted production source.');
     const sourceText = await sourceBlob.text();
-    const production = await planProductionFromSource(sourceText,{apiKey:aiKey,baseUrl:aiBaseUrl,model:aiModel});
+    const production = await planProductionFromSource(sourceText,{apiKey:aiKey,baseUrl:aiBaseUrl,model:aiModel,defaults:{styleId:project.default_style_id,aspectRatio:project.default_aspect_ratio}});
     const validated = CreateJobSchema.safeParse({production:{
       ...production,
       projectMetadata:{...(production.projectMetadata ?? {}),projectId:id}
     }});
     if (!validated.success) return reply.code(422).send({error:'planned_production_failed_validation',details:validated.error.flatten()});
-    const {data:project,error:projectError} = await db.from('film_studio_projects').select('id,title').eq('id',id).maybeSingle();
-    if (projectError) throw projectError;
-    if (!project) return reply.code(404).send({error:'project_not_found'});
     const {data:job,error:jobError} = await db.from('film_studio_jobs').insert({
       project_id:id,title:validated.data.production.title || project.title,
       idea:validated.data.production.idea,status:'queued',progress:0,
