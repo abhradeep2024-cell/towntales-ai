@@ -339,6 +339,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   });
   (spec.dialogue ?? []).forEach((line, index) => {
     if (!sceneIds.has(line.sceneId)) ctx.addIssue({code:'custom',path:['dialogue',index,'sceneId'],message:'Dialogue sceneId must reference a declared scene.'});
+    if (line.characterId && !characterIds.has(line.characterId)) ctx.addIssue({code:'custom',path:['dialogue',index,'characterId'],message:'Dialogue characterId must reference a declared character.'});
     if (line.voiceProfileId && !voiceProfileIds.has(line.voiceProfileId)) ctx.addIssue({code:'custom',path:['dialogue',index,'voiceProfileId'],message:'Dialogue voiceProfileId must reference a declared voice profile.'});
     if (line.endSeconds <= line.startSeconds || line.endSeconds > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing must be ordered and within the production timeline.'});
   });
