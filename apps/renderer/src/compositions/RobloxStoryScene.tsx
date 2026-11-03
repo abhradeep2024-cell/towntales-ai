@@ -102,7 +102,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
     : kind === 'resident' && (residentNotices || residentPanics) ? -0.5
       : kind === 'alex' && sceneIndex === 6 ? Math.max(0, Math.min(1, (t - 4) / 0.7)) * 0.85
       : kind === 'alex' && sceneIndex === 2
-        ? (t >= 1.4 && t <= 2.5 ? -0.42 : t > 2.5 && t < 3.0 ? 0.18 : 0)
+        ? (t >= cues.dismissStart - 1.1 && t <= cues.dismissStart ? -0.42 : t > cues.dismissStart && t < cues.dismissStart + 0.4 ? 0.18 : 0)
         : 0;
   const mouthOpen = kind === 'double' && sceneIndex === 6 ? 0.085
     : kind === 'alex' && (sceneIndex === 3 || sceneIndex === 5 || sceneIndex === 6 || sceneIndex === 7 || sceneIndex === 8)
@@ -291,8 +291,8 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
   const cues: SceneCues = {
     openingPunch: localWordTime('never', 2.7) + 0.35,
     residentNotice: localWordTime('shadow', 1.6),
-    residentRun: localWordTime('take', 3.4),
-    dismissStart: localWordTime('legend', 2.15),
+    residentRun: localWordTime('coming', 3.4),
+    dismissStart: localWordTime('stupid', 4.1),
     alexRaise: localWordTime('raised', 0.72),
     shadowWave: Math.max(0.2, localWordTime('waved', 3.2) - 0.25),
     alexRun: localWordTime('ran', 0.1),
