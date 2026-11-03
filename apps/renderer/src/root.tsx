@@ -35,6 +35,36 @@ const verticalProduction = {
   audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
 
+const declarativeAnimationProduction = {
+  schemaVersion: 1 as const, title: 'Declarative Animation Engine QA', idea: 'A reusable actor walks, turns and waves beside a prop.', styleId: 'roblox-cinematic',
+  styleInvariants: ['Persistent actor identity', 'Timeline-driven motion'], durationSeconds: 6, aspectRatio: '16:9' as const,
+  fps: 30 as const, width: 1280, height: 720,
+  characters: [{
+    id: 'CHAR_QA_001', name: 'QA Actor', rig: 'block-humanoid' as const,
+    appearance: { bodyColor: '#2563a6', skinColor: '#e8b58e', hairColor: '#171717', pantsColor: '#171a22', shoeColor: '#f2f2f2', scale: 1 }
+  }],
+  scenes: [{
+    id: 'declarative-scene', title: 'Actor motion contract', durationSeconds: 6,
+    visualDirection: 'An actor walks into frame, turns and waves beside a prop.',
+    narration: '', onScreenText: ['DECLARATIVE ANIMATION'], background: '#101522',
+    actors: [{
+      characterId: 'CHAR_QA_001', position: [-2,0,0] as [number,number,number], rotationY: 0,
+      actions: [
+        { type: 'walk' as const, startSeconds: 0, durationSeconds: 1.8, intensity: 1, arm: 'both' as const, repeat: 1 },
+        { type: 'move' as const, startSeconds: 0, durationSeconds: 2, targetPosition: [0,0,0] as [number,number,number], intensity: 1, arm: 'right' as const, repeat: 1 },
+        { type: 'turn' as const, startSeconds: 2, durationSeconds: 0.8, targetRotationY: 0.6, intensity: 1, arm: 'right' as const, repeat: 1 },
+        { type: 'wave' as const, startSeconds: 3, durationSeconds: 2, intensity: 1, arm: 'right' as const, repeat: 3 }
+      ]
+    }],
+    props: [{ id: 'qa-prop', type: 'box' as const, position: [2,0.6,0] as [number,number,number], scale: [0.8,1.2,0.8] as [number,number,number], color: '#d8a34a', rotation: [0,0,0] as [number,number,number], castShadow: true }],
+    camera: { keyframes: [
+      { atSeconds: 0, position: [0,3,9] as [number,number,number], target: [0,1,0] as [number,number,number], fov: 40 },
+      { atSeconds: 6, position: [1,2.5,6] as [number,number,number], target: [0.5,1,0] as [number,number,number], fov: 35 }
+    ] }
+  }],
+  subtitles: [], audio: { musicEnabled: false, voiceEnabled: false, burnSubtitles: false, voice: 'en-US-AriaNeural', musicVolume: 0.12, voiceVolume: 1, musicStyle: 'ambient' as const }
+};
+
 const episode01ProductionFullResolution = {
   ...episode01Production,
   width: 1080,
@@ -47,7 +77,7 @@ export const FilmStudioRoot:React.FC = () => <>
   <Composition id="FilmStudioSmoke" component={FilmStudioSmoke} durationInFrames={150} fps={30} width={1280} height={720} />
   <Composition id="FilmStudioMultiSceneSmoke" component={FilmComposition} durationInFrames={300} fps={30} width={1280} height={720}
     defaultProps={{production:multiSceneProduction}} />
-  <Composition id="FilmStudioVerticalSmoke" component={FilmComposition} durationInFrames={150} fps={30} width={720} height={1280}
+  <Composition id="FilmStudioDeclarativeSmoke" component={FilmComposition} durationInFrames={180} fps={30} width={1280} height={720}\n    defaultProps={{production:declarativeAnimationProduction}} />\n  <Composition id="FilmStudioVerticalSmoke" component={FilmComposition} durationInFrames={150} fps={30} width={720} height={1280}
     defaultProps={{production:verticalProduction}} />
   <Composition id="TownTalesEpisode01Preview" component={FilmComposition} durationInFrames={1800} fps={30} width={360} height={640}
     defaultProps={{production:episode01Production}} />
