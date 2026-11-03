@@ -75,6 +75,7 @@ function GltfAnimatedActor({actor,character,asset,time}:{
   const active = actor.actions.filter(action=>time>=action.startSeconds && time<=action.startSeconds+action.durationSeconds);
   const priorities = ['talk','wave','point','gesture','jump','recoil','dance','clap','crouch','run','walk','idle'];
   const actionType = priorities.find(type=>active.some(action=>action.type===type)) ?? 'idle';
+  const currentAnimationAction = active.find(action=>action.type===actionType);
   const requestedName = character.animationMap?.[actionType] ?? actionType;
   const clipName = gltf.animations.find(clip=>clip.name.toLowerCase()===requestedName.toLowerCase())?.name ?? gltf.animations[0]?.name;
   const nextAction = clipName ? actionMap.get(clipName) ?? null : null;
@@ -88,10 +89,14 @@ function GltfAnimatedActor({actor,character,asset,time}:{
   useFrame(()=>{
     if (nextAction && currentAction.current !== nextAction) {
       currentAction.current?.fadeOut(0.12);
+      const repeating = ['idle','walk','run','dance'].includes(actionType);
+      const repetitions = repeating ? Infinity : Math.max(1,currentAnimationAction?.repeat ?? 1);
+      nextAction.setLoop(repeating ? THREE.LoopRepeat : THREE.LoopOnce,repetitions);
+      nextAction.clampWhenFinished = !repeating;
       nextAction.reset().fadeIn(0.12).play();
       currentAction.current = nextAction;
     }
-    mixer.update(1/fps);
+    mixer.setTime(Math.max(0,time-(currentAnimationAction?.startSeconds ?? 0)));
   });
   return <group position={position} rotation={[0,rotationY,0]} scale={character.appearance.scale}>
     <primitive object={model}/>
