@@ -13,7 +13,7 @@ From the repository root, set your API token and submit a DOCX, TXT or JSON brie
 cd apps/api
 API_TOKEN="YOUR_API_TOKEN" npm run submit -- ../path/to/story.docx --title "My story" --aspect-ratio 9:16 --style roblox-cinematic
 ```
-Optional flags: `--description "..." `, `--style <style-id>`, and `--aspect-ratio 16:9|9:16|1:1`. The command uploads the source, extracts it, asks the configured AI planner for a validated production manifest, and queues a render job. Set `API_BASE_URL` if the API is not hosted at the default Render URL. Keep `API_TOKEN` private; never put it in source control.
+Optional flags: `--description "..."`, `--style <style-id>`, `--aspect-ratio 16:9|9:16|1:1`, and `--no-wait` (return after queueing instead of waiting). By default the command waits for rendering and creative QA, then prints the approved MP4 URL and signed QA/preview artifact URLs. A creative-QA rejection returns the review findings and a non-zero exit code. Set `API_BASE_URL` if the API is not hosted at the default Render URL. Keep `API_TOKEN` private; never put it in source control.
 
 Story planning requires `AI_API_KEY` and `AI_MODEL`. Automated creative QA requires a vision-capable model configured as `CREATIVE_QA_MODEL` (or a vision-capable `AI_MODEL`). Set `AI_BASE_URL` when using an OpenAI-compatible provider other than the default.
 
