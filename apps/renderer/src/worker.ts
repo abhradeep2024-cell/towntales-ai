@@ -7,7 +7,7 @@ import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { ProductionSpecSchema } from '@film-studio/contracts';
 
 const execFileAsync = promisify(execFile);
@@ -48,6 +48,20 @@ async function api(path: string, body: unknown = {}) {
   });
   if (!response.ok) throw new Error(`API ${path} failed (${response.status}): ${(await response.text()).slice(0, 500)}`);
   return response.json() as Promise<any>;
+}
+
+async function uploadVerifiedArtifact(objectKey: string, body: Buffer, contentType: string) {
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(objectKey, body, {
+    contentType, upsert: false, cacheControl: '3600'
+  });
+  if (uploadError) throw uploadError;
+  const { data, error: signedError } = await supabase.storage.from(bucket).createSignedUrl(objectKey, 300);
+  if (signedError || !data?.signedUrl) throw signedError ?? new Error(`Could not sign production artifact ${objectKey}.`);
+  const response = await fetch(data.signedUrl, { signal: AbortSignal.timeout(30000) });
+  if (!response.ok) throw new Error(`Production artifact download failed for ${objectKey} (HTTP ${response.status}).`);
+  const downloaded = Buffer.from(await response.arrayBuffer());
+  if (!downloaded.equals(body)) throw new Error(`Production artifact verification failed for ${objectKey}.`);
+  return { objectKey, bytes: body.length, sha256: createHash('sha256').update(body).digest('hex'), verifiedDownload: true };
 }
 
 async function runJob(job: any, serveUrl: string) {
@@ -180,15 +194,89 @@ async function runJob(job: any, serveUrl: string) {
     await writeFile(downloadedPath, downloadedFile);
     await execFileAsync('ffmpeg', ['-v', 'error', '-i', downloadedPath, '-f', 'null', '-']);
 
-    const qcReport = {
+    const narrationRequested = Boolean(production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0));
+    const qcReport: Record<string, any> = {
       passed: true,
+      releaseReady: false,
+      releaseStatus: 'pending-creative-review',
       renderer,
-      checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true, audioPresent: audioRequested ? audioPresent : true, privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true },
-      durationSeconds: duration, width: video.width, height: video.height, fps: actualFps, bytes,
+      checks: {
+        exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true,
+        durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true,
+        h264Video: true, aacAudio: audioRequested ? true : null,
+        audioPresent: audioRequested ? audioPresent : true,
+        wordAlignment: narrationRequested ? true : null,
+        wordSynchronizedCaptions: narrationRequested ? true : null,
+        privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true
+      },
+      durationSeconds: duration, width: video.width, height: video.height, fps: actualFps,
+      decodedFrames: actualFrames || expectedFrames, bytes,
+      sha256: createHash('sha256').update(file).digest('hex'),
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
-      audioMode: { musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled, burnSubtitles: production.audio.burnSubtitles, musicStyle: production.audio.musicStyle },
+      audioMode: {
+        musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled,
+        burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle,
+        captionTiming: narrationRequested ? 'edge-tts-word-boundary' : null
+      },
       validatedAt: new Date().toISOString()
     };
+
+    const artifacts: Record<string, any> = {};
+    const manifest = {
+      schemaVersion: 1,
+      episode: production.title,
+      generatedAt: new Date().toISOString(),
+      productionFormat: { width: production.width, height: production.height, fps: production.fps, durationSeconds: production.durationSeconds, aspectRatio: production.aspectRatio },
+      approvedNarrationScript: production.scenes.map((scene) => scene.narration.trim()).filter(Boolean),
+      sceneManifest: production.scenes.map((scene, index) => ({
+        order: index + 1, id: scene.id, durationSeconds: scene.durationSeconds,
+        title: scene.title, visualDirection: scene.visualDirection, narration: scene.narration,
+        background: scene.background
+      })),
+      characters: production.styleId === 'roblox-cinematic-horror' ? [
+        { id: 'CHAR_ALEX_001', name: 'Alex', wardrobe: ['black messy hair', 'blue hoodie', 'black trousers', 'white sneakers'], assetStatus: 'procedural R6-inspired model' },
+        { id: 'CHAR_SHADOW_ALEX_001', name: 'Shadow Alex', appearance: 'matte near-black silhouette with subtle pale eyes', controller: 'independent animation controller' }
+      ] : [],
+      environmentAssets: production.styleId === 'roblox-cinematic-horror' ? [
+        'ENV_TOWN_STREET_001', 'ENV_ALEX_HOUSE_001', 'ENV_BEDROOM_001',
+        'PROP_CLOCK_001', 'PROP_WARNING_SIGN_001', 'LIGHT_STREET_001', 'LIGHT_BEDROOM_001'
+      ] : [],
+      styleInvariants: production.styleInvariants,
+      sourceProductionSpec: production
+    };
+    const manifestKey = objectKey.replace(/\.mp4$/, '.production-manifest.json');
+    artifacts.productionManifest = await uploadVerifiedArtifact(manifestKey, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
+
+    if (narrationRequested) {
+      const alignmentPath = join(workDir, 'word-alignments.json');
+      const alignmentBytes = await readFile(alignmentPath);
+      const alignment = JSON.parse(alignmentBytes.toString('utf8'));
+      if (!Array.isArray(alignment.words) || alignment.words.length === 0) throw new Error('Word-alignment sidecar is empty.');
+      const alignmentKey = objectKey.replace(/\.mp4$/, '.word-alignments.json');
+      artifacts.wordAlignments = await uploadVerifiedArtifact(alignmentKey, alignmentBytes, 'application/json');
+    }
+
+    const creativeReview = {
+      status: 'pending-human-review',
+      releaseApproved: false,
+      requiredReview: [
+        'Watch all nine scenes in sequence and confirm story comprehension.',
+        'Inspect Alex identity, wardrobe and proportions across every scene.',
+        'Inspect independent shadow timing, three-wave gesture and head turn.',
+        'Confirm the bedroom double casts no visible shadow.',
+        'Confirm Alex has no shadow in daylight while residents do.',
+        'Confirm the original shadow is visible behind the same bedroom window and waves before the cut.',
+        'Listen to narration, music and effects on phone speakers and headphones.',
+        'Inspect caption safe areas, readability and word-level synchronization.'
+      ],
+      automatedReviewLimit: 'Automated technical checks cannot certify subjective creative quality or replace final visual approval.'
+    };
+    const creativeKey = objectKey.replace(/\.mp4$/, '.creative-qa.json');
+    artifacts.creativeQa = await uploadVerifiedArtifact(creativeKey, Buffer.from(JSON.stringify(creativeReview, null, 2)), 'application/json');
+
+    qcReport.artifacts = artifacts;
+    const technicalKey = objectKey.replace(/\.mp4$/, '.technical-qa.json');
+    artifacts.technicalQa = await uploadVerifiedArtifact(technicalKey, Buffer.from(JSON.stringify(qcReport, null, 2)), 'application/json');
     await api(`/internal/jobs/${jobId}/complete`, { outputKey: objectKey, outputBytes: bytes, qcReport });
   } finally {
     await rm(workDir, { recursive: true, force: true });
