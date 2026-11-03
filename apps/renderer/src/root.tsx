@@ -30,6 +30,7 @@ const verticalProduction = {
   styleInvariants: ['Swiss grid', 'typographic hierarchy'], durationSeconds: 5, aspectRatio: '9:16' as const,
   fps: 30 as const, width: 720, height: 1280,
   scenes: [{id:'scene-1',title:'VERTICAL',durationSeconds:5,visualDirection:'A title framed for portrait mobile viewing',narration:'',onScreenText:['9:16 · 720 × 1280'],background:'#101522'}],
+  captionCues: [{id:'vertical-title',sceneId:'scene-1',text:'VERTICAL TITLE TEST',startSeconds:0.5,endSeconds:2.5,kind:'title'}],
   subtitles: [{start:1,end:3,text:'Portrait render check'}],
   audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
