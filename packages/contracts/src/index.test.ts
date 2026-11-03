@@ -154,4 +154,26 @@ describe('declarative animation production contract', () => {
     expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
   });
 
+
+  it('accepts expanded performance actions including gaze, speech, dance and recovery poses', () => {
+    const production = structuredClone(base);
+    production.scenes[0].actors[0].actions = [
+      {type:'look-at',startSeconds:0,durationSeconds:2,targetPosition:[1,1,0]},
+      {type:'talk',startSeconds:2,durationSeconds:2},
+      {type:'crouch',startSeconds:4,durationSeconds:1}
+    ];
+    production.scenes[0].actors[1].actions = [
+      {type:'clap',startSeconds:0,durationSeconds:2},
+      {type:'dance',startSeconds:2,durationSeconds:2},
+      {type:'fall',startSeconds:4,durationSeconds:2}
+    ];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects look-at actions without a target', () => {
+    const invalid = structuredClone(base);
+    invalid.scenes[0].actors[0].actions = [{type:'look-at',startSeconds:0,durationSeconds:2}];
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
 });
