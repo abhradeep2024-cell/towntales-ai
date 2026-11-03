@@ -133,6 +133,11 @@ function Town({ night = true }: { night?: boolean }) {
     <ABlock position={[-4.1, 1.85, 1.35]} scale={[1.05, 0.82, 0.12]} material={material('#e5b83f')} />
     <ABlock position={[-4.1, 1.88, 1.425]} scale={[0.12, 0.43, 0.025]} material={material('#24232a')} />
     <mesh position={[-4.1, 1.58, 1.445]}><sphereGeometry args={[0.055, 12, 12]} /><meshBasicMaterial color="#24232a" /></mesh>
+    {/* Upstairs window: a fixed landmark for the final shadow reveal. */}
+    <ABlock position={[-3, 2.15, -3.18]} scale={[1.35, 1.35, 0.1]} material={material('#111827')} />
+    <ABlock position={[-3, 2.15, -3.105]} scale={[1.16, 1.16, 0.035]} material={new THREE.MeshStandardMaterial({ color: '#6e8da8', roughness: 0.28, transparent: true, opacity: 0.32 })} shadowless />
+    {[-3.58, -3, -2.42].map((x) => <ABlock key={x} position={[x, 2.15, -3.06]} scale={[0.055, 1.28, 0.06]} material={material('#d2c4aa')} />)}
+    {[1.57, 2.15, 2.73].map((y) => <ABlock key={y} position={[-3, y, -3.06]} scale={[1.22, 0.055, 0.06]} material={material('#d2c4aa')} />)}
   </group>;
 }
 
@@ -146,6 +151,11 @@ function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number;
     <ABlock position={[2.3, 0.18, -1.8]} scale={[3.3, 0.45, 2.2]} material={material('#725f66')} />
     <ABlock position={[2.3, 0.48, -1.8]} scale={[3.25, 0.25, 2.1]} material={material('#a8b3c7')} />
     <ABlock position={[1.5, 0.7, -2.35]} scale={[0.95, 0.28, 0.5]} material={material('#e4d9c7')} />
+    {/* Doorway silhouette gives the duplicate a clear entrance position. */}
+    <ABlock position={[-2.45, 1.35, -3.48]} scale={[0.14, 2.7, 0.16]} material={material('#51434a')} />
+    <ABlock position={[-0.95, 1.35, -3.48]} scale={[0.14, 2.7, 0.16]} material={material('#51434a')} />
+    <ABlock position={[-1.7, 2.72, -3.48]} scale={[1.65, 0.14, 0.16]} material={material('#51434a')} />
+    <ABlock position={[-1.7, 1.35, -3.42]} scale={[1.25, 2.5, 0.035]} material={material('#171d2b')} shadowless />
     <pointLight position={[0, 3.8, 0]} intensity={blackout ? flicker : 1.5} color="#f4d9ad" distance={9} />
   </group>;
 }
@@ -167,9 +177,10 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-3.6, 0, 3.5].map((x, i) => <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, i === 1 ? 1.2 : 0.8]} />)}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
-    {(shadowWave || sceneIndex === 4 || sceneIndex === 8) && <Actor frame={frame + (sceneIndex === 0 ? 45 : 24)} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={sceneIndex === 8 ? [2.4, 0, -2.5] : [0.95, 0, -0.1]} />}
-    {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[0.9, 0, -1.8]} />}
-    {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[0.9, 0, -1.8]} />}
+    {(shadowWave || sceneIndex === 4) && <Actor frame={frame + (sceneIndex === 0 ? 45 : 24)} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={[0.95, 0, -0.1]} />}
+    {sceneIndex === 8 && <Actor frame={frame + 24} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 0.95, -3.45]} />}
+    {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
+    {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
   </>;
 }
 
