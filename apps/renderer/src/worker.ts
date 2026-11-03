@@ -77,7 +77,7 @@ async function runJob(job: any, serveUrl: string) {
   try {
     await writeFile(specPath, JSON.stringify(production), 'utf8');
     const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
-    const narrationRequested = Boolean(production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0));
+    const narrationRequested = Boolean(production.audio?.voiceEnabled && (production.scenes.some((scene) => scene.narration.trim().length > 0) || (production.dialogue?.length ?? 0) > 0));
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 4 });
     await execFileAsync(pythonExecutable, [
       audioScript, '--spec', specPath, '--workdir', workDir, '--prepare-only',
@@ -249,7 +249,7 @@ async function runJob(job: any, serveUrl: string) {
       .map(match => ({start:Number(match[1]),duration:Number(match[2])}));
     const audioStream = streams.find((stream: any) => stream.codec_type === 'audio');
     const audioPresent = Boolean(audioStream);
-    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)));
+    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && (production.scenes.some((scene) => scene.narration.trim().length > 0) || (production.dialogue?.length ?? 0) > 0)));
     if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was found in the final MP4.');
     if (audioRequested && audioStream.codec_name !== 'aac') throw new Error(`Expected AAC audio, received ${audioStream.codec_name ?? 'unknown'}.`);
     const videoStreamDuration = Number(video.duration ?? duration);
