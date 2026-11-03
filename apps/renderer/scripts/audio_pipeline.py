@@ -384,6 +384,10 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     scene_boundaries: list[tuple[int, float, float]] = []
     scene_cursor = 0.0
     narration_lines: list[str] = []
+    dialogue_lines = spec.get('dialogue') or []
+    voice_profiles = {profile['id']:profile for profile in (spec.get('voiceProfiles') or [])}
+    scene_index_by_id = {scene['id']:index for index,scene in enumerate(spec.get('scenes', []))}
+    alignment_audits: list[dict] = []
     for idx, scene in enumerate(spec.get("scenes", [])):
         scene_duration = float(scene["durationSeconds"])
         scene_boundaries.append((idx, scene_cursor, scene_cursor + scene_duration))
@@ -419,6 +423,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         if require_word_alignment and (provider != "edge-tts" or not word_events):
             raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
         alignment_coverage = compare_word_alignment_coverage(voice_text, word_events)
+        alignment_audits.append(alignment_coverage)
         report["wordAlignmentAudit"] = alignment_coverage
         report["alignedWordCoverage"] = round(alignment_coverage["coverage"], 4)
         if require_word_alignment and alignment_coverage["coverage"] < 0.98:
@@ -448,8 +453,70 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         report["expectedWordCount"] = expected_word_count
         report["alignedWordCoverage"] = round(len(word_events) / max(1, expected_word_count), 4)
         voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": 0, "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
-    elif require_word_alignment:
-        raise RuntimeError("Production word alignment required, but the specification contains no narration.")
+    elif require_word_alignment and not dialogue_lines:
+        raise RuntimeError("Production word alignment required, but the specification contains no narration or dialogue.");
+
+    if audio.get("voiceEnabled", True):
+        for dialogue_index,line in enumerate(dialogue_lines):
+            profile = voice_profiles.get(line.get("voiceProfileId")) if line.get("voiceProfileId") else None
+            if line.get("voiceProfileId") and not profile:
+                raise RuntimeError(f"Dialogue line {line.get('id')} references a missing voice profile.")
+            voice_name = (profile or {}).get("voice", audio.get("voice", "en-US-AriaNeural"))
+            preferred_rate = (profile or {}).get("rate", "+10%")
+            pitch = (profile or {}).get("pitch", "+0Hz")
+            profile_volume = (profile or {}).get("volume", "+0%")
+            volume_factor = max(0.0, 1.0 + int(profile_volume.replace("%","")) / 100.0)
+            line_start = float(line["startSeconds"])
+            line_end = float(line["endSeconds"])
+            slot_duration = line_end - line_start
+            target = workdir / f"dialogue-{dialogue_index + 1:03d}.mp3"
+            candidate_rates = list(dict.fromkeys([preferred_rate, "+15%", "+20%", "+25%", "+30%"]))
+            provider = ""
+            word_events = []
+            clip_duration = 0.0
+            final_rate = preferred_rate
+            for candidate_rate in candidate_rates:
+                provider,word_events = make_voice(str(line["text"]),voice_name,target,rate=candidate_rate,pitch=pitch,volume=profile_volume)
+                clip_duration = media_duration(target)
+                final_rate = candidate_rate
+                if clip_duration <= slot_duration - 0.05:
+                    break
+                if provider != "edge-tts":
+                    break
+            if clip_duration > slot_duration - 0.05:
+                raise RuntimeError(f"Dialogue line {line.get('id')} takes {clip_duration:.2f}s but its assigned window is only {slot_duration:.2f}s.");
+            if require_word_alignment and (provider != "edge-tts" or not word_events):
+                raise RuntimeError(f"Dialogue line {line.get('id')} has no genuine Edge TTS word boundaries.");
+            audit = compare_word_alignment_coverage(str(line["text"]),word_events)
+            alignment_audits.append(audit)
+            if require_word_alignment and audit["coverage"] < 0.98:
+                missing = ", ".join(audit["missingWords"][:12]) or "unknown"
+                raise RuntimeError(f"Dialogue line {line.get('id')} word alignment coverage is {audit['coverage']:.2%}; missing: {missing}.");
+            scene_index = scene_index_by_id.get(line["sceneId"])
+            if scene_index is None:
+                raise RuntimeError(f"Dialogue line {line.get('id')} references an unknown scene.");
+            for event in word_events:
+                absolute_start = line_start + float(event["start"])
+                absolute_end = line_start + float(event["end"])
+                if absolute_end > line_end + 0.05:
+                    raise RuntimeError(f"Dialogue word {event['text']!r} exceeds its assigned line window.");
+                aligned_words.append({**event,"sceneIndex":scene_index,"start":round(absolute_start,6),"end":round(absolute_end,6),"speaker":line.get("speaker"),"characterId":line.get("characterId")});
+            voice_tracks.append({"kind":"dialogue","file":target.name,"delayMs":round(line_start * 1000),"volume":float(audio.get("voiceVolume",1)) * volume_factor,"bytes":target.stat().st_size,"sha256":hashlib.sha256(target.read_bytes()).hexdigest(),"speaker":line.get("speaker"),"voiceProfileId":line.get("voiceProfileId")});
+            report["voiceLines"] = int(report.get("voiceLines",0)) + 1
+            report["voiceSegments"] = int(report.get("voiceSegments",0)) + 1
+            report["dialogueVoiceProfiles"] = report.get("dialogueVoiceProfiles",[]) + [{"lineId":line.get("id"),"speaker":line.get("speaker"),"voiceProfileId":line.get("voiceProfileId"),"provider":provider,"voice":voice_name,"rate":final_rate}]
+            report["expectedWordCount"] = int(report.get("expectedWordCount",0)) + audit["expectedWordCount"]
+        if alignment_audits:
+            total_expected = sum(audit["expectedWordCount"] for audit in alignment_audits)
+            total_aligned = sum(audit["alignedWordCount"] for audit in alignment_audits)
+            total_matched = sum(audit["matchedWordCount"] for audit in alignment_audits)
+            missing = [word for audit in alignment_audits for word in audit["missingWords"]]
+            unexpected = [word for audit in alignment_audits for word in audit["unexpectedWords"]]
+            combined_audit = {"expectedWordCount":total_expected,"alignedWordCount":total_aligned,"matchedWordCount":total_matched,"coverage":total_matched / max(1,total_expected),"missingWords":missing,"unexpectedWords":unexpected}
+            report["wordAlignmentAudit"] = combined_audit
+            report["alignedWordCoverage"] = round(combined_audit["coverage"],4)
+            if require_word_alignment and combined_audit["coverage"] < 0.98:
+                raise RuntimeError(f"Combined narration and dialogue word alignment coverage is {combined_audit['coverage']:.2%}; at least 98% is required.");
 
     if aligned_words:
         aligned_words = normalize_word_alignments(aligned_words)
