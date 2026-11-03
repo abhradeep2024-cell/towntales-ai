@@ -95,6 +95,7 @@ class PreparedAudioTests(unittest.TestCase):
             self.assertEqual(words[0]["start"], 1.1)
             self.assertEqual(words[-1]["end"], 2.2)
             self.assertEqual(manifest["report"]["wordAlignmentAudit"]["coverage"], 1.0)
+            self.assertIn((1.0,3.0),manifest["report"]["musicDuckIntervals"])
 
     def test_episode_narration_retries_at_faster_rates_until_it_fits(self):
         spec = {
