@@ -391,7 +391,9 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        rig: { type: string, enum: [block-humanoid] }
+        rig: { type: string, enum: [block-humanoid, gltf-humanoid] }
+        assetId: { type: string }
+        animationMap: { type: object, additionalProperties: { type: string } }
         appearance: { type: object }
     Environment:
       type: object
