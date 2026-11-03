@@ -419,6 +419,10 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     shadow_reveal_start = float(shadow_reveal_word["start"]) if shadow_reveal_word else 40.5
     blackout_word = word_at(6, "out")
     blackout_start = float(blackout_word["start"]) if blackout_word else 50.4
+    window_wave_word = word_at(8, "waving")
+    window_wave_start = max(0.0, float(window_wave_word["start"]) - 0.35) if window_wave_word else 3.0
+    if window_wave_word and float(window_wave_word["start"]) > 59.2:
+        raise RuntimeError("The final 'waving' cue lands too late to complete the window wave before the final impact and silence.")
     music_ducks: list[tuple[float, float]] = []
     if spec.get("styleId") == "roblox-cinematic-horror":
         music_ducks.append((max(0.0, shadow_wave_start - 0.08), shadow_wave_start + 1.8))
@@ -453,6 +457,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     report["shadowWaveStart"] = shadow_wave_start
     report["shadowRevealStart"] = shadow_reveal_start
     report["blackoutStart"] = blackout_start
+    report["windowWaveStart"] = window_wave_start
     report["finalSilenceStart"] = final_silence_start
     report["subtitleTiming"] = "edge-tts-word-boundary" if aligned_words else None
     report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
