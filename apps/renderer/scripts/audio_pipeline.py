@@ -343,112 +343,104 @@ def write_srt(subtitles: list[dict], path: Path) -> None:
     path.write_text("\n".join(rows), encoding="utf-8")
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--spec", required=True)
-    parser.add_argument("--video", required=True)
-    parser.add_argument("--output", required=True)
-    parser.add_argument("--workdir", required=True)
-    parser.add_argument("--burn-subtitles", action="store_true")
-    parser.add_argument("--self-test", action="store_true")
-    parser.add_argument("--require-word-alignment", action="store_true", help="Fail unless every narration line has genuine Edge TTS word boundaries.")
-    args = parser.parse_args()
-
-    spec_path, video_path, output_path, workdir = map(Path, (args.spec, args.video, args.output, args.workdir))
-    workdir.mkdir(parents=True, exist_ok=True)
-    if args.self_test:
-        spec = {
-            "durationSeconds": 5,
-            "scenes": [{"durationSeconds": 5, "narration": ""}],
-            "subtitles": [],
-            "audio": {"musicEnabled": True, "voiceEnabled": False, "musicStyle": "ambient", "musicVolume": 0.12, "voiceVolume": 1}
-        }
-    else:
-        spec = json.loads(spec_path.read_text(encoding="utf-8"))
-
+def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> dict:
     audio = spec.get("audio") or {}
     duration = float(spec["durationSeconds"])
-    input_args = ["-i", str(video_path)]
-    filters: list[str] = []
-    labels: list[str] = []
-    next_input = 1
-    report: dict = {"voiceProvider": None, "voiceLines": 0, "musicGenerated": False, "wordAlignmentProvider": None, "alignedWordCount": 0}
+    report: dict = {"voiceProvider": None, "voiceLines": 0, "musicGenerated": False, "effectsGenerated": False, "wordAlignmentProvider": None, "alignedWordCount": 0}
     aligned_words: list[dict] = []
-
-    if audio.get("musicEnabled", True):
-        music = workdir / "music.wav"
-        make_music(music, duration, audio.get("musicStyle", "ambient"))
-        input_args += ["-i", str(music)]
-        filters.append(f"[{next_input}:a]volume={float(audio.get('musicVolume', 0.12)):.3f}[music]")
-        labels.append("[music]")
-        next_input += 1
-        report["musicGenerated"] = True
-
-    effects_enabled = bool(audio.get("effectsEnabled", spec.get("styleId") == "roblox-cinematic-horror"))
-    if effects_enabled:
-        effects = workdir / "effects.wav"
-        make_effects(effects, duration)
-        input_args += ["-i", str(effects)]
-        filters.append(f"[{next_input}:a]volume=0.18[effects]")
-        labels.append("[effects]")
-        next_input += 1
-        report["effectsGenerated"] = True
-    else:
-        report["effectsGenerated"] = False
+    voice_tracks: list[dict] = []
+    scene_start = 0.0
+    voice_cursor = 0.0
+    providers: set[str] = set()
 
     if audio.get("voiceEnabled", True):
         voice_name = audio.get("voice", "en-US-AriaNeural")
-        scene_start = 0.0
-        voice_cursor = 0.0
-        providers = set()
         for idx, scene in enumerate(spec.get("scenes", [])):
             narration = (scene.get("narration") or "").strip()
             if narration:
                 target = workdir / f"voice-{idx:02d}.mp3"
                 provider, word_events = make_voice(narration, voice_name, target)
                 providers.add(provider)
-                if args.require_word_alignment and (provider != "edge-tts" or not word_events):
+                if require_word_alignment and (provider != "edge-tts" or not word_events):
                     raise RuntimeError(f"Production word alignment required, but scene {idx} used {provider} without real word boundaries.")
-
-                # Narration must not overlap the next narration line. If a line runs
-                # beyond its storyboard beat, the next line follows its actual audio end.
                 voice_start = max(scene_start, voice_cursor)
                 clip_duration = media_duration(target)
                 if clip_duration <= 0:
                     raise RuntimeError(f"Scene {idx} narration produced an empty audio track.")
                 for event in word_events:
-                    aligned_words.append({
-                        **event,
-                        "sceneIndex": idx,
-                        "start": round(voice_start + float(event["start"]), 6),
-                        "end": round(voice_start + float(event["end"]), 6)
-                    })
-                input_args += ["-i", str(target)]
-                delay_ms = max(0, round(voice_start * 1000))
-                label = f"voice{idx}"
-                filters.append(f"[{next_input}:a]adelay={delay_ms}|{delay_ms},volume={float(audio.get('voiceVolume', 1)):.3f}[{label}]")
-                labels.append(f"[{label}]")
-                next_input += 1
+                    aligned_words.append({**event, "sceneIndex": idx, "start": round(voice_start + float(event["start"]), 6), "end": round(voice_start + float(event["end"]), 6)})
+                voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": max(0, round(voice_start * 1000)), "volume": float(audio.get("voiceVolume", 1))})
                 report["voiceLines"] += 1
                 voice_cursor = voice_start + clip_duration
                 if voice_cursor > duration + 0.05:
-                    raise RuntimeError(
-                        f"Narration exceeds the {duration:.2f}s episode: scene {idx} ends at {voice_cursor:.2f}s. "
-                        "Shorten or re-time the approved narration; do not truncate speech."
-                    )
+                    raise RuntimeError(f"Narration exceeds the {duration:.2f}s episode: scene {idx} ends at {voice_cursor:.2f}s. Shorten or re-time the approved narration; do not truncate speech.")
             scene_start += float(scene["durationSeconds"])
         report["voiceProvider"] = "+".join(sorted(providers)) if providers else None
-        if aligned_words:
-            aligned_words = normalize_word_alignments(aligned_words)
-            validate_word_alignment_bounds(aligned_words, duration)
-            alignment_path = workdir / "word-alignments.json"
-            alignment_path.write_text(json.dumps({"schemaVersion": 1, "timebase": "seconds-from-video-start", "provider": "edge-tts-word-boundary", "words": aligned_words}, indent=2), encoding="utf-8")
-            report["wordAlignmentProvider"] = "edge-tts-word-boundary"
-            report["alignedWordCount"] = len(aligned_words)
-            report["wordAlignmentFile"] = str(alignment_path)
-        elif args.require_word_alignment:
-            raise RuntimeError("Production word alignment required, but no word-boundary events were captured.")
 
+    if aligned_words:
+        aligned_words = normalize_word_alignments(aligned_words)
+        validate_word_alignment_bounds(aligned_words, duration)
+        alignment_path = workdir / "word-alignments.json"
+        alignment_path.write_text(json.dumps({"schemaVersion": 1, "timebase": "seconds-from-video-start", "provider": "edge-tts-word-boundary", "words": aligned_words}, indent=2), encoding="utf-8")
+        report["wordAlignmentProvider"] = "edge-tts-word-boundary"
+        report["alignedWordCount"] = len(aligned_words)
+        report["wordAlignmentFile"] = alignment_path.name
+    elif require_word_alignment:
+        raise RuntimeError("Production word alignment required, but no word-boundary events were captured.")
+
+    music_ducks: list[tuple[float, float]] = [(19.8, 22.2)] if spec.get("styleId") == "roblox-cinematic-horror" else []
+    effects_ducks: list[tuple[float, float]] = []
+    except_word = next((item for item in aligned_words if item.get("sceneIndex") == 7 and str(item["text"]).strip(".,!?;:").lower() == "except"), None)
+    if except_word:
+        me_word = next((item for item in aligned_words if item.get("sceneIndex") == 7 and str(item["text"]).strip(".,!?;:").lower() == "me" and float(item["start"]) >= float(except_word["start"])), None)
+        if me_word:
+            reveal_silence = (max(0.0, float(except_word["start"]) - 0.04), min(duration, float(me_word["end"]) + 0.35))
+            music_ducks.append(reveal_silence)
+            effects_ducks.append(reveal_silence)
+
+    tracks: list[dict] = []
+    if audio.get("musicEnabled", True):
+        music_path = workdir / "music.wav"
+        make_music(music_path, duration, audio.get("musicStyle", "ambient"), music_ducks)
+        tracks.append({"kind": "music", "file": music_path.name, "delayMs": 0, "volume": float(audio.get("musicVolume", 0.12))})
+        report["musicGenerated"] = True
+    effects_enabled = bool(audio.get("effectsEnabled", spec.get("styleId") == "roblox-cinematic-horror"))
+    if effects_enabled:
+        effects_path = workdir / "effects.wav"
+        make_effects(effects_path, duration, effects_ducks)
+        tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18})
+        report["effectsGenerated"] = True
+    tracks.extend(voice_tracks)
+    report["effectsEnabled"] = effects_enabled
+    report["musicDuckIntervals"] = music_ducks
+    report["effectsDuckIntervals"] = effects_ducks
+    report["subtitleTiming"] = "edge-tts-word-boundary" if aligned_words else None
+    report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
+    manifest = {"schemaVersion": 1, "durationSeconds": duration, "tracks": tracks, "report": report}
+    manifest_path = workdir / "audio-manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    report["audioManifestFile"] = manifest_path.name
+    return manifest
+
+
+def mux_prepared_audio(spec: dict, video_path: Path, output_path: Path, workdir: Path, manifest: dict, require_word_alignment: bool, burn_subtitles: bool) -> dict:
+    duration = float(spec["durationSeconds"])
+    input_args = ["-i", str(video_path)]
+    filters: list[str] = []
+    labels: list[str] = []
+    for input_index, track in enumerate(manifest.get("tracks", []), 1):
+        audio_path = workdir / track["file"]
+        if not audio_path.exists() or audio_path.stat().st_size < 100:
+            raise RuntimeError(f"Prepared audio track is missing or empty: {track['file']}")
+        input_args += ["-i", str(audio_path)]
+        delay_ms = int(track.get("delayMs", 0))
+        volume = float(track.get("volume", 1.0))
+        label = f"audio{input_index}"
+        if delay_ms:
+            filters.append(f"[{input_index}:a]adelay={delay_ms}|{delay_ms},volume={volume:.3f}[{label}]")
+        else:
+            filters.append(f"[{input_index}:a]volume={volume:.3f}[{label}]")
+        labels.append(f"[{label}]")
     has_audio = bool(labels)
     if has_audio:
         mix_inputs = "".join(labels)
@@ -457,20 +449,25 @@ def main() -> int:
     else:
         map_audio = ["-an"]
 
-    subtitles = spec.get("subtitles") or []
+    report = dict(manifest.get("report", {}))
     vf_args: list[str] = []
-    if args.require_word_alignment:
-        if not aligned_words:
-            raise RuntimeError("Word-synchronized captions cannot be generated without actual narration alignment.")
+    alignment_path = workdir / "word-alignments.json"
+    if require_word_alignment:
+        if not alignment_path.exists():
+            raise RuntimeError("Word-synchronized captions cannot be generated without prepared word alignment.")
+        alignment_data = json.loads(alignment_path.read_text(encoding="utf-8"))
+        words = alignment_data.get("words", [])
+        if not words:
+            raise RuntimeError("Prepared word alignment is empty.")
         width, height = media_dimensions(video_path)
         ass_path = workdir / "word-captions.ass"
-        write_word_ass(aligned_words, ass_path, width, height)
+        write_word_ass(words, ass_path, width, height)
         vf_args = ["-vf", f"ass={ass_path}"]
         report["subtitlesBurned"] = True
         report["subtitleTiming"] = "edge-tts-word-boundary"
-    elif args.burn_subtitles and subtitles:
+    elif burn_subtitles and spec.get("subtitles"):
         srt_path = workdir / "subtitles.srt"
-        write_srt(subtitles, srt_path)
+        write_srt(spec["subtitles"], srt_path)
         vf_args = ["-vf", f"subtitles={srt_path}:force_style='FontName=Arial,FontSize=24,Outline=2,Shadow=1,MarginV=60'"]
         report["subtitlesBurned"] = True
         report["subtitleTiming"] = "sentence-cue"
@@ -484,9 +481,51 @@ def main() -> int:
     run(command)
     if not output_path.exists() or output_path.stat().st_size < 1000:
         raise RuntimeError("Audio mux did not produce a valid MP4.")
+    report["muxedOutput"] = output_path.name
+    return report
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--spec", required=True)
+    parser.add_argument("--video")
+    parser.add_argument("--output")
+    parser.add_argument("--workdir", required=True)
+    parser.add_argument("--burn-subtitles", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--prepare-only", action="store_true", help="Generate narration, word alignment, music and effects before video rendering.")
+    parser.add_argument("--reuse-prepared", action="store_true", help="Mux an already prepared audio workdir without regenerating TTS.")
+    parser.add_argument("--require-word-alignment", action="store_true", help="Fail unless every narration line has genuine Edge TTS word boundaries.")
+    args = parser.parse_args()
+    if args.prepare_only and args.reuse_prepared:
+        raise RuntimeError("Use either --prepare-only or --reuse-prepared, not both.")
+    spec_path = Path(args.spec)
+    workdir = Path(args.workdir)
+    workdir.mkdir(parents=True, exist_ok=True)
+    if args.self_test:
+        spec = {"durationSeconds": 5, "styleId": "audio-smoke", "scenes": [{"durationSeconds": 5, "narration": ""}], "subtitles": [], "audio": {"musicEnabled": True, "voiceEnabled": False, "musicStyle": "ambient", "musicVolume": 0.12, "voiceVolume": 1}}
+    else:
+        spec = json.loads(spec_path.read_text(encoding="utf-8"))
+
+    manifest_path = workdir / "audio-manifest.json"
+    if args.reuse_prepared:
+        if not manifest_path.exists():
+            raise RuntimeError("Prepared audio manifest is missing; run --prepare-only first.")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if abs(float(manifest.get("durationSeconds", 0)) - float(spec["durationSeconds"])) > 0.001:
+            raise RuntimeError("Prepared audio duration does not match the production specification.")
+        if args.require_word_alignment and not (workdir / "word-alignments.json").exists():
+            raise RuntimeError("Prepared word alignment is required but missing.")
+    else:
+        manifest = prepare_audio(spec, workdir, args.require_word_alignment)
+    if args.prepare_only:
+        print(json.dumps(manifest.get("report", {})))
+        return 0
+    if not args.video or not args.output:
+        raise RuntimeError("--video and --output are required unless --prepare-only is used.")
+    report = mux_prepared_audio(spec, Path(args.video), Path(args.output), workdir, manifest, args.require_word_alignment, args.burn_subtitles)
     print(json.dumps(report))
     return 0
-
 
 if __name__ == "__main__":
     try:
