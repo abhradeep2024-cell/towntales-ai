@@ -258,16 +258,15 @@ async function runJob(job: any, serveUrl: string) {
         title: scene.title, visualDirection: scene.visualDirection, narration: scene.narration,
         background: scene.background
       })),
-      characters: production.styleId === 'roblox-cinematic-horror' ? [
-        { id: 'CHAR_ALEX_001', name: 'Alex', wardrobe: ['black messy hair', 'blue hoodie', 'black trousers', 'white sneakers'], assetStatus: 'procedural R6-inspired model' },
-        { id: 'CHAR_SHADOW_ALEX_001', name: 'Shadow Alex', identityOf: 'CHAR_ALEX_001', appearance: 'matte near-black silhouette with subtle pale eyes', controller: 'independent animation controller' },
-        { id: 'CHAR_ALEX_DOUBLE_001', name: 'Alex Double', identityOf: 'CHAR_ALEX_001', wardrobe: ['black messy hair', 'blue hoodie', 'black trousers', 'white sneakers'], shadow: 'none', controller: 'independent expression and movement controller', assetStatus: 'shared Alex rig with independent scene controller' },
-        { id: 'CHAR_TOWN_RESIDENT_001', name: 'Town Resident', wardrobe: ['olive green top', 'dark trousers', 'dark shoes'], controller: 'resident walk and panic controller', assetStatus: 'procedural R6-inspired resident rig' }
-      ] : [],
-      environmentAssets: production.styleId === 'roblox-cinematic-horror' ? [
-        'ENV_TOWN_STREET_001', 'ENV_ALEX_HOUSE_001', 'ENV_BEDROOM_001',
-        'PROP_CLOCK_001', 'PROP_WARNING_SIGN_001', 'LIGHT_STREET_001', 'LIGHT_BEDROOM_001'
-      ] : [],
+      characters: (production.characters ?? []).map((character) => ({
+        id: character.id, name: character.name, rig: character.rig,
+        appearance: character.appearance, assetStatus: 'resolved-from-production-manifest'
+      })),
+      environmentAssets: (production.environments ?? []).map((environment) => ({
+        id: environment.id, name: environment.name, assetId: environment.assetId ?? null,
+        locationDescription: environment.locationDescription, timeOfDay: environment.timeOfDay ?? null,
+        weather: environment.weather ?? null, atmosphere: environment.atmosphere ?? null
+      })),
       styleInvariants: production.styleInvariants,
       sourceProductionSpec: production
     };
@@ -294,14 +293,12 @@ async function runJob(job: any, serveUrl: string) {
       status: 'pending-human-review',
       releaseApproved: false,
       requiredReview: [
-        'Watch all nine scenes in sequence and confirm story comprehension.',
-        'Inspect Alex identity, wardrobe and proportions across every scene.',
-        'Inspect independent shadow timing, three-wave gesture and head turn.',
-        'Confirm the bedroom double casts no visible shadow.',
-        'Confirm Alex has no shadow in daylight while residents do.',
-        'Confirm the original shadow is visible behind the same bedroom window and waves before the cut.',
-        'Listen to narration, music and effects on phone speakers and headphones.',
-        'Inspect caption safe areas, readability and word-level synchronization.'
+        'Watch every scene in sequence and confirm the story is understandable and causally coherent.',
+        'Verify every recurring character retains the approved identity, appearance, wardrobe and proportions.',
+        'Check that actor actions, interactions, spatial continuity and camera movement match the production plan.',
+        'Inspect environments, props, lighting, transitions and visual effects for continuity defects.',
+        'Listen to narration, dialogue, music, ambience and effects on phone speakers and headphones.',
+        'Inspect caption spelling, safe areas, readability and synchronization against the final audio.'
       ],
       automatedReviewLimit: 'Automated technical checks cannot certify subjective creative quality or replace final visual approval.'
     };
