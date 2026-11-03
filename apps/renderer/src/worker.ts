@@ -177,7 +177,7 @@ async function runJob(job: any, serveUrl: string) {
           composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 23, x264Preset: 'veryfast',
           inputProps: { production, wordAlignments }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
           onProgress: ({ progress }) => {
-            const pct = Math.max(25, Math.min(82, 25 + Math.round(progress * 57));
+            const pct = Math.max(25, Math.min(82, 25 + Math.round(progress * 57)));
             progressWrites = progressWrites.then(async () => {
               if (!renderingActive) return;
               const now = Date.now();
