@@ -176,7 +176,7 @@ class WordAlignmentTests(unittest.TestCase):
         ]
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "captions.ass"
-            write_word_ass(words, target, 1080, 1920)
+            write_word_ass(words, target, 1080, 1920, {"shadow"})
             output = target.read_text(encoding="utf-8")
         self.assertIn("Dialogue: 0,0:00:00.10,0:00:00.30", output)
         self.assertIn("shadow", output)
