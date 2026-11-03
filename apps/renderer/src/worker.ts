@@ -79,6 +79,11 @@ async function resolveProductionAssets(production: any, workDir: string) {
       continue;
     }
     if (record.asset_type !== asset.type) throw new Error(`Library asset ${asset.libraryAssetKey}@${asset.libraryVersion} type mismatch: expected ${asset.type}, received ${record.asset_type}.`);
+    const usedAsModel =
+      (production.characters ?? []).some((character:any)=>character.assetId===asset.id && character.rig==='gltf-humanoid') ||
+      (production.environments ?? []).some((environment:any)=>environment.assetId===asset.id) ||
+      (production.scenes ?? []).some((scene:any)=>(scene.props ?? []).some((prop:any)=>prop.type==='model' && prop.assetId===asset.id));
+    if (usedAsModel && record.mime_type !== 'model/gltf-binary') throw new Error(`Model asset ${asset.libraryAssetKey}@${asset.libraryVersion} must be uploaded as model/gltf-binary.`);
     const {data:blob,error:downloadError} = await supabase.storage.from(bucket).download(record.storage_key);
     if (downloadError || !blob) throw downloadError ?? new Error(`Could not download library asset ${asset.libraryAssetKey}.`);
     const bytes = Buffer.from(await blob.arrayBuffer());
