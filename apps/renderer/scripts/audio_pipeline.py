@@ -376,17 +376,31 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         # One continuous narration master preserves natural pacing across the Bible's fixed scene boundaries.
         voice_text = "\n\n".join(narration_lines)
         target = workdir / "voice-master.mp3"
-        provider, word_events = make_voice(voice_text, voice_name, target, rate="+5%")
         expected_word_count = len(re.findall(r"\b[\w]+(?:['’][\w]+)?\b", voice_text))
+        # Fit the continuous voice track inside the fixed 60-second Bible timeline.
+        # Retry only with progressively faster Edge voices; retain the final attempt's
+        # real word-boundary events so captions and animation remain aligned to its audio.
+        voice_rate = "+10%"
+        clip_duration = 0.0
+        provider = ""
+        word_events = []
+        for candidate_rate in ("+10%", "+15%", "+20%", "+25%", "+30%"):
+            provider, word_events = make_voice(voice_text, voice_name, target, rate=candidate_rate)
+            clip_duration = media_duration(target)
+            voice_rate = candidate_rate
+            if clip_duration <= duration - 0.45:
+                break
+            if provider != "edge-tts":
+                break
+            print(f"[audio] Narration at {candidate_rate} is {clip_duration:.2f}s; retrying faster to preserve the approved 60-second timeline.", file=sys.stderr)
         if require_word_alignment and (provider != "edge-tts" or not word_events):
             raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
         if require_word_alignment and len(word_events) < expected_word_count * 0.9:
             raise RuntimeError(f"Edge TTS returned only {len(word_events)} word boundaries for {expected_word_count} narration words; the caption and choreography alignment is incomplete.")
-        clip_duration = media_duration(target)
         if clip_duration <= 0:
             raise RuntimeError("Continuous narration master produced an empty audio track.")
         if clip_duration > duration - 0.45:
-            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s; it must finish by {duration - 0.45:.2f}s to preserve the Bible's final impact and silence. Adjust delivery without changing the approved scene timecodes.")
+            raise RuntimeError(f"Continuous narration takes {clip_duration:.2f}s even at {voice_rate}; it must finish by {duration - 0.45:.2f}s to preserve the Bible's final impact and silence. Adjust delivery without changing the approved scene timecodes.")
         for event in word_events:
             word_start = float(event["start"])
             scene_index = next((idx for idx, start, end in scene_boundaries if start <= word_start < end), None)
@@ -398,7 +412,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         report["voiceLines"] = 1
         report["voiceSegments"] = len(narration_lines)
         report["voiceDurationSeconds"] = round(clip_duration, 3)
-        report["voiceRate"] = "+5%"
+        report["voiceRate"] = voice_rate
         report["expectedWordCount"] = expected_word_count
         report["alignedWordCoverage"] = round(len(word_events) / max(1, expected_word_count), 4)
         voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": 0, "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
