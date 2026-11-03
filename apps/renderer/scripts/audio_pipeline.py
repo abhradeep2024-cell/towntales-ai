@@ -335,7 +335,7 @@ def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> No
         current = ass_escape(current_text)
         normalized = re.sub(r"[^a-z0-9]+", "", current_text.lower())
         current_colour = "&H000040FF&" if normalized in key_words else "&H00FFFFFF&"
-        if index:
+        if index and words[index - 1].get("sceneIndex") == item.get("sceneIndex"):
             previous = ass_escape(str(words[index - 1]["text"]))
             caption = f"{{\\an5\\pos({width // 2},{y})\\bord5\\shad2\\1c&H00FFFFFF&}}{previous} {{\\1c{current_colour}}}{current}"
         else:
