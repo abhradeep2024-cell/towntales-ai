@@ -29,19 +29,19 @@ describe('Real Factory API authentication boundary', () => {
   });
 
   it('rejects unauthenticated asset-library uploads', async () => {
-    const response = await app.inject({method:'POST',url:'/v1/assets',payload:{}});
+    const response = await app!.inject({method:'POST',url:'/v1/assets',payload:{}});
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({error:'unauthorized'});
   });
 
   it('rejects unauthenticated source intake', async () => {
-    const response = await app.inject({method:'POST',url:'/v1/intake',payload:{}});
+    const response = await app!.inject({method:'POST',url:'/v1/intake',payload:{}});
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({error:'unauthorized'});
   });
 
   it('rejects unauthenticated story planning', async () => {
-    const response = await app.inject({method:'POST',url:'/v1/projects/00000000-0000-4000-8000-000000000001/plan',payload:{}});
+    const response = await app!.inject({method:'POST',url:'/v1/projects/00000000-0000-4000-8000-000000000001/plan',payload:{}});
     expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({error:'unauthorized'});
   });
