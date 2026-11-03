@@ -265,4 +265,20 @@ describe('declarative animation production contract', () => {
     expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
   });
 
+
+  it('accepts reusable GLTF humanoid rigs with explicit animation maps', () => {
+    const production: any = structuredClone(base);
+    production.assets = [{id:'hero-rig',type:'rig',libraryAssetKey:'hero-rig',libraryVersion:2,required:true}];
+    production.characters[0].rig = 'gltf-humanoid';
+    production.characters[0].assetId = 'hero-rig';
+    production.characters[0].animationMap = {idle:'Idle',walk:'Walk',run:'Run',talk:'Talk'};
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects GLTF humanoid characters without a declared rig asset', () => {
+    const production: any = structuredClone(base);
+    production.characters[0].rig = 'gltf-humanoid';
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
 });
