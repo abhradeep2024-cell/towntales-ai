@@ -34,6 +34,66 @@ export const ProjectFilesSchema = z.record(z.string(), z.string()).superRefine((
   }
 });
 
+
+export const Vector3Schema = z.tuple([z.number(), z.number(), z.number()]);
+export const CharacterAppearanceSchema = z.object({
+  bodyColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#2563a6'),
+  skinColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#e8b58e'),
+  hairColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171717'),
+  pantsColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171a22'),
+  shoeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#f2f2f2'),
+  scale: z.number().min(0.25).max(3).default(1)
+}).default({});
+export const CharacterAssetSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(120),
+  rig: z.enum(['block-humanoid']).default('block-humanoid'),
+  appearance: CharacterAppearanceSchema
+});
+export const ActorActionSchema = z.object({
+  type: z.enum(['idle','walk','run','wave','point','turn','jump','recoil','gesture','move','disappear','appear']),
+  startSeconds: z.number().nonnegative(),
+  durationSeconds: z.number().positive().max(90),
+  intensity: z.number().min(0).max(2).default(1),
+  arm: z.enum(['left','right','both']).default('right'),
+  targetPosition: Vector3Schema.optional(),
+  targetRotationY: z.number().optional(),
+  repeat: z.number().int().min(1).max(20).default(1),
+  note: z.string().max(500).optional()
+});
+export const SceneActorSchema = z.object({
+  characterId: z.string().min(1).max(80),
+  position: Vector3Schema.default([0,0,0]),
+  rotationY: z.number().default(0),
+  actions: z.array(ActorActionSchema).max(80).default([])
+});
+export const ScenePropSchema = z.object({
+  id: z.string().min(1).max(80),
+  type: z.enum(['box','sphere','cylinder','plane']),
+  position: Vector3Schema,
+  scale: Vector3Schema.default([1,1,1]),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#777777'),
+  rotation: Vector3Schema.default([0,0,0]),
+  castShadow: z.boolean().default(true)
+});
+export const CameraKeyframeSchema = z.object({
+  atSeconds: z.number().nonnegative(),
+  position: Vector3Schema,
+  target: Vector3Schema,
+  fov: z.number().min(15).max(100).default(40)
+});
+export const SceneCameraSchema = z.object({
+  keyframes: z.array(CameraKeyframeSchema).min(1).max(30)
+});
+export const SceneLightingSchema = z.object({
+  ambientColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#ffffff'),
+  ambientIntensity: z.number().min(0).max(5).default(1.2),
+  keyColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#ffffff'),
+  keyIntensity: z.number().min(0).max(10).default(2),
+  keyPosition: Vector3Schema.default([4,8,5]),
+  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional()
+});
+
 export const SceneSchema = z.object({
   id: z.string().min(1).max(80),
   title: z.string().min(1).max(160),
@@ -41,7 +101,11 @@ export const SceneSchema = z.object({
   narration: z.string().max(5000).default(''),
   visualDirection: z.string().min(1).max(4000),
   onScreenText: z.array(z.string().max(300)).max(20).default([]),
-  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522')
+  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
+  actors: z.array(SceneActorSchema).max(40).default([]),
+  props: z.array(ScenePropSchema).max(100).default([]),
+  camera: SceneCameraSchema.optional(),
+  lighting: SceneLightingSchema.optional()
 });
 
 export const ProductionSpecSchema = z.preprocess((input) => {
@@ -73,6 +137,7 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   fps: z.union([z.literal(24), z.literal(25), z.literal(30)]).default(30),
   width: z.number().int().min(320).max(1920).default(1280),
   height: z.number().int().min(320).max(1920).default(720),
+  characters: z.array(CharacterAssetSchema).max(100).default([]),
   scenes: z.array(SceneSchema).min(1).max(30),
   projectFiles: ProjectFilesSchema.optional(),
   subtitles: z.array(z.object({start: z.number().nonnegative(), end: z.number().positive(), text: z.string().min(1).max(500)})).max(300).default([]),
