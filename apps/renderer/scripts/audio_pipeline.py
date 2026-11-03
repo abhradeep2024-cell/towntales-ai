@@ -420,10 +420,10 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     report["effectsDuckIntervals"] = effects_ducks
     report["subtitleTiming"] = "edge-tts-word-boundary" if aligned_words else None
     report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
-    manifest = {"schemaVersion": 1, "durationSeconds": duration, "tracks": tracks, "report": report}
     manifest_path = workdir / "audio-manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     report["audioManifestFile"] = manifest_path.name
+    manifest = {"schemaVersion": 1, "durationSeconds": duration, "tracks": tracks, "report": report}
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 
 
