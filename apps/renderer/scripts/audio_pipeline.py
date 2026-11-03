@@ -447,7 +447,9 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     report["subtitlesBurned"] = bool(aligned_words or (audio.get("burnSubtitles") and spec.get("subtitles")))
     manifest_path = workdir / "audio-manifest.json"
     report["audioManifestFile"] = manifest_path.name
-    manifest = {"schemaVersion": 1, "durationSeconds": duration, "tracks": tracks, "report": report}
+    spec_hash = hashlib.sha256(json.dumps(spec, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    report["productionSpecSha256"] = spec_hash
+    manifest = {"schemaVersion": 1, "durationSeconds": duration, "productionSpecSha256": spec_hash, "tracks": tracks, "report": report}
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 
@@ -551,6 +553,9 @@ def main() -> int:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if abs(float(manifest.get("durationSeconds", 0)) - float(spec["durationSeconds"])) > 0.001:
             raise RuntimeError("Prepared audio duration does not match the production specification.")
+        spec_hash = hashlib.sha256(json.dumps(spec, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+        if manifest.get("productionSpecSha256") != spec_hash:
+            raise RuntimeError("Prepared audio belongs to a different production specification; regenerate narration and alignment.")
         if args.require_word_alignment and not (workdir / "word-alignments.json").exists():
             raise RuntimeError("Prepared word alignment is required but missing.")
     else:
