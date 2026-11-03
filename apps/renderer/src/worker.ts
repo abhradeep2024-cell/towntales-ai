@@ -124,7 +124,8 @@ async function runJob(job: any, serveUrl: string) {
     const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
     await execFileAsync(pythonExecutable, [
       audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
-      '--require-word-alignment'
+      ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : []),
+      ...(production.audio.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0) ? ['--require-word-alignment'] : [])
     ], { timeout: 4 * 60 * 1000, maxBuffer: 2_000_000 });
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
