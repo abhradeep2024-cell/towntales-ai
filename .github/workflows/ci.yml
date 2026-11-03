@@ -92,9 +92,17 @@ jobs:
         run: npm run render:lemo:smoke
       - name: Render a new film with the native Art Deco engine modules
         run: npm run render:lemo:art-deco
-      - name: Render and mux TownTales Episode 01 preview\n        run: |\n          npx remotion render apps/renderer/src/index.tsx TownTalesEpisode01Preview /tmp/towntales-episode-01-preview.mp4 --log=error\n          PYTHON_EXECUTABLE=.venv/bin/python .venv/bin/python apps/renderer/scripts/audio_pipeline.py \\\n            --spec apps/renderer/fixtures/episode-01-roblox.json \\\n            --video /tmp/towntales-episode-01-preview.mp4 \\\n            --output /tmp/towntales-episode-01.mp4 \\\n            --workdir /tmp/towntales-episode-01-audio\n      - name: Validate all MP4 outputs
+      - name: Render and mux TownTales Episode 01 preview
         run: |
-          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4; do
+          npx remotion render apps/renderer/src/index.tsx TownTalesEpisode01Preview /tmp/towntales-episode-01-preview.mp4 --log=error
+          PYTHON_EXECUTABLE=.venv/bin/python .venv/bin/python apps/renderer/scripts/audio_pipeline.py \
+            --spec apps/renderer/fixtures/episode-01-roblox.json \
+            --video /tmp/towntales-episode-01-preview.mp4 \
+            --output /tmp/towntales-episode-01.mp4 \
+            --workdir /tmp/towntales-episode-01-audio
+      - name: Validate all MP4 outputs
+        run: |
+          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4 /tmp/towntales-episode-01.mp4; do
             test -s "$f"
             ffmpeg -v error -i "$f" -f null -
             ffprobe -v error -show_entries format=duration,size:stream=codec_type,width,height,r_frame_rate -of json "$f"
