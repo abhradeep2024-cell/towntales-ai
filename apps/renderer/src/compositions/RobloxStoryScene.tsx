@@ -131,7 +131,7 @@ function Town({ night = true }: { night?: boolean }) {
       <boxGeometry args={[0.3, 0.035, 0.018]} />
       <meshBasicMaterial color="#171923" />
     </mesh>
-    <mesh position={[3.56, 3.65, -1.375]} rotation={[0, 0, -Math.PI / 3]}>
+    <mesh position={[3.34, 3.65, -1.375]}>
       <boxGeometry args={[0.23, 0.028, 0.018]} />
       <meshBasicMaterial color="#171923" />
     </mesh>
@@ -210,6 +210,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
   const scale = width / 360;
   const push = Math.min(1, frame / Math.max(1, fps * 2));
   const cameraPosition: [number, number, number] = sceneIndex === 0 ? [0, 3.5 - push * 1.1, 11 - push * 2.1]
+    : sceneIndex === 3 ? [0, 2.6, 9.5 - push * 2.1]
     : sceneIndex === 4 ? [0, 2.5, 9 - push * 1.3]
     : sceneIndex === 5 || sceneIndex === 6 ? [0, 2.2, 8.2 - push * 0.8]
     : sceneIndex === 7 ? [0, 3.5 - Math.min(1, frame / Math.max(1, fps * 5)) * 1.45, 9.5]
@@ -223,6 +224,9 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number }> = 
     </Canvas>}
     {blackout && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, opacity: Math.max(0, 1 - (frame / fps - 10.4) / 0.85) }}>
       {[0, 1].map((eye) => <div key={eye} style={{ width: 12 * scale, height: 7 * scale, borderRadius: '50%', background: '#bceaff', boxShadow: '0 0 18px 7px rgba(188,234,255,.75)' }} />)}
+    </div>}
+    {sceneIndex === 1 && <div style={{ position: 'absolute', top: '16%', right: '7%', padding: `${8 * scale}px ${12 * scale}px`, border: `${2 * scale}px solid rgba(255,230,180,.8)`, borderRadius: 8 * scale, background: 'rgba(12,16,25,.82)', color: '#fff0c9', fontFamily: 'Arial', fontWeight: 900, fontSize: 23 * scale, letterSpacing: 1.5 * scale, boxShadow: '0 0 18px rgba(255,210,130,.25)' }}>
+      9:00 PM
     </div>}
     <div style={{ position: 'absolute', top: '5%', left: '6%', color: 'rgba(255,255,255,.58)', fontFamily: 'Arial', fontSize: 18 * scale, letterSpacing: 5 * scale }}>
       TOWNTALES  /  {String(sceneIndex + 1).padStart(2, '0')}
