@@ -12,6 +12,7 @@ import array
 import json
 import hashlib
 import math
+import re
 import shutil
 import subprocess
 import sys
