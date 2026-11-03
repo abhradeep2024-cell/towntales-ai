@@ -102,8 +102,8 @@ export const SceneSchema = z.object({
   visualDirection: z.string().min(1).max(4000),
   onScreenText: z.array(z.string().max(300)).max(20).default([]),
   background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
-  actors: z.array(SceneActorSchema).max(40).default([]),
-  props: z.array(ScenePropSchema).max(100).default([]),
+  actors: z.array(SceneActorSchema).max(40).optional(),
+  props: z.array(ScenePropSchema).max(100).optional(),
   camera: SceneCameraSchema.optional(),
   lighting: SceneLightingSchema.optional()
 });
