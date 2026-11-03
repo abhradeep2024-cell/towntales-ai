@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Free, local audio bed + optional Edge TTS narration, muxed into a rendered MP4.
+"""Audio-first narration, word alignment, music and effects preparation plus MP4 muxing.
 
-Edge TTS is online and optional. If it is unavailable, espeak-ng is used when installed.
-All voice/music is mixed and encoded by FFmpeg. No API credential is needed.
+Edge TTS is optional for smoke jobs, but required for narrated production when
+--require-word-alignment is set. Production fails closed rather than silently
+substituting unaligned speech. FFmpeg performs the final audio/video mux.
 """
 from __future__ import annotations
 
