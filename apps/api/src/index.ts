@@ -4,10 +4,12 @@ import { CreateJobSchema } from '@film-studio/contracts';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
+import { extractProductionInput } from './intake.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const app = Fastify({logger: true, bodyLimit: 4_000_000});
+const app = Fastify({logger: true, bodyLimit: 8_000_000});
 const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
@@ -173,6 +175,72 @@ app.get('/v1/styles/:slug/engine', async (request, reply) => {
     return {styleSlug:slug,file:selected.path,role:selected.role,bytes:Buffer.byteLength(content,'utf8'),sourceCommit:engineIndex.sourceCommit,content};
   } catch (error) {
     request.log.error(error); return reply.code(503).send({error:'style_engine_unavailable'});
+  }
+});
+
+
+app.post('/v1/intake', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const body = request.body as {filename?:string;contentBase64?:string;title?:string;description?:string;styleId?:string;aspectRatio?:'16:9'|'9:16'|'1:1'};
+  if (!body || typeof body.filename !== 'string' || typeof body.contentBase64 !== 'string') {
+    return reply.code(400).send({error:'filename_and_base64_content_required'});
+  }
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.contentBase64)) {
+    return reply.code(400).send({error:'invalid_base64_content'});
+  }
+  const bytes = Buffer.from(body.contentBase64,'base64');
+  if (bytes.toString('base64') !== body.contentBase64 || bytes.byteLength > 5 * 1024 * 1024) {
+    return reply.code(413).send({error:'invalid_or_oversized_source_file'});
+  }
+  let extracted;
+  try { extracted = await extractProductionInput(body.filename,bytes); }
+  catch (error) {
+    return reply.code(400).send({error:'source_extraction_failed',message:error instanceof Error ? error.message : 'Unknown extraction error'});
+  }
+  const db = requireDb();
+  const id = randomUUID();
+  const safeName = body.filename.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
+  const sourceKey = `intake/${id}/source-${safeName}`;
+  const textKey = `intake/${id}/extracted.txt`;
+  const mime = extracted.format === 'docx'
+    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : extracted.format === 'json' ? 'application/json' : 'text/plain; charset=utf-8';
+  let projectId: string | undefined;
+  const uploadedKeys: string[] = [];
+  try {
+    const title = (body.title ?? body.filename.replace(/\\.[^.]+$/,'')).trim().slice(0,160);
+    if (!title) return reply.code(400).send({error:'project_title_required'});
+    const aspectRatio = body.aspectRatio ?? '9:16';
+    if (!['16:9','9:16','1:1'].includes(aspectRatio)) return reply.code(400).send({error:'invalid_aspect_ratio'});
+    const {data:project,error:projectError} = await db.from('film_studio_projects').insert({
+      title,description:typeof body.description === 'string' ? body.description.slice(0,4000) : null,
+      default_style_id:typeof body.styleId === 'string' ? body.styleId.slice(0,100) : null,
+      default_aspect_ratio:aspectRatio
+    }).select('id,title,created_at').single();
+    if (projectError) throw projectError;
+    projectId = project.id;
+    const {error:sourceError} = await db.storage.from(bucket).upload(sourceKey,bytes,{contentType:mime,upsert:false});
+    if (sourceError) throw sourceError;
+    uploadedKeys.push(sourceKey);
+    const extractedBytes = Buffer.from(extracted.text,'utf8');
+    const {error:textError} = await db.storage.from(bucket).upload(textKey,extractedBytes,{contentType:'text/plain; charset=utf-8',upsert:false});
+    if (textError) throw textError;
+    uploadedKeys.push(textKey);
+    const {error:assetError} = await db.from('film_studio_assets').insert([
+      {project_id:projectId,asset_type:'data',storage_key:sourceKey,mime_type:mime,byte_size:bytes.byteLength,metadata:{role:'original-production-input',filename:safeName,format:extracted.format}},
+      {project_id:projectId,asset_type:'data',storage_key:textKey,mime_type:'text/plain; charset=utf-8',byte_size:extractedBytes.byteLength,metadata:{role:'extracted-production-text',sourceFilename:safeName,format:extracted.format}}
+    ]);
+    if (assetError) throw assetError;
+    return reply.code(201).send({
+      project,source:{filename:safeName,format:extracted.format,bytes:bytes.byteLength,extractedCharacters:extracted.text.length},
+      warnings:extracted.warnings,
+      nextStage:'story_interpretation_not_started'
+    });
+  } catch (error) {
+    request.log.error(error,'Production intake persistence failed');
+    if (uploadedKeys.length) await db.storage.from(bucket).remove(uploadedKeys).catch(() => undefined);
+    if (projectId) await db.from('film_studio_projects').delete().eq('id',projectId).catch(() => undefined);
+    return reply.code(503).send({error:'production_intake_persistence_failed'});
   }
 });
 
