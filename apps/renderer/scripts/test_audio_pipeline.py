@@ -62,7 +62,7 @@ class WordAlignmentTests(unittest.TestCase):
 
     def test_ass_captions_use_actual_word_timestamps_and_red_emphasis(self):
         words = [
-            {"text": "Hello", "start": 0.10, "end": 0.30},
+            {"text": "shadow", "start": 0.10, "end": 0.30},
             {"text": "there", "start": 0.31, "end": 0.55},
             {"text": "friend.", "start": 0.56, "end": 0.90},
         ]
@@ -71,7 +71,7 @@ class WordAlignmentTests(unittest.TestCase):
             write_word_ass(words, target, 1080, 1920)
             output = target.read_text(encoding="utf-8")
         self.assertIn("Dialogue: 0,0:00:00.10,0:00:00.30", output)
-        self.assertIn("Hello", output)
+        self.assertIn("shadow", output)
         self.assertIn("there", output)
         self.assertIn("&H000040FF&", output)
         self.assertIn("PlayResX: 1080", output)
