@@ -71,7 +71,6 @@ function GltfAnimatedActor({actor,character,asset,time}:{
   const mixer = useMemo(()=>new THREE.AnimationMixer(model),[model]);
   const actionMap = useMemo(()=>new Map(gltf.animations.map(clip=>[clip.name,mixer.clipAction(clip)])),[gltf.animations,mixer]);
   const currentAction = useRef<THREE.AnimationAction|null>(null);
-  const {fps} = useVideoConfig();
   const active = actor.actions.filter(action=>time>=action.startSeconds && time<=action.startSeconds+action.durationSeconds);
   const priorities = ['talk','wave','point','gesture','jump','recoil','dance','clap','crouch','run','walk','idle'];
   const actionType = priorities.find(type=>active.some(action=>action.type===type)) ?? 'idle';
