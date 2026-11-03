@@ -187,7 +187,7 @@ const libraryMimeTypes = new Set([
   'application/json','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain',
   'image/png','image/jpeg','image/webp','image/svg+xml',
   'audio/mpeg','audio/wav','audio/ogg','audio/mp4',
-  'video/mp4','font/woff','font/woff2'
+  'video/mp4','font/woff','font/woff2','model/gltf-binary'
 ]);
 
 app.post('/v1/assets', async (request, reply) => {
