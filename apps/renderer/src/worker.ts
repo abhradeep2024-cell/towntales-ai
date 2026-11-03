@@ -140,7 +140,7 @@ async function runJob(job: any, serveUrl: string) {
       audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
       ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : []),
       ...(production.audio.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0) ? ['--require-word-alignment'] : [])
-    ], { timeout: 4 * 60 * 1000, maxBuffer: 2_000_000 });
+    ], { timeout: 8 * 60 * 1000, maxBuffer: 2_000_000 });
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
 
@@ -188,7 +188,7 @@ async function runJob(job: any, serveUrl: string) {
     // Verify that the private object can be retrieved through a short-lived signed URL.
     const { data: signedObject, error: signedUrlError } = await supabase.storage.from(bucket).createSignedUrl(objectKey, 300);
     if (signedUrlError || !signedObject?.signedUrl) throw signedUrlError ?? new Error('Could not create a signed URL for the uploaded MP4.');
-    const signedDownload = await fetch(signedObject.signedUrl, { signal: AbortSignal.timeout(30000) });
+    const signedDownload = await fetch(signedObject.signedUrl, { signal: AbortSignal.timeout(90000) });
     if (!signedDownload.ok) throw new Error(`Signed MP4 download failed (HTTP ${signedDownload.status}).`);
     const downloadedFile = Buffer.from(await signedDownload.arrayBuffer());
     if (downloadedFile.length !== bytes || !downloadedFile.equals(file)) {
