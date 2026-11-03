@@ -39,5 +39,5 @@ export const episode01Production: ProductionSpec = {
     { start: 48, end: 54, text: 'The next morning, I ran outside. The sun was shining. Everyone had a shadow. Except me.' },
     { start: 54, end: 60, text: 'Then I noticed something terrifying. My shadow was standing behind my bedroom window. And it was waving again.' }
   ],
-  audio: { musicEnabled: true, voiceEnabled: true, burnSubtitles: false, voice: 'en-US-AriaNeural', musicStyle: 'suspense', musicVolume: 0.12, voiceVolume: 1 }
+  audio: { musicEnabled: true, voiceEnabled: true, burnSubtitles: true, voice: 'en-US-AriaNeural', musicStyle: 'suspense', musicVolume: 0.12, voiceVolume: 1 }
 };
