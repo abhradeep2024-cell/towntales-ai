@@ -24,8 +24,10 @@ class PreparedAudioTests(unittest.TestCase):
         def fake_voice(text, voice, target, rate="+0%"):
             target.write_bytes(b"voice-track-" * 60)
             return "edge-tts", [
-                {"text": "Hello", "start": 0.1, "end": 0.4},
-                {"text": "Shadow", "start": 2.1, "end": 2.4}
+                {"text": "Hello", "start": 0.1, "end": 0.3},
+                {"text": "town", "start": 0.5, "end": 0.7},
+                {"text": "Shadow", "start": 2.1, "end": 2.3},
+                {"text": "moves", "start": 2.5, "end": 2.7}
             ]
         with tempfile.TemporaryDirectory() as directory:
             with patch("audio_pipeline.make_voice", side_effect=fake_voice), patch("audio_pipeline.media_duration", return_value=4.5):
@@ -36,7 +38,7 @@ class PreparedAudioTests(unittest.TestCase):
             self.assertTrue((Path(directory) / "audio-manifest.json").exists())
             self.assertTrue((Path(directory) / "word-alignments.json").exists())
             self.assertEqual([track["kind"] for track in manifest["tracks"]], ["voice"])
-            self.assertEqual([word["sceneIndex"] for word in json.loads((Path(directory) / "word-alignments.json").read_text())["words"]], [0, 1])
+            self.assertEqual([word["sceneIndex"] for word in json.loads((Path(directory) / "word-alignments.json").read_text())["words"]], [0, 0, 1, 1])
             self.assertTrue(all(track["sha256"] and track["bytes"] > 100 for track in manifest["tracks"]))
 
     def test_narration_that_spills_past_its_scene_is_rejected(self):
@@ -49,7 +51,13 @@ class PreparedAudioTests(unittest.TestCase):
         }
         def fake_voice(text, voice, target):
             target.write_bytes(b"voice-track-" * 60)
-            return "edge-tts", [{"text": "This", "start": 0.1, "end": 0.4}]
+            return "edge-tts", [
+                {"text": "This", "start": 0.1, "end": 0.3},
+                {"text": "line", "start": 0.5, "end": 0.7},
+                {"text": "is", "start": 0.8, "end": 1.0},
+                {"text": "too", "start": 1.1, "end": 1.3},
+                {"text": "long", "start": 1.4, "end": 1.6}
+            ]
         with tempfile.TemporaryDirectory() as directory:
             with patch("audio_pipeline.make_voice", side_effect=fake_voice), patch("audio_pipeline.media_duration", return_value=2.2):
                 with self.assertRaisesRegex(RuntimeError, "Continuous narration takes 2.20s"):
