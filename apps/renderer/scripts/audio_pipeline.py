@@ -502,6 +502,8 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
                     raise RuntimeError(f"Dialogue word {event['text']!r} exceeds its assigned line window.");
                 aligned_words.append({**event,"sceneIndex":scene_index,"start":round(absolute_start,6),"end":round(absolute_end,6),"speaker":line.get("speaker"),"characterId":line.get("characterId")});
             voice_tracks.append({"kind":"dialogue","file":target.name,"delayMs":round(line_start * 1000),"volume":float(audio.get("voiceVolume",1)) * volume_factor,"bytes":target.stat().st_size,"sha256":hashlib.sha256(target.read_bytes()).hexdigest(),"speaker":line.get("speaker"),"voiceProfileId":line.get("voiceProfileId")});
+            if not report.get("voiceProvider"):
+                report["voiceProvider"] = provider
             report["voiceLines"] = int(report.get("voiceLines",0)) + 1
             report["voiceSegments"] = int(report.get("voiceSegments",0)) + 1
             report["dialogueVoiceProfiles"] = report.get("dialogueVoiceProfiles",[]) + [{"lineId":line.get("id"),"speaker":line.get("speaker"),"voiceProfileId":line.get("voiceProfileId"),"provider":provider,"voice":voice_name,"rate":final_rate}]
