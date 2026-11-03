@@ -324,7 +324,22 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   const characterIds = new Set((spec.characters ?? []).map(character => character.id));
   const voiceProfileIds = new Set((spec.voiceProfiles ?? []).map(profile => profile.id));
   const assetIds = new Set((spec.assets ?? []).map(asset => asset.id));
+  let sceneTimelineCursor = 0;
+  const sceneWindows = new Map<string,{start:number;end:number}>();
   spec.scenes.forEach((scene,index) => {
+    sceneWindows.set(scene.id,{start:sceneTimelineCursor,end:sceneTimelineCursor + scene.durationSeconds});
+    sceneTimelineCursor += scene.durationSeconds;
+    (scene.actors ?? []).forEach((actor,actorIndex) => {
+      if (!characterIds.has(actor.characterId)) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'characterId'],message:'Scene actor must reference a declared character.'});
+      actor.actions.forEach((action,actionIndex) => {
+        if (action.startSeconds + action.durationSeconds > scene.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'actions',actionIndex],message:'Actor action must finish within its scene.'});
+        if ((action.type === 'move' || action.type === 'look-at') && !action.targetPosition) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Move and look-at actions require a targetPosition.'});
+        if (action.type === 'turn' && action.targetRotationY === undefined) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'actions',actionIndex,'targetRotationY'],message:'Turn actions require targetRotationY.'});
+      });
+    });
+    (scene.camera?.keyframes ?? []).forEach((keyframe,keyframeIndex) => {
+      if (keyframe.atSeconds > scene.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['scenes',index,'camera','keyframes',keyframeIndex,'atSeconds'],message:'Camera keyframe must be within its scene.'});
+    });
     if (scene.environmentId && !environmentIds.has(scene.environmentId)) ctx.addIssue({code:'custom',path:['scenes',index,'environmentId'],message:'Scene environmentId must reference a declared environment.'});
   });
   (spec.environments ?? []).forEach((environment, index) => {
@@ -342,6 +357,8 @@ export const ProductionSpecSchema = z.preprocess((input) => {
     if (line.characterId && !characterIds.has(line.characterId)) ctx.addIssue({code:'custom',path:['dialogue',index,'characterId'],message:'Dialogue characterId must reference a declared character.'});
     if (line.voiceProfileId && !voiceProfileIds.has(line.voiceProfileId)) ctx.addIssue({code:'custom',path:['dialogue',index,'voiceProfileId'],message:'Dialogue voiceProfileId must reference a declared voice profile.'});
     if (line.endSeconds <= line.startSeconds || line.endSeconds > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing must be ordered and within the production timeline.'});
+    const sceneWindow = sceneWindows.get(line.sceneId);
+    if (sceneWindow && (line.startSeconds < sceneWindow.start - 0.001 || line.endSeconds > sceneWindow.end + 0.001)) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timecodes must fall inside the referenced scene window.'});
   });
   (spec.audioCues ?? []).forEach((cue, index) => {
     if (!sceneIds.has(cue.sceneId)) ctx.addIssue({code:'custom',path:['audioCues',index,'sceneId'],message:'Audio cue sceneId must reference a declared scene.'});
