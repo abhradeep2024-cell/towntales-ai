@@ -115,7 +115,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const torso = isVoid ? voidMat : kind === 'resident' ? material('#64845b') : hoodie;
   const trousers = isVoid ? voidMat : black;
   const face = isVoid ? voidMat : skin;
-  const shoe = isVoid ? voidMat : white;
+  const shoe = isVoid ? voidMat : kind === 'resident' ? material('#272b33') : white;
   const actorShadowless = isVoid || isDouble || (kind === 'alex' && [0, 3, 4, 7, 8].includes(sceneIndex));
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : residentNotices ? 0.22 : 0;
   const bodyLean = kind === 'resident' && residentPanics ? 0.16
