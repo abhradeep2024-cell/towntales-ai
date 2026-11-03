@@ -256,7 +256,8 @@ async function runJob(job: any, serveUrl: string) {
       sceneManifest: production.scenes.map((scene, index) => ({
         order: index + 1, id: scene.id, durationSeconds: scene.durationSeconds,
         title: scene.title, visualDirection: scene.visualDirection, narration: scene.narration,
-        background: scene.background
+        environmentId: scene.environmentId ?? null, actors: scene.actors ?? [], props: scene.props ?? [],
+        camera: scene.camera ?? null, lighting: scene.lighting ?? null, background: scene.background
       })),
       characters: (production.characters ?? []).map((character) => ({
         id: character.id, name: character.name, rig: character.rig,
@@ -265,7 +266,9 @@ async function runJob(job: any, serveUrl: string) {
       environmentAssets: (production.environments ?? []).map((environment) => ({
         id: environment.id, name: environment.name, assetId: environment.assetId ?? null,
         locationDescription: environment.locationDescription, timeOfDay: environment.timeOfDay ?? null,
-        weather: environment.weather ?? null, atmosphere: environment.atmosphere ?? null
+        weather: environment.weather ?? null, atmosphere: environment.atmosphere ?? null,
+        background: environment.background, groundColor: environment.groundColor, groundSize: environment.groundSize,
+        fog: environment.fog ?? null, props: environment.props
       })),
       styleInvariants: production.styleInvariants,
       sourceProductionSpec: production
