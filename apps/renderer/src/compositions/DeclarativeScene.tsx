@@ -131,7 +131,6 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
   </group>;
 }
 
-type SceneProp = NonNullable<Scene['props']>[number];
 type LibraryAsset = NonNullable<ProductionSpec['assets']>[number];
 
 function ModelAsset({asset,position,scale,rotation,castShadow=true}:{
