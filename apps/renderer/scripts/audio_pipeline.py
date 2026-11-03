@@ -386,6 +386,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     report: dict = {"voiceProvider": None, "voiceLines": 0, "voiceSegments": 0, "voiceDurationSeconds": 0.0, "musicGenerated": False, "effectsGenerated": False, "wordAlignmentProvider": None, "alignedWordCount": 0}
     aligned_words: list[dict] = []
     voice_tracks: list[dict] = []
+    speech_intervals: list[tuple[float,float]] = []
     scene_boundaries: list[tuple[int, float, float]] = []
     scene_cursor = 0.0
     narration_lines: list[str] = []
@@ -454,6 +455,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         report["voiceLines"] = 1
         report["voiceSegments"] = len(narration_lines)
         report["voiceDurationSeconds"] = round(clip_duration, 3)
+        speech_intervals.append((0.0,min(duration,clip_duration)))
         report["voiceRate"] = voice_rate
         report["expectedWordCount"] = expected_word_count
         report["alignedWordCoverage"] = round(len(word_events) / max(1, expected_word_count), 4)
@@ -507,6 +509,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
                     raise RuntimeError(f"Dialogue word {event['text']!r} exceeds its assigned line window.");
                 aligned_words.append({**event,"sceneIndex":scene_index,"start":round(absolute_start,6),"end":round(absolute_end,6),"speaker":line.get("speaker"),"characterId":line.get("characterId")});
             voice_tracks.append({"kind":"dialogue","file":target.name,"delayMs":round(line_start * 1000),"volume":float(audio.get("voiceVolume",1)) * volume_factor,"bytes":target.stat().st_size,"sha256":hashlib.sha256(target.read_bytes()).hexdigest(),"speaker":line.get("speaker"),"voiceProfileId":line.get("voiceProfileId")});
+            speech_intervals.append((line_start,min(duration,line_start+clip_duration)))
             if not report.get("voiceProvider"):
                 report["voiceProvider"] = provider
             report["voiceLines"] = int(report.get("voiceLines",0)) + 1
@@ -541,6 +544,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     music_ducks: list[tuple[float, float]] = []
     effects_ducks: list[tuple[float, float]] = []
     final_silence_start = max(0.0, duration - 0.15)
+    music_ducks.extend(speech_intervals)
     music_ducks.append((final_silence_start, duration))
     effects_ducks.append((final_silence_start, duration))
     audio_cues = spec.get("audioCues") or []
