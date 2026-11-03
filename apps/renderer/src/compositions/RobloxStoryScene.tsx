@@ -253,7 +253,7 @@ function World({ scene, sceneIndex, frame, fps, cues }: { scene: Scene; sceneInd
     : sceneIndex === 7 ? [-2.8 + Math.min(1, (frame / fps) / 2.2) * 2.0, 0, 0.2]
     : sceneIndex === 4 ? [-0.8 - (frame / fps) * 0.73, 0, 0.2 - (frame / fps) * 1.13]
      : sceneIndex === 6 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - cues.alexTurn) / 2)) * 0.65, 0, 0.2 + Math.max(0, Math.min(1, (frame / fps - cues.alexTurn) / 2)) * 0.3]
-    : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.22, 0, 0.2]
+    : sceneIndex === 2 ? [-0.4 - (frame / fps) * 0.62, 0, 0.2 + (frame / fps) * 0.12]
     : sceneIndex === 5 ? [-0.8 + Math.max(0, Math.min(1, (frame / fps - 3) / 1.1)) * 0.45, 0, 0.2]
     : [-0.8, 0, 0.2];
   return <>
@@ -312,7 +312,7 @@ export const RobloxStoryScene: React.FC<{ scene: Scene; sceneIndex: number; scen
     windowReveal: localWordTime('window', 1.0),
     windowWave: Math.max(0.4, localWordTime('waving', 4.8) - 0.5)
   };
-  const alexX = sceneIndex === 4 ? -0.8 - t * 0.73 : sceneIndex === 2 ? -0.4 - t * 0.22 : -0.8;
+  const alexX = sceneIndex === 4 ? -0.8 - t * 0.73 : sceneIndex === 2 ? -0.4 - t * 0.62 : -0.8;
   const alexZ = sceneIndex === 4 ? 0.2 - t * 1.13 : 0.2;
   let cameraPosition: [number, number, number] = [0, 2.6, 9.5];
   let cameraTarget: [number, number, number] = [0, 1, 0];
