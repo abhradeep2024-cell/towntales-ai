@@ -81,22 +81,23 @@ def make_music(path: Path, duration: float, mood: str, duck_intervals: list[tupl
             amp = (0.020 if voice == 0 else 0.014) * (1.0 if voice < 2 else 0.78)
             value += amp * (math.sin(2 * math.pi * hz * t) + 0.18 * math.sin(4 * math.pi * hz * t))
         if mood == "suspense":
-            if 17 <= t < 24:
-                section_gain = 1.08
-            elif 24 <= t < 31:
-                section_gain = 1.16
-            elif 31 <= t < 39:
-                section_gain = 0.88
-            elif 39 <= t < 51:
+            progress = t / max(duration, 0.001)
+            if progress < 0.28:
+                section_gain = 1.02
+            elif progress < 0.52:
+                section_gain = 1.12
+            elif progress < 0.70:
+                section_gain = 0.86
+            elif progress < 0.88:
                 section_gain = 0.72
-            elif 51 <= t < 56:
-                section_gain = 0.18
-            elif t >= 56:
-                section_gain = 0.9 + 0.25 * min(1.0, (t - 56) / 4)
+            elif progress < 0.96:
+                section_gain = 0.22
+            else:
+                section_gain = 0.88 + 0.20 * min(1.0, (progress - 0.96) / 0.04)
             bass_hz = freqs[chord_idx][0] * 0.5
             heartbeat = max(0.0, math.sin(2 * math.pi * 0.82 * t)) ** 8
             value += 0.018 * heartbeat * math.sin(2 * math.pi * bass_hz * t)
-            tension = min(1.0, max(0.0, (t - 16) / 8))
+            tension = min(1.0, max(0.0, (progress - 0.25) / 0.35))
             value += 0.004 * tension * math.sin(2 * math.pi * freqs[chord_idx][0] * 1.05946 * t)
         if duck_intervals and any(start <= t <= end for start, end in duck_intervals):
             section_gain = 0.0
@@ -480,7 +481,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     effects_enabled = bool(audio.get("effectsEnabled", effect_cues))
     if effects_enabled:
         effects_path = workdir / "effects.wav"
-        make_effects(effects_path, duration, effect_cues, effects_ducks)
+        make_effects(effects_path, duration, effect_cues or None, effects_ducks)
         tracks.append({"kind": "effects", "file": effects_path.name, "delayMs": 0, "volume": 0.18, "bytes": effects_path.stat().st_size, "sha256": hashlib.sha256(effects_path.read_bytes()).hexdigest()})
         report["effectsGenerated"] = True
     tracks.extend(voice_tracks)
