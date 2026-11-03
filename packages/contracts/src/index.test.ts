@@ -157,7 +157,7 @@ describe('declarative animation production contract', () => {
 
 
   it('accepts expanded performance actions including gaze, speech, dance and recovery poses', () => {
-    const production = structuredClone(base);
+    const production: any = structuredClone(base);
     production.scenes[0].actors[0].actions = [
       {type:'look-at',startSeconds:0,durationSeconds:2,targetPosition:[1,1,0]},
       {type:'talk',startSeconds:2,durationSeconds:2},
