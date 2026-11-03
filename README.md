@@ -20,6 +20,13 @@ Story planning requires `AI_API_KEY` and `AI_MODEL`. Automated creative QA requi
 ## Reusable asset library
 The authenticated `POST /v1/assets` endpoint registers immutable asset versions; `GET /v1/assets` searches the private catalogue and returns short-lived signed URLs. Common media types and binary glTF (`model/gltf-binary`) are supported. Production manifests reference assets by `libraryAssetKey` and `libraryVersion`; the renderer verifies downloaded byte size and SHA-256 before using them. GLB assets can be used for reusable environment/prop models and GLTF humanoid character rigs with named animation clips.
 
+## Agent research and diagnostics
+The `Real Factory Agent Tooling` GitHub Actions workflow has two isolated support agents:
+- **Agent Reach** searches public web and YouTube references for story/style research and saves JSON evidence artifacts.
+- **REA** analyzes the renderer application and saves a structured JavaScript/dependency diagnostic report.
+
+Run it from GitHub Actions → Real Factory Agent Tooling. Choose `research`, `diagnostics`, or `both`. These tools support planning and debugging; they do not bypass the production contract, alter a render job, or approve a final MP4.
+
 ## Free-tier architecture
 - Render free web service hosts only the authenticated API.
 - Public GitHub Actions standard runners render videos and are free for public repositories. Render's free API instance sleeps after 15 minutes without inbound traffic.
