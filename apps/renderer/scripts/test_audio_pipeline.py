@@ -2,9 +2,63 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from audio_pipeline import make_effects, normalize_word_alignments, validate_word_alignment_bounds, write_word_ass
+from audio_pipeline import make_effects, normalize_word_alignments, validate_word_alignment_bounds, write_word_ass, prepare_audio, mux_prepared_audio
 import wave
+from unittest.mock import patch
 
+
+
+class PreparedAudioTests(unittest.TestCase):
+    def test_audio_is_prepared_before_render_with_scene_relative_word_alignment_and_hashes(self):
+        spec = {
+            "durationSeconds": 5,
+            "styleId": "test",
+            "scenes": [
+                {"durationSeconds": 2, "narration": "Hello town"},
+                {"durationSeconds": 3, "narration": "Shadow moves"}
+            ],
+            "subtitles": [],
+            "audio": {"musicEnabled": False, "voiceEnabled": True, "effectsEnabled": False}
+        }
+        def fake_voice(text, voice, target):
+            target.write_bytes(b"voice-track-" * 60)
+            token = text.split()[0]
+            return "edge-tts", [{"text": token, "start": 0.1, "end": 0.4}]
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("audio_pipeline.make_voice", side_effect=fake_voice), patch("audio_pipeline.media_duration", side_effect=[1.5, 2.5]):
+                manifest = prepare_audio(spec, Path(directory), require_word_alignment=True)
+            self.assertEqual(manifest["report"]["voiceLines"], 2)
+            self.assertEqual(manifest["report"]["wordAlignmentProvider"], "edge-tts-word-boundary")
+            self.assertTrue((Path(directory) / "audio-manifest.json").exists())
+            self.assertTrue((Path(directory) / "word-alignments.json").exists())
+            self.assertEqual([track["sceneIndex"] for track in manifest["tracks"]], [0, 1])
+            self.assertTrue(all(track["sha256"] and track["bytes"] > 100 for track in manifest["tracks"]))
+
+    def test_narration_that_spills_past_its_scene_is_rejected(self):
+        spec = {
+            "durationSeconds": 2,
+            "styleId": "test",
+            "scenes": [{"durationSeconds": 2, "narration": "This line is too long"}],
+            "subtitles": [],
+            "audio": {"musicEnabled": False, "voiceEnabled": True, "effectsEnabled": False}
+        }
+        def fake_voice(text, voice, target):
+            target.write_bytes(b"voice-track-" * 60)
+            return "edge-tts", [{"text": "This", "start": 0.1, "end": 0.4}]
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("audio_pipeline.make_voice", side_effect=fake_voice), patch("audio_pipeline.media_duration", return_value=2.2):
+                with self.assertRaisesRegex(RuntimeError, "takes 2.20s"):
+                    prepare_audio(spec, Path(directory), require_word_alignment=True)
+
+    def test_mux_rejects_changed_prepared_audio_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workdir = Path(directory)
+            audio_file = workdir / "voice.mp3"
+            audio_file.write_bytes(b"prepared-audio" * 60)
+            manifest = {"tracks": [{"kind": "voice", "file": "voice.mp3", "delayMs": 0, "volume": 1, "bytes": audio_file.stat().st_size, "sha256": "incorrect"}], "report": {}}
+            spec = {"durationSeconds": 5, "subtitles": []}
+            with self.assertRaisesRegex(RuntimeError, "hash changed"):
+                mux_prepared_audio(spec, workdir / "not-needed.mp4", workdir / "output.mp4", workdir, manifest, False, False)
 
 class WordAlignmentTests(unittest.TestCase):
     def test_small_boundary_overlap_is_corrected(self):
