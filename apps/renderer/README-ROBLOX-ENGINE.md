@@ -14,6 +14,7 @@ The former text-card presentation is replaced with deterministic Three.js scenes
 - Original procedural suspense effects: opening boom, wind, clock ticks, chase footsteps, door creak, heartbeat, electrical buzz, morning birds and final impact.
 - Production worker checks for H.264/AAC, target dimensions, frame rate, decoded frame count, file size and full decode.
 - Private Supabase upload verification with byte-for-byte signed-download checks.
+- The private `towntales-assets` bucket must allow `video/mp4` and `application/json` (50 MB per-object limit); CI verifies both content types with signed-download byte comparisons.
 - Sidecar delivery for the production manifest, word alignments, technical QA and pending creative review.
 
 ## Remaining production gates
