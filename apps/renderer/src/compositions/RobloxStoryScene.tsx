@@ -19,7 +19,7 @@ function Block({ position, scale, material: mat, rotation = [0, 0, 0] }: {
   position: [number, number, number]; scale: [number, number, number]; material: THREE.Material;
   rotation?: [number, number, number];
 }) {
-  return <mesh position={position} scale={scale} rotation={rotation} castShadow receiveShadow material={mat}>
+  return <mesh position={position} scale={scale} rotation={rotation} castShadow={!arguments[0]?.shadowless} receiveShadow material={mat}>
     <boxGeometry args={[1, 1, 1]} />
   </mesh>;
 }
@@ -42,40 +42,40 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0] }: {
   const torso = isVoid ? voidMat : kind === 'resident' ? material('#64845b') : hoodie;
   const trousers = isVoid ? voidMat : black;
   const face = isVoid ? voidMat : skin;
-  const shoe = isVoid ? voidMat : white;
+  const shoe = isVoid ? voidMat : white;\n  const ABlock = (props: { position: [number, number, number]; scale: [number, number, number]; material: THREE.Material; rotation?: [number, number, number] }) => <ABlock {...props} shadowless={isVoid || (kind === 'alex' && sceneIndex === 7)} />;
   const headTilt = isDouble ? Math.sin(t * 1.2) * 0.12 : 0;
   return <group position={position} rotation={[0, sceneIndex === 8 ? -0.35 : 0.08, 0]}>
     <group position={[0, 1.12 + idle, 0]}>
-      <Block position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
-      <Block position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, 0, headTilt]} />
+      <ABlock position={[0, 0, 0]} scale={[0.72, 0.82, 0.38]} material={torso} />
+      <ABlock position={[0, 0.72, 0]} scale={[0.57, 0.57, 0.52]} material={face} rotation={[headTilt, 0, headTilt]} />
       {!isVoid && <>
-        <Block position={[0, 1.02, -0.02]} scale={[0.63, 0.16, 0.62]} material={hair} />
-        <Block position={[-0.22, 1.08, 0.02]} scale={[0.2, 0.19, 0.52]} material={hair} rotation={[0, 0, -0.22]} />
-        <Block position={[0.12, 1.1, -0.03]} scale={[0.22, 0.2, 0.5]} material={hair} rotation={[0, 0, 0.25]} />
-        <Block position={[-0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
-        <Block position={[0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
-        <Block position={[0, 0.59, 0.27]} scale={[0.16, 0.035, 0.02]} material={material('#914d43')} />
-        <Block position={[0, 0.22, -0.25]} scale={[0.42, 0.44, 0.18]} material={hoodie} />
+        <ABlock position={[0, 1.02, -0.02]} scale={[0.63, 0.16, 0.62]} material={hair} />
+        <ABlock position={[-0.22, 1.08, 0.02]} scale={[0.2, 0.19, 0.52]} material={hair} rotation={[0, 0, -0.22]} />
+        <ABlock position={[0.12, 1.1, -0.03]} scale={[0.22, 0.2, 0.5]} material={hair} rotation={[0, 0, 0.25]} />
+        <ABlock position={[-0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
+        <ABlock position={[0.14, 0.78, 0.268]} scale={[0.055, 0.075, 0.018]} material={black} />
+        <ABlock position={[0, 0.59, 0.27]} scale={[0.16, 0.035, 0.02]} material={material('#914d43')} />
+        <ABlock position={[0, 0.22, -0.25]} scale={[0.42, 0.44, 0.18]} material={hoodie} />
       </>}
       {isShadow && <>
-        <Block position={[-0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
-        <Block position={[0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
+        <ABlock position={[-0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
+        <ABlock position={[0.14, 0.08, 0.266]} scale={[0.12, 0.045, 0.02]} material={eyes} />
       </>}
       <group position={[-0.47, 0.23, 0]} rotation={[armLeft, 0, -0.08]}>
-        <Block position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
-        <Block position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
+        <ABlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
+        <ABlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
       </group>
       <group position={[0.47, 0.23, 0]} rotation={[armRight, 0, 0.08]}>
-        <Block position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
-        <Block position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
+        <ABlock position={[0, -0.32, 0]} scale={[0.24, 0.72, 0.27]} material={torso} />
+        <ABlock position={[0, -0.72, 0]} scale={[0.23, 0.2, 0.25]} material={face} />
       </group>
       <group position={[-0.19, -0.46, 0]} rotation={[leg, 0, 0]}>
-        <Block position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
-        <Block position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
+        <ABlock position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
+        <ABlock position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
       </group>
       <group position={[0.19, -0.46, 0]} rotation={[-leg, 0, 0]}>
-        <Block position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
-        <Block position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
+        <ABlock position={[0, -0.37, 0]} scale={[0.29, 0.78, 0.32]} material={trousers} />
+        <ABlock position={[0, -0.79, 0.08]} scale={[0.32, 0.18, 0.48]} material={shoe} />
       </group>
     </group>
   </group>;
@@ -85,14 +85,14 @@ function Town({ night = true }: { night?: boolean }) {
   const house = material(night ? '#33415b' : '#e8c9a0');
   const road = material(night ? '#202735' : '#6d747b');
   return <group>
-    <Block position={[0, -0.18, 0]} scale={[18, 0.35, 10]} material={road} />
+    <ABlock position={[0, -0.18, 0]} scale={[18, 0.35, 10]} material={road} />
     {[-6, -3, 3, 6].map((x, i) => <group key={x} position={[x, 0, -4.1]}>
-      <Block position={[0, 1.1, 0]} scale={[2.2, 2.2, 1.7]} material={house} />
-      <Block position={[0, 2.55, 0]} scale={[2.5, 0.75, 1.9]} material={material(night ? '#171d2c' : '#a65e4d')} />
-      <Block position={[0, 0.7, 0.88]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
-      <Block position={[-0.62, 1.45, 0.89]} scale={[0.35, 0.45, 0.08]} material={material('#92b8d0')} />
+      <ABlock position={[0, 1.1, 0]} scale={[2.2, 2.2, 1.7]} material={house} />
+      <ABlock position={[0, 2.55, 0]} scale={[2.5, 0.75, 1.9]} material={material(night ? '#171d2c' : '#a65e4d')} />
+      <ABlock position={[0, 0.7, 0.88]} scale={[0.48, 1.2, 0.08]} material={material('#453a3a')} />
+      <ABlock position={[-0.62, 1.45, 0.89]} scale={[0.35, 0.45, 0.08]} material={material('#92b8d0')} />
     </group>)}
-    <Block position={[-3.7, 2.3, -1.4]} scale={[0.12, 4.6, 0.12]} material={material('#242a34')} />
+    <ABlock position={[-3.7, 2.3, -1.4]} scale={[0.12, 4.6, 0.12]} material={material('#242a34')} />
     <mesh position={[-3.7, 4.55, -1.4]}><sphereGeometry args={[0.24, 16, 16]} /><meshBasicMaterial color="#ffd58a" /></mesh>
   </group>;
 }
@@ -100,13 +100,13 @@ function Town({ night = true }: { night?: boolean }) {
 function Bedroom({ frame, fps, blackout = false }: { frame: number; fps: number; blackout?: boolean }) {
   const flicker = blackout && frame / fps > 6 ? (Math.sin(frame * 2.4) > 0.2 ? 0.05 : 0.8) : 1;
   return <group>
-    <Block position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
-    <Block position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
-    <Block position={[-3.4, 1.3, -3.48]} scale={[2.3, 2.1, 0.08]} material={material('#5b83a5', 0.35)} />
-    <Block position={[-3.4, 1.3, -3.4]} scale={[0.08, 2.2, 0.12]} material={material('#111827')} />
-    <Block position={[2.3, 0.18, -1.8]} scale={[3.3, 0.45, 2.2]} material={material('#725f66')} />
-    <Block position={[2.3, 0.48, -1.8]} scale={[3.25, 0.25, 2.1]} material={material('#a8b3c7')} />
-    <Block position={[1.5, 0.7, -2.35]} scale={[0.95, 0.28, 0.5]} material={material('#e4d9c7')} />
+    <ABlock position={[0, -0.16, 0]} scale={[12, 0.3, 8]} material={material('#343747')} />
+    <ABlock position={[0, 2.4, -3.7]} scale={[12, 5, 0.25]} material={material('#202638')} />
+    <ABlock position={[-3.4, 1.3, -3.48]} scale={[2.3, 2.1, 0.08]} material={material('#5b83a5', 0.35)} />
+    <ABlock position={[-3.4, 1.3, -3.4]} scale={[0.08, 2.2, 0.12]} material={material('#111827')} />
+    <ABlock position={[2.3, 0.18, -1.8]} scale={[3.3, 0.45, 2.2]} material={material('#725f66')} />
+    <ABlock position={[2.3, 0.48, -1.8]} scale={[3.25, 0.25, 2.1]} material={material('#a8b3c7')} />
+    <ABlock position={[1.5, 0.7, -2.35]} scale={[0.95, 0.28, 0.5]} material={material('#e4d9c7')} />
     <pointLight position={[0, 3.8, 0]} intensity={blackout ? flicker : 1.5} color="#f4d9ad" distance={9} />
   </group>;
 }
@@ -126,7 +126,7 @@ function World({ scene, sceneIndex, frame, fps }: { scene: Scene; sceneIndex: nu
     <directionalLight position={[-4, 8, 5]} intensity={isMorning ? 2.5 : 1.7} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
     <pointLight position={[-3.7, 4.4, -1.4]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
-    {sceneIndex === 1 && [-2.8, 0, 2.7].map((x, i) => <Actor key={i} frame={frame} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, 0.8]} />)}
+    {(sceneIndex === 1 || sceneIndex === 7) && [-2.8, 2.7].map((x, i) => <Actor key={i} frame={frame} fps={fps} kind="resident" sceneIndex={1} position={[x, 0, 0.8]} />)}
     {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
     {(shadowWave || sceneIndex === 4 || sceneIndex === 8) && <Actor frame={frame + (sceneIndex === 0 ? 45 : 24)} fps={fps} kind="shadow" sceneIndex={sceneIndex} position={sceneIndex === 8 ? [2.4, 0, -2.5] : [0.95, 0, -0.1]} />}
     {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[0.9, 0, -1.8]} />}
