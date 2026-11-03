@@ -72,7 +72,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const isShadow = kind === 'shadow';
   const isDouble = kind === 'double';
   const isVoid = isShadow;
-  const residentWitness = kind === 'resident' && sceneIndex === 1 && position[0] > 0.5;
+  const residentWitness = kind === 'resident' && sceneIndex === 1 && position[0] > 0.9;
   const residentNotices = residentWitness && t >= cues.residentNotice && t < cues.residentRun;
   const residentPanics = residentWitness && t >= cues.residentRun;
   const alexFleesBedroom = sceneIndex === 6 && kind === 'alex' && t >= 4;
@@ -257,21 +257,22 @@ function World({ scene, sceneIndex, frame, fps, wordAlignments, sceneStartSecond
     <pointLight position={[-0.8, 4.4, 0.2]} color="#ffd58a" intensity={night ? 2.2 : 0.2} distance={10} />
     {inTown ? <Town night={night} frame={frame} fps={fps} sceneIndex={sceneIndex} /> : <Bedroom frame={frame} fps={fps} blackout={isBlackout} />}
     {(sceneIndex === 1 || sceneIndex === 7) && [-1.2, 0, 1.2].map((x, i) => {
-      const residentRun = sceneIndex === 1 && i === 2 && frame / fps > 3.4;
-      const travel = Math.max(0, frame / fps - 3.4);
+      const residentRun = sceneIndex === 1 && i === 2 && frame / fps >= cues.residentRun;
+      const travel = Math.max(0, frame / fps - cues.residentRun);
       const residentPosition: [number, number, number] = [
         x + (sceneIndex === 1 ? frame / fps * 0.12 + (residentRun ? travel * 0.55 : 0) : 0),
         0,
         (i === 1 ? 1.2 : 0.8) - (residentRun ? travel * 1.2 : 0)
       ];
-      return <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={sceneIndex} position={residentPosition} />;
+      return <Actor key={i} frame={frame + i * 7} fps={fps} kind="resident" sceneIndex={sceneIndex} position={residentPosition} cues={cues} />;
     })}
-    {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} />}
+    {sceneIndex !== 1 && <Actor frame={frame} fps={fps} kind="alex" sceneIndex={sceneIndex} position={alexPosition} cues={cues} />}
     {(shadowWave || sceneIndex === 4) && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={sceneIndex}
-      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1 - (frame / fps) * 0.52] : [0.95, 0, -0.1]} />}
-    {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.13]} scale={0.5} />}
-    {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - 1.2) / 2.2)) * 0.45, 0, -3.05]} />}
-    {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} />}
+      position={sceneIndex === 4 ? [0.95 - (frame / fps) * 0.65, 0, -0.1 - (frame / fps) * 0.52] : [0.95, 0, -0.1]} cues={cues} />}
+    {sceneIndex === 1 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={1} position={[1.72, 0, 0.35]} scale={0.78} cues={cues} />}
+    {sceneIndex === 8 && <Actor frame={frame} fps={fps} kind="shadow" sceneIndex={8} position={[-3, 1.67, -3.13]} scale={0.5} cues={cues} />}
+    {sceneIndex === 5 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={5} position={[-1.7 + Math.min(1, Math.max(0, (frame / fps - cues.doubleReveal) / 2.2)) * 0.45, 0, -3.05]} cues={cues} />}
+    {sceneIndex === 6 && <Actor frame={frame} fps={fps} kind="double" sceneIndex={6} position={[-1.25, 0, -3.05]} cues={cues} />}
   </>;
 }
 
