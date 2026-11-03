@@ -25,6 +25,9 @@ describe('production source intake extraction', () => {
   it('rejects unsupported formats', async () => {
     await expect(extractProductionInput('story.pdf', Buffer.from('pdf'))).rejects.toThrow('Unsupported');
   });
+  it('rejects extracted text beyond the planner input budget', async () => {
+    await expect(extractProductionInput('story.txt', Buffer.from('x'.repeat(60_001)))).rejects.toThrow('60,000-character');
+  });
   it('rejects empty and oversized inputs', async () => {
     await expect(extractProductionInput('story.txt', Buffer.alloc(0))).rejects.toThrow('empty');
     await expect(extractProductionInput('story.txt', Buffer.alloc(5 * 1024 * 1024 + 1))).rejects.toThrow('5 MB');
