@@ -166,8 +166,8 @@ function Town({ night = true, frame, fps, sceneIndex }: { night?: boolean; frame
   const house = material(night ? '#33415b' : '#e8c9a0');
   const road = material(night ? '#202735' : '#6d747b');
   const seconds = frame / fps;
-  const doorOpen = Math.max(0, Math.min(1, (seconds - 5.5) / 0.6));
-  const doorClose = Math.max(0, Math.min(1, (seconds - 6.4) / 0.25));
+  const doorOpen = Math.max(0, Math.min(1, (seconds - 1.85) / 0.5));
+  const doorClose = Math.max(0, Math.min(1, (seconds - 2.75) / 0.18));
   const alexHouseDoorAngle = sceneIndex === 4 ? -1.05 * doorOpen * (1 - doorClose) : 0;
   return <group>
     <ABlock position={[0, -0.18, 0]} scale={[18, 0.35, 10]} material={road} />
