@@ -260,6 +260,14 @@ def normalize_word_alignments(words: list[dict]) -> list[dict]:
     return normalized
 
 
+def validate_word_alignment_bounds(words: list[dict], duration: float) -> None:
+    for item in words:
+        if float(item["start"]) < 0 or float(item["end"]) > duration + 0.05:
+            raise RuntimeError(
+                f"Word timing for {item['text']!r} falls outside the {duration:.2f}s video timeline."
+            )
+
+
 def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> None:
     # Keep two-word context on screen while the currently spoken word turns red.
     font_size = max(36, round(width * 0.075))
@@ -403,6 +411,7 @@ def main() -> int:
         report["voiceProvider"] = "+".join(sorted(providers)) if providers else None
         if aligned_words:
             aligned_words = normalize_word_alignments(aligned_words)
+            validate_word_alignment_bounds(aligned_words, duration)
             alignment_path = workdir / "word-alignments.json"
             alignment_path.write_text(json.dumps({"schemaVersion": 1, "timebase": "seconds-from-video-start", "provider": "edge-tts-word-boundary", "words": aligned_words}, indent=2), encoding="utf-8")
             report["wordAlignmentProvider"] = "edge-tts-word-boundary"
