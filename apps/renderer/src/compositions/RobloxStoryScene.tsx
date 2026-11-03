@@ -83,7 +83,7 @@ function Actor({ frame, fps, kind, sceneIndex, position = [0, 0, 0], scale = 1, 
   const wave = isShadow && (sceneIndex === 0 || sceneIndex === 1 || sceneIndex === 3 || sceneIndex === 8);
   // Word-aligned cues make the hand raise, independent wave and head turn land on the final narration.
   const waveStart = sceneIndex === 0 ? Math.max(0.1, cues.openingPunch - 0.2) : sceneIndex === 1 ? Math.max(0.2, cues.residentRun - 0.8) : sceneIndex === 3 ? cues.shadowWave : sceneIndex === 8 ? cues.windowWave : 0.35;
-  const waveDuration = sceneIndex === 8 ? 0.9 : 1.8;
+  const waveDuration = sceneIndex === 8 ? 0.7 : 1.8;
   const waveCycles = sceneIndex === 8 ? 1 : 3;
   const wavePhase = (t - waveStart) / waveDuration;
   const waveEnvelope = wavePhase >= 0 && wavePhase <= 1 ? Math.sin(Math.PI * wavePhase) ** 2 : 0;
