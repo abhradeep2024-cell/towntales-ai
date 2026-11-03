@@ -12,6 +12,7 @@ import asyncio
 import array
 import json
 import hashlib
+import difflib
 import math
 import re
 import shutil
@@ -302,6 +303,34 @@ def validate_word_alignment_bounds(words: list[dict], duration: float) -> None:
             )
 
 
+def compare_word_alignment_coverage(text: str, events: list[dict]) -> dict:
+    """Compare actual speech-boundary tokens with the approved narration text.
+
+    Sequence matching tolerates punctuation and provider tokenization differences,
+    while exposing omitted or unexpected spoken tokens in the QA report.
+    """
+    token_pattern = re.compile(r"[\\w]+(?:['’][\\w]+)?", re.UNICODE)
+    expected = [token.casefold().replace("’", "'") for token in token_pattern.findall(text)]
+    observed = [token.casefold().replace("’", "'") for event in events
+                for token in token_pattern.findall(str(event.get("text", "")))]
+    matcher = difflib.SequenceMatcher(a=expected, b=observed, autojunk=False)
+    matched_expected: set[int] = set()
+    matched_observed: set[int] = set()
+    for block in matcher.get_matching_blocks():
+        matched_expected.update(range(block.a, block.a + block.size))
+        matched_observed.update(range(block.b, block.b + block.size))
+    missing = [expected[index] for index in range(len(expected)) if index not in matched_expected]
+    extra = [observed[index] for index in range(len(observed)) if index not in matched_observed]
+    return {
+        "expectedWordCount": len(expected),
+        "alignedWordCount": len(observed),
+        "matchedWordCount": len(matched_expected),
+        "coverage": len(matched_expected) / max(1, len(expected)),
+        "missingWords": missing,
+        "unexpectedWords": extra,
+    }
+
+
 def write_word_ass(words: list[dict], path: Path, width: int, height: int) -> None:
     # Keep two-word context on screen while the currently spoken word turns red.
     font_size = max(36, round(width * 0.075))
@@ -395,8 +424,17 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
             print(f"[audio] Narration at {candidate_rate} is {clip_duration:.2f}s; retrying faster to preserve the approved 60-second timeline.", file=sys.stderr)
         if require_word_alignment and (provider != "edge-tts" or not word_events):
             raise RuntimeError("Production word alignment required, but the continuous narration master has no genuine Edge TTS word boundaries.")
-        if require_word_alignment and len(word_events) < expected_word_count * 0.9:
-            raise RuntimeError(f"Edge TTS returned only {len(word_events)} word boundaries for {expected_word_count} narration words; the caption and choreography alignment is incomplete.")
+        alignment_coverage = compare_word_alignment_coverage(voice_text, word_events)
+        report["wordAlignmentAudit"] = alignment_coverage
+        report["alignedWordCoverage"] = round(alignment_coverage["coverage"], 4)
+        if require_word_alignment and alignment_coverage["coverage"] < 0.98:
+            missing = ", ".join(alignment_coverage["missingWords"][:12]) or "unknown"
+            raise RuntimeError(
+                f"Edge TTS aligned {alignment_coverage['matchedWordCount']} of "
+                f"{alignment_coverage['expectedWordCount']} narration words "
+                f"({alignment_coverage['coverage']:.2%}); missing: {missing}. "
+                "Word-synchronized captions and choreography require at least 98% token coverage."
+            )
         if clip_duration <= 0:
             raise RuntimeError("Continuous narration master produced an empty audio track.")
         if clip_duration > duration - 0.45:
