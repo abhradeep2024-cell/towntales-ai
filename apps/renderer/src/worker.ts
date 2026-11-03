@@ -44,7 +44,8 @@ async function api(path: string, body: unknown = {}) {
   const response = await fetch(`${apiBase}${path}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${workerSecret}`, 'content-type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(150_000)
   });
   if (!response.ok) throw new Error(`API ${path} failed (${response.status}): ${(await response.text()).slice(0, 500)}`);
   return response.json() as Promise<any>;
