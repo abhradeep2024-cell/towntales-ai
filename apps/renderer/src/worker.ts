@@ -211,7 +211,7 @@ async function runJob(job: any, serveUrl: string) {
     await writeFile(downloadedPath, downloadedFile);
     await execFileAsync('ffmpeg', ['-v', 'error', '-i', downloadedPath, '-f', 'null', '-']);
 
-    const narrationRequested = Boolean(production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0));
+
     const qcReport: Record<string, any> = {
       passed: true,
       releaseReady: false,
