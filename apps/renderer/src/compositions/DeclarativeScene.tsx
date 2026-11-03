@@ -106,7 +106,7 @@ function AnimatedActor({ actor, character, time }: { actor: Actor; character?: C
 }
 
 function SceneProps({ scene }: { scene: Scene }) {
-  return <group>{scene.props.map(prop => {
+  return <group>{(scene.props ?? []).map(prop => {
     const common = { position: prop.position as [number,number,number], scale: prop.scale as [number,number,number], rotation: prop.rotation as [number,number,number] };
     if (prop.type === 'sphere') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><sphereGeometry args={[.5,24,16]}/><meshStandardMaterial color={prop.color}/></mesh>;
     if (prop.type === 'cylinder') return <mesh key={prop.id} {...common} castShadow={prop.castShadow}><cylinderGeometry args={[.5,.5,1,20]}/><meshStandardMaterial color={prop.color}/></mesh>;
@@ -129,7 +129,7 @@ export const DeclarativeScene: React.FC<{ scene: Scene; production: ProductionSp
       <CameraTrack scene={scene} time={time}/>
       <mesh rotation={[-Math.PI/2,0,0]} position={[0,-.06,0]} receiveShadow><planeGeometry args={[80,80]}/><meshStandardMaterial color="#454a52"/></mesh>
       <SceneProps scene={scene}/>
-      {scene.actors.map((actor,index)=><AnimatedActor key={actor.characterId+index} actor={actor} character={characters.get(actor.characterId)} time={time}/>)}
+      {(scene.actors ?? []).map((actor,index)=><AnimatedActor key={actor.characterId+index} actor={actor} character={characters.get(actor.characterId)} time={time}/>)}
     </Canvas>
     {scene.onScreenText.map((line,index)=><div key={index} style={{position:'absolute',top:`${14+index*6}%`,left:'50%',transform:'translateX(-50%)',maxWidth:'88%',color:'#fff',fontSize:36,fontWeight:900,textAlign:'center',textShadow:'0 3px 12px #000',fontFamily:'Arial'}}>{line}</div>)}
   </div>;
