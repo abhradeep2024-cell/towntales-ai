@@ -16,6 +16,19 @@ function stripJsonFence(value: string): string {
   return result.trim();
 }
 
+export function parseStructuredProductionSpec(sourceText: string): ProductionSpec | null {
+  try {
+    const parsed = JSON.parse(sourceText) as unknown;
+    const candidate = parsed && typeof parsed === 'object' && 'production' in parsed
+      ? (parsed as {production?:unknown}).production
+      : parsed;
+    const validated = ProductionSpecSchema.safeParse(candidate);
+    return validated.success ? validated.data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function planProductionFromSource(
   sourceText: string,
   config: PlannerConfig
