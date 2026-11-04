@@ -121,7 +121,12 @@ export const SceneSchema = z.object({
   actors: z.array(SceneActorSchema).max(40).optional(),
   props: z.array(ScenePropSchema).max(100).optional(),
   camera: SceneCameraSchema.optional(),
-  lighting: SceneLightingSchema.optional()
+  lighting: SceneLightingSchema.optional(),
+  startSeconds: z.number().nonnegative().optional(),
+  endSeconds: z.number().positive().optional(),
+  transitionIn: z.enum(['cut','dissolve','fade','wipe','match-cut']).default('cut'),
+  transitionOut: z.enum(['cut','dissolve','fade','wipe','match-cut']).default('cut'),
+  continuityNotes: z.array(z.string().max(500)).max(30).default([])
 });
 
 
@@ -282,6 +287,14 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   captionCues: z.array(CaptionCueSchema).max(2000).optional(),
   outputProfiles: z.array(OutputProfileSchema).max(20).optional(),
   qaRules: z.array(QualityRuleSchema).max(200).optional(),
+  versionManifest: z.object({
+    schema: z.string().min(1).max(80),
+    renderer: z.string().min(1).max(80),
+    asset: z.string().min(1).max(80),
+    productionPlan: z.string().min(1).max(80),
+    audio: z.string().min(1).max(80),
+    renderSettings: z.string().min(1).max(80)
+  }).optional(),
   projectMetadata: z.object({
     projectId: z.string().max(120).optional(),
     episodeId: z.string().max(120).optional(),
@@ -326,6 +339,15 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   uniqueIds(spec.voiceProfiles ?? [], 'voiceProfiles');
   uniqueIds(spec.audioCues ?? [], 'audioCues');
   uniqueIds(spec.captionCues ?? [], 'captionCues');
+  spec.scenes.forEach((scene,index) => {
+    if ((scene.startSeconds === undefined) !== (scene.endSeconds === undefined)) {
+      ctx.addIssue({code:'custom',path:['scenes',index],message:'Scene startSeconds and endSeconds must be supplied together.'});
+    }
+    if (scene.startSeconds !== undefined && scene.endSeconds !== undefined) {
+      if (scene.endSeconds <= scene.startSeconds) ctx.addIssue({code:'custom',path:['scenes',index,'endSeconds'],message:'Scene endSeconds must be after startSeconds.'});
+      if (Math.abs((scene.endSeconds - scene.startSeconds) - scene.durationSeconds) > 0.001) ctx.addIssue({code:'custom',path:['scenes',index,'endSeconds'],message:'Scene time window must match durationSeconds.'});
+    }
+  });
   const sceneIds = new Set(spec.scenes.map(scene => scene.id));
   const environmentIds = new Set((spec.environments ?? []).map(environment => environment.id));
   const characterIds = new Set((spec.characters ?? []).map(character => character.id));
@@ -342,6 +364,9 @@ export const ProductionSpecSchema = z.preprocess((input) => {
     }
   });
   spec.scenes.forEach((scene,index) => {
+    if (scene.startSeconds !== undefined && Math.abs(scene.startSeconds - sceneTimelineCursor) > 0.001) {
+      ctx.addIssue({code:'custom',path:['scenes',index,'startSeconds'],message:'Explicit scene time windows must follow scene order without gaps or overlaps.'});
+    }
     sceneWindows.set(scene.id,{start:sceneTimelineCursor,end:sceneTimelineCursor + scene.durationSeconds});
     sceneTimelineCursor += scene.durationSeconds;
     (scene.actors ?? []).forEach((actor,actorIndex) => {
