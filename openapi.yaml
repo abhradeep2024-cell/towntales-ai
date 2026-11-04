@@ -374,6 +374,16 @@ components:
           maxItems: 20
           items: { type: string, maxLength: 300 }
         background: { type: string, pattern: '^#[0-9a-fA-F]{6}' }
+        actors:
+          type: array
+          maxItems: 50
+          items: { $ref: '#/components/schemas/SceneActor' }
+        props:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/SceneProp' }
+        camera: { $ref: '#/components/schemas/SceneCamera' }
+        lighting: { $ref: '#/components/schemas/SceneLighting' }
     Asset:
       type: object
       required: [id, type]
@@ -553,17 +563,6 @@ components:
             max_attempts: { type: integer }
             qc_report: { type: object }
             updated_at: { type: string, format: date-time }
- }
-        actors:
-          type: array
-          maxItems: 50
-          items: { $ref: '#/components/schemas/SceneActor' }
-        props:
-          type: array
-          maxItems: 100
-          items: { $ref: '#/components/schemas/SceneProp' }
-        camera: { $ref: '#/components/schemas/SceneCamera' }
-        lighting: { $ref: '#/components/schemas/SceneLighting' }
     SceneActor:
       type: object
       required: [characterId]
