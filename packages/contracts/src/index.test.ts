@@ -153,7 +153,7 @@ describe('declarative animation production contract', () => {
   });
 
   it('rejects subtitles with reversed or out-of-range timecodes', () => {
-    const invalid = structuredClone(base);
+    const invalid: any = structuredClone(base);
     invalid.subtitles = [
       { start: 3, end: 2, text: 'Reversed' },
       { start: 5, end: 7, text: 'Beyond runtime' }
