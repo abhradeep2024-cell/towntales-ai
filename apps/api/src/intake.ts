@@ -12,6 +12,15 @@ export interface ExtractedProductionInput {
 const MAX_SOURCE_BYTES = 5 * 1024 * 1024;
 const MAX_EXTRACTED_CHARACTERS = 60_000;
 
+export function deriveProjectTitle(filename: string, suppliedTitle?: unknown): string | null {
+  if (suppliedTitle !== undefined && typeof suppliedTitle !== 'string') return null;
+  const candidate = typeof suppliedTitle === 'string'
+    ? suppliedTitle
+    : filename.replace(/\\.[^.]+$/, '');
+  const title = candidate.trim().slice(0, 160);
+  return title || null;
+}
+
 export async function extractProductionInput(filename: string, bytes: Buffer): Promise<ExtractedProductionInput> {
   if (!filename || filename.length > 180 || /[\\/\\\\]/.test(filename) || filename.includes('..')) {
     throw new Error('Invalid source filename.');
