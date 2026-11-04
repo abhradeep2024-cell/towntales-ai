@@ -111,7 +111,7 @@ describe('declarative animation production contract', () => {
   });
 
   it('validates explicit scene windows and preserves transition and continuity data', () => {
-    const production = structuredClone(base);
+    const production: any = structuredClone(base);
     production.scenes[0].startSeconds = 0;
     production.scenes[0].endSeconds = 6;
     production.scenes[0].transitionIn = 'fade';
