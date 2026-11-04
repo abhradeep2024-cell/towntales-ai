@@ -458,7 +458,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
         speech_intervals.append((0.0,min(duration,clip_duration)))
         report["voiceRate"] = voice_rate
         report["expectedWordCount"] = expected_word_count
-        report["alignedWordCoverage"] = round(len(word_events) / max(1, expected_word_count), 4)
+        report["alignedWordCoverage"] = round(alignment_coverage["coverage"], 4)
         voice_tracks.append({"kind": "voice", "file": target.name, "delayMs": 0, "volume": float(audio.get("voiceVolume", 1)), "bytes": target.stat().st_size, "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
     elif require_word_alignment and not dialogue_lines:
         raise RuntimeError("Production word alignment required, but the specification contains no narration or dialogue.");
