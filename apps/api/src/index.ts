@@ -283,7 +283,7 @@ app.post('/v1/intake', async (request, reply) => {
   let projectId: string | undefined;
   const uploadedKeys: string[] = [];
   try {
-    const title = (body.title ?? body.filename.replace(/\\.[^.]+$/,'')).trim().slice(0,160);
+    const title = deriveProjectTitle(body.filename, body.title);
     if (!title) return reply.code(400).send({error:'project_title_required'});
     const aspectRatio = body.aspectRatio ?? '9:16';
     if (!['16:9','9:16','1:1'].includes(aspectRatio)) return reply.code(400).send({error:'invalid_aspect_ratio'});
