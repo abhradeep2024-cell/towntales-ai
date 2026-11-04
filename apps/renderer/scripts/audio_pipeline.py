@@ -309,7 +309,7 @@ def compare_word_alignment_coverage(text: str, events: list[dict]) -> dict:
     Sequence matching tolerates punctuation and provider tokenization differences,
     while exposing omitted or unexpected spoken tokens in the QA report.
     """
-    token_pattern = re.compile(r"[\\w]+(?:['’][\\w]+)?", re.UNICODE)
+    token_pattern = re.compile(r"[\w]+(?:['’][\w]+)?", re.UNICODE)
     expected = [token.casefold().replace("’", "'") for token in token_pattern.findall(text)]
     observed = [token.casefold().replace("’", "'") for event in events
                 for token in token_pattern.findall(str(event.get("text", "")))]
@@ -392,7 +392,7 @@ def prepare_audio(spec: dict, workdir: Path, require_word_alignment: bool) -> di
     narration_lines: list[str] = []
     dialogue_lines = spec.get('dialogue') or []
     voice_profiles = {profile['id']:profile for profile in (spec.get('voiceProfiles') or [])}
-    scene_index_by_id = {scene['id']:index for index,scene in enumerate(spec.get('scenes', []))}
+    scene_index_by_id = {scene['id']:index for index,scene in enumerate(spec.get('scenes', [])) if scene.get('id')}
     alignment_audits: list[dict] = []
     for idx, scene in enumerate(spec.get("scenes", [])):
         scene_duration = float(scene["durationSeconds"])
