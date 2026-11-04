@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
-import { extractProductionInput } from './intake.js';
+import { deriveProjectTitle, extractProductionInput } from './intake.js';
 import { parseStructuredProductionSpec, planProductionFromSource } from './planner.js';
 import { reviewProductionCreatively } from './creative-review.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
