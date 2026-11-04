@@ -1,0 +1,98 @@
+{
+  "styleId": "roblox-cinematic-horror",
+  "durationSeconds": 60,
+  "scenes": [
+    {
+      "durationSeconds": 5,
+      "narration": "In this town, your shadow must NEVER move differently from you after sunset."
+    },
+    {
+      "durationSeconds": 6,
+      "narration": "Everyone knows the rule. Because once your shadow moves on its own, it means something is coming to take your place."
+    },
+    {
+      "durationSeconds": 6,
+      "narration": "My name is Alex, and I thought it was just another stupid town legend."
+    },
+    {
+      "durationSeconds": 7,
+      "narration": "Until one night, at exactly 9 PM, I raised my hand. But my shadow didn’t. Instead... it waved at me."
+    },
+    {
+      "durationSeconds": 7,
+      "narration": "I ran home as fast as I could."
+    },
+    {
+      "durationSeconds": 8,
+      "narration": "But when I opened my bedroom door, someone was already standing inside. It looked exactly like me. Same clothes. Same face."
+    },
+    {
+      "durationSeconds": 12,
+      "narration": "But something was wrong. It had no shadow. I turned around to run. And suddenly, every light in the house went out."
+    },
+    {
+      "durationSeconds": 5,
+      "narration": "The next morning, I ran outside. The sun was shining. Everyone had a shadow. Except me."
+    },
+    {
+      "durationSeconds": 4,
+      "narration": "Then I noticed something terrifying. My shadow was standing behind my bedroom window. And it was waving again."
+    }
+  ],
+  "subtitles": [
+    {
+      "start": 0,
+      "end": 5,
+      "text": "In this town, your shadow must NEVER move differently from you after sunset."
+    },
+    {
+      "start": 5,
+      "end": 11,
+      "text": "Everyone knows the rule. Because once your shadow moves on its own, it means something is coming to take your place."
+    },
+    {
+      "start": 11,
+      "end": 17,
+      "text": "My name is Alex, and I thought it was just another stupid town legend."
+    },
+    {
+      "start": 17,
+      "end": 24,
+      "text": "Until one night, at exactly 9 PM, I raised my hand. But my shadow didn’t. Instead... it waved at me."
+    },
+    {
+      "start": 24,
+      "end": 31,
+      "text": "I ran home as fast as I could."
+    },
+    {
+      "start": 31,
+      "end": 39,
+      "text": "But when I opened my bedroom door, someone was already standing inside. It looked exactly like me. Same clothes. Same face."
+    },
+    {
+      "start": 39,
+      "end": 51,
+      "text": "But something was wrong. It had no shadow. I turned around to run. And suddenly, every light in the house went out."
+    },
+    {
+      "start": 51,
+      "end": 56,
+      "text": "The next morning, I ran outside. The sun was shining. Everyone had a shadow. Except me."
+    },
+    {
+      "start": 56,
+      "end": 60,
+      "text": "Then I noticed something terrifying. My shadow was standing behind my bedroom window. And it was waving again."
+    }
+  ],
+  "audio": {
+    "musicEnabled": true,
+    "voiceEnabled": true,
+    "musicStyle": "suspense",
+    "musicVolume": 0.12,
+    "voiceVolume": 1,
+    "voice": "en-US-AriaNeural",
+    "burnSubtitles": true
+  }
+}

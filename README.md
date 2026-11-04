@@ -1,11 +1,31 @@
-# ChatGPT Film Studio
+# Real Factory
 
-Free-tier-first, ChatGPT-directed film production. ChatGPT is the creative director; Lemo-Opuscar provides the 66-style directing library and frame-renderer contract; Remotion renders structured scenes; FFmpeg performs audio/video mastering; Supabase stores jobs and private MP4s.
+Real Factory is an automated animation production pipeline, not a SaaS product. It accepts a story/script/production Bible, plans scenes and assets, renders previews and masters, performs technical QA, and stores outputs privately. ChatGPT is the creative director; Lemo-Opuscar provides the 66-style directing library and frame-renderer contract; Remotion renders structured scenes; FFmpeg performs audio/video mastering; Supabase stores jobs and private MP4s.
 
 ## Production modes
 - **Lemo project page:** submit projectFiles containing index.html and local JS/CSS/JSON/SVG assets. The page must expose window.DUR, deterministic window.render(t), and window.READY. The Lemo-Opuscar headless renderer renders it against the pinned Lemo library, including shared core helpers and the styles tree.
 - **Remotion scene fallback:** omit projectFiles and submit a validated multi-scene script. Supports title/scene animation, subtitles, landscape, portrait and square dimensions.
 - **Audio:** optional Edge TTS narration per scene, local espeak-ng fallback, original procedural ambient music, FFmpeg mixing and loudness normalization. The Edge voice service requires network access; espeak-ng is local.
+
+## Submit a production
+From the repository root, set your API token and submit a DOCX, TXT or JSON brief:
+```bash
+cd apps/api
+API_TOKEN="YOUR_API_TOKEN" npm run submit -- ../path/to/story.docx --title "My story" --aspect-ratio 9:16 --style roblox-cinematic
+```
+Optional flags: `--description "..."`, `--style <style-id>`, `--aspect-ratio 16:9|9:16|1:1`, and `--no-wait` (return after queueing instead of waiting). By default the command waits for rendering and creative QA, then prints the approved MP4 URL and signed QA/preview artifact URLs. A creative-QA rejection returns the review findings and a non-zero exit code. Set `API_BASE_URL` if the API is not hosted at the default Render URL. Keep `API_TOKEN` private; never put it in source control.
+
+Story planning requires `AI_API_KEY` and `AI_MODEL`. Automated creative QA requires a vision-capable model configured as `CREATIVE_QA_MODEL` (or a vision-capable `AI_MODEL`). Set `AI_BASE_URL` when using an OpenAI-compatible provider other than the default.
+
+## Reusable asset library
+The authenticated `POST /v1/assets` endpoint registers immutable asset versions; `GET /v1/assets` searches the private catalogue and returns short-lived signed URLs. Common media types and binary glTF (`model/gltf-binary`) are supported. Production manifests reference assets by `libraryAssetKey` and `libraryVersion`; the renderer verifies downloaded byte size and SHA-256 before using them. GLB assets can be used for reusable environment/prop models and GLTF humanoid character rigs with named animation clips.
+
+## Agent research and diagnostics
+The `Real Factory Agent Tooling` GitHub Actions workflow has two isolated support agents:
+- **Agent Reach** searches public web and YouTube references for story/style research and saves JSON evidence artifacts.
+- **REA** analyzes the renderer application and saves a structured JavaScript/dependency diagnostic report.
+
+Run it from GitHub Actions → Real Factory Agent Tooling. Choose `research`, `diagnostics`, or `both`. These tools support planning and debugging; they do not bypass the production contract, alter a render job, or approve a final MP4.
 
 ## Free-tier architecture
 - Render free web service hosts only the authenticated API.

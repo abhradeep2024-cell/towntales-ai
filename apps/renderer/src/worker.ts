@@ -5,9 +5,9 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, extname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { ProductionSpecSchema } from '@film-studio/contracts';
 
 const execFileAsync = promisify(execFile);
@@ -44,10 +44,70 @@ async function api(path: string, body: unknown = {}) {
   const response = await fetch(`${apiBase}${path}`, {
     method: 'POST',
     headers: { authorization: `Bearer ${workerSecret}`, 'content-type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(150_000)
   });
   if (!response.ok) throw new Error(`API ${path} failed (${response.status}): ${(await response.text()).slice(0, 500)}`);
   return response.json() as Promise<any>;
+}
+
+async function uploadVerifiedArtifact(objectKey: string, body: Buffer, contentType: string) {
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(objectKey, body, {
+    contentType, upsert: false, cacheControl: '3600'
+  });
+  if (uploadError) throw uploadError;
+  const { data, error: signedError } = await supabase.storage.from(bucket).createSignedUrl(objectKey, 300);
+  if (signedError || !data?.signedUrl) throw signedError ?? new Error(`Could not sign production artifact ${objectKey}.`);
+  const response = await fetch(data.signedUrl, { signal: AbortSignal.timeout(30000) });
+  if (!response.ok) throw new Error(`Production artifact download failed for ${objectKey} (HTTP ${response.status}).`);
+  const downloaded = Buffer.from(await response.arrayBuffer());
+  if (!downloaded.equals(body)) throw new Error(`Production artifact verification failed for ${objectKey}.`);
+  return { objectKey, bytes: body.length, sha256: createHash('sha256').update(body).digest('hex'), verifiedDownload: true };
+}
+
+async function resolveProductionAssets(production: any, workDir: string) {
+  const assets = production.assets ?? [];
+  for (const asset of assets) {
+    if (!asset.libraryAssetKey || !asset.libraryVersion) continue;
+    const {data:record,error} = await supabase.from('film_studio_asset_library')
+      .select('asset_key,version,asset_type,storage_key,mime_type,byte_size,sha256,status')
+      .eq('asset_key',asset.libraryAssetKey).eq('version',asset.libraryVersion).maybeSingle();
+    if (error) throw error;
+    if (!record || record.status !== 'ready') {
+      if (asset.required !== false) throw new Error(`Required library asset ${asset.libraryAssetKey}@${asset.libraryVersion} is missing or not ready.`);
+      asset.metadata = {...(asset.metadata ?? {}),resolutionStatus:'optional-asset-unavailable'};
+      continue;
+    }
+    if (record.asset_type !== asset.type) throw new Error(`Library asset ${asset.libraryAssetKey}@${asset.libraryVersion} type mismatch: expected ${asset.type}, received ${record.asset_type}.`);
+    const usedAsModel =
+      (production.characters ?? []).some((character:any)=>character.assetId===asset.id && character.rig==='gltf-humanoid') ||
+      (production.environments ?? []).some((environment:any)=>environment.assetId===asset.id) ||
+      (production.scenes ?? []).some((scene:any)=>(scene.props ?? []).some((prop:any)=>prop.type==='model' && prop.assetId===asset.id));
+    if (usedAsModel && record.mime_type !== 'model/gltf-binary') throw new Error(`Model asset ${asset.libraryAssetKey}@${asset.libraryVersion} must be uploaded as model/gltf-binary.`);
+    const {data:blob,error:downloadError} = await supabase.storage.from(bucket).download(record.storage_key);
+    if (downloadError || !blob) throw downloadError ?? new Error(`Could not download library asset ${asset.libraryAssetKey}.`);
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    const digest = createHash('sha256').update(bytes).digest('hex');
+    if (bytes.byteLength !== Number(record.byte_size) || (record.sha256 && digest !== record.sha256)) {
+      throw new Error(`Library asset ${asset.libraryAssetKey}@${asset.libraryVersion} failed byte-size or SHA-256 verification.`);
+    }
+    const extension = extname(record.storage_key).slice(0,12);
+    const safeId = String(asset.id).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,80);
+    const relativePath = `assets/${safeId}${extension}`;
+    const target = join(workDir,relativePath);
+    await mkdir(dirname(target),{recursive:true});
+    await writeFile(target,bytes);
+    const {data:signedAsset,error:signedAssetError} = await supabase.storage.from(bucket).createSignedUrl(record.storage_key,1800);
+    if (signedAssetError || !signedAsset?.signedUrl) throw signedAssetError ?? new Error(`Could not sign library asset ${asset.libraryAssetKey} for rendering.`);
+    asset.uri = signedAsset.signedUrl;
+    asset.metadata = {
+      ...(asset.metadata ?? {}),
+      resolvedPath:relativePath,
+      resolvedMimeType:record.mime_type,
+      resolvedSha256:digest,
+      resolutionStatus:'verified'
+    };
+  }
 }
 
 async function runJob(job: any, serveUrl: string) {
@@ -55,12 +115,81 @@ async function runJob(job: any, serveUrl: string) {
   const parsed = ProductionSpecSchema.safeParse(job.production_specification);
   if (!parsed.success) throw new Error(`Invalid stored production specification: ${parsed.error.message}`);
   const production = parsed.data;
+  const runtimeProduction = structuredClone(production);
   const workDir = await mkdtemp(join(tmpdir(), 'film-studio-'));
   const outputPath = join(workDir, 'final.mp4');
   const silentPath = join(workDir, 'picture-only.mp4');
   const specPath = join(workDir, 'production.json');
 
   try {
+    await resolveProductionAssets(runtimeProduction,workDir);
+    await writeFile(specPath, JSON.stringify(runtimeProduction), 'utf8');
+    const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
+    const narrationRequested = Boolean(production.audio?.voiceEnabled && (production.scenes.some((scene) => scene.narration.trim().length > 0) || (production.dialogue?.length ?? 0) > 0));
+    await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 4 });
+    await execFileAsync(pythonExecutable, [
+      audioScript, '--spec', specPath, '--workdir', workDir, '--prepare-only',
+      ...(narrationRequested ? ['--require-word-alignment'] : [])
+    ], { timeout: 8 * 60 * 1000, maxBuffer: 2_000_000 });
+    const audioManifestPath = join(workDir, 'audio-manifest.json');
+    const preparedAudio = JSON.parse(await readFile(audioManifestPath, 'utf8'));
+    const alignmentPath = join(workDir, 'word-alignments.json');
+    const wordAlignmentData = narrationRequested ? JSON.parse(await readFile(alignmentPath, 'utf8')) : { words: [] };
+    const wordAlignments = Array.isArray(wordAlignmentData.words) ? wordAlignmentData.words : [];
+    if (narrationRequested && !wordAlignments.length) throw new Error('Prepared narration has no word-level alignment for visual synchronization.');
+
+    const previewScale = production.aspectRatio === '9:16'
+      ? {width:360,height:640}
+      : production.aspectRatio === '16:9' ? {width:640,height:360} : {width:480,height:480};
+    const previewProduction = ProductionSpecSchema.parse({...runtimeProduction,...previewScale,fps:24});
+    const previewSilentPath = join(workDir,'preview-picture-only.mp4');
+    const previewPath = join(workDir,'preview.mp4');
+    await api(`/internal/jobs/${jobId}/progress`,{status:'rendering',progress:8});
+
+    if (previewProduction.projectFiles) {
+      const previewProjectDir = join(workDir,'lemo-preview-project');
+      await mkdir(previewProjectDir,{recursive:true});
+      for (const [relativePath,contents] of Object.entries(previewProduction.projectFiles)) {
+        const target = join(previewProjectDir,relativePath);
+        await mkdir(join(target,'..'),{recursive:true});
+        await writeFile(target,contents,'utf8');
+      }
+      const lemoEntry = join(repositoryRoot,'vendor','lemo-opuscar','core','render','video.mjs');
+      await execFileAsync('node',[lemoEntry,previewProjectDir,'--fps','24','--workers',String(concurrency),'--out',previewSilentPath,'--size',`${previewProduction.width}x${previewProduction.height}`],{timeout:8*60*1000,maxBuffer:2_000_000});
+    } else {
+      const previewCompositions = await getCompositions(serveUrl,{inputProps:{production:previewProduction,wordAlignments},...(browserExecutable ? {browserExecutable} : {})});
+      const previewComposition = previewCompositions.find(item => item.id === 'FilmStudio');
+      if (!previewComposition) throw new Error('FilmStudio composition was not registered for preview rendering.');
+      await renderMedia({
+        composition:{...previewComposition,width:previewProduction.width,height:previewProduction.height,fps:previewProduction.fps,durationInFrames:Math.round(previewProduction.durationSeconds*previewProduction.fps)},
+        serveUrl,codec:'h264',outputLocation:previewSilentPath,crf:30,x264Preset:'veryfast',
+        inputProps:{production:previewProduction,wordAlignments},concurrency,...(browserExecutable ? {browserExecutable} : {})
+      });
+    }
+
+    await execFileAsync(pythonExecutable,[
+      audioScript,'--spec',specPath,'--video',previewSilentPath,'--output',previewPath,'--workdir',workDir,'--reuse-prepared',
+      ...(production.audio?.burnSubtitles ? ['--burn-subtitles'] : []),
+      ...(narrationRequested ? ['--require-word-alignment'] : [])
+    ],{timeout:8*60*1000,maxBuffer:2_000_000});
+    await execFileAsync('ffmpeg',['-v','error','-i',previewPath,'-f','null','-']);
+    const previewProbe = await execFileAsync('ffprobe',['-v','error','-count_frames','-show_entries','format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,nb_read_frames','-of','json',previewPath]);
+    const previewMetadata = JSON.parse(previewProbe.stdout);
+    const previewVideo = (previewMetadata.streams ?? []).find((stream:any) => stream.codec_type === 'video');
+    const previewAudio = (previewMetadata.streams ?? []).find((stream:any) => stream.codec_type === 'audio');
+    const previewDuration = Number(previewMetadata.format?.duration ?? 0);
+    const previewBytes = Number(previewMetadata.format?.size ?? 0);
+    if (!previewVideo || previewVideo.width !== previewProduction.width || previewVideo.height !== previewProduction.height) throw new Error('Preview dimensions do not match the preview profile.');
+    if (previewVideo.codec_name !== 'h264' || previewVideo.r_frame_rate !== '24/1') throw new Error('Preview must be H.264 at 24 FPS.');
+    if (Math.abs(previewDuration - production.durationSeconds) > 1) throw new Error('Preview duration does not match the production runtime.');
+    if (Number(previewVideo.nb_read_frames ?? 0) !== Math.round(production.durationSeconds * 24)) throw new Error('Preview frame count does not match the preview profile.');
+    if ((production.audio?.musicEnabled || narrationRequested) && (!previewAudio || previewAudio.codec_name !== 'aac')) throw new Error('Preview is missing the requested AAC audio track.');
+    if (!previewBytes || previewBytes > 20 * 1024 * 1024) throw new Error('Preview is empty or exceeds the 20 MB preview budget.');
+    await api(`/internal/jobs/${jobId}/progress`,{status:'rendering',progress:22});
+    const {data:previewJob,error:previewJobError} = await supabase.from('film_studio_jobs').select('status').eq('id',jobId).single();
+    if (previewJobError) throw previewJobError;
+    if (previewJob.status === 'cancelled') throw new Error('JOB_CANCELLED');
+
     let renderer: 'lemo-opuscar' | 'remotion' = 'remotion';
     if (production.projectFiles) {
       renderer = 'lemo-opuscar';
@@ -73,11 +202,11 @@ async function runJob(job: any, serveUrl: string) {
       }
       const lemoEntry = join(repositoryRoot, 'vendor', 'lemo-opuscar', 'core', 'render', 'video.mjs');
       try { await stat(lemoEntry); } catch { throw new Error('The pinned Lemo-Opuscar submodule is missing. Check out the repository with submodules and install vendor/lemo-opuscar dependencies.'); }
-      await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 8 });
+      await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 25 });
       await execFileAsync('node', [lemoEntry, projectDir, '--fps', String(production.fps), '--workers', String(concurrency), '--out', silentPath, '--size', `${production.width}x${production.height}`], { timeout: 12 * 60 * 1000, maxBuffer: 2_000_000 });
       await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 82 });
     } else {
-      const compositions = await getCompositions(serveUrl, { inputProps: { production }, ...(browserExecutable ? { browserExecutable } : {}) });
+      const compositions = await getCompositions(serveUrl, { inputProps: { production:runtimeProduction, wordAlignments }, ...(browserExecutable ? { browserExecutable } : {}) });
       const composition = compositions.find((item) => item.id === 'FilmStudio');
       if (!composition) throw new Error('FilmStudio composition was not registered.');
       const actual = {
@@ -93,10 +222,10 @@ async function runJob(job: any, serveUrl: string) {
       let progressWrites: Promise<void> = Promise.resolve();
       try {
         await renderMedia({
-          composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 28, x264Preset: 'veryfast',
-          inputProps: { production }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
+          composition: actual, serveUrl, codec: 'h264', outputLocation: silentPath, crf: 23, x264Preset: 'veryfast',
+          inputProps: { production:runtimeProduction, wordAlignments }, concurrency, ...(browserExecutable ? { browserExecutable } : {}),
           onProgress: ({ progress }) => {
-            const pct = Math.max(2, Math.min(82, Math.round(progress * 80)));
+            const pct = Math.max(25, Math.min(82, 25 + Math.round(progress * 57)));
             progressWrites = progressWrites.then(async () => {
               if (!renderingActive) return;
               const now = Date.now();
@@ -120,16 +249,19 @@ async function runJob(job: any, serveUrl: string) {
       await progressWrites;
     }
 
-    await writeFile(specPath, JSON.stringify(production), 'utf8');
-    const audioScript = join(rendererDir, '..', 'scripts', 'audio_pipeline.py');
     await execFileAsync(pythonExecutable, [
-      audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir,
-      ...(production.audio.burnSubtitles ? ['--burn-subtitles'] : [])
-    ], { timeout: 4 * 60 * 1000, maxBuffer: 2_000_000 });
+      audioScript, '--spec', specPath, '--video', silentPath, '--output', outputPath, '--workdir', workDir, '--reuse-prepared',
+      ...(production.audio?.burnSubtitles ? ['--burn-subtitles'] : []),
+      ...(narrationRequested ? ['--require-word-alignment'] : [])
+    ], { timeout: 8 * 60 * 1000, maxBuffer: 2_000_000 });
+    const wordCaptionsPath = join(workDir, 'word-captions.ass');
+    const wordCaptionsReady = await stat(wordCaptionsPath).then(() => true).catch(() => false);
+    const audioManifestReady = await stat(audioManifestPath).then(() => true).catch(() => false);
+    if (narrationRequested && !wordCaptionsReady) throw new Error('Word-synchronized caption sidecar was not generated.');
 
     await api(`/internal/jobs/${jobId}/progress`, { status: 'rendering', progress: 88 });
 
-    const probe = await execFileAsync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration,size:stream=codec_type,width,height,r_frame_rate', '-of', 'json', outputPath]);
+    const probe = await execFileAsync('ffprobe', ['-v', 'error', '-count_frames', '-show_entries', 'format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames,duration,start_time', '-of', 'json', outputPath]);
     const metadata = JSON.parse(probe.stdout);
     const bytes = (await stat(outputPath)).size;
     if (!bytes || bytes < 1000) throw new Error('Rendered MP4 is unexpectedly small.');
@@ -137,14 +269,43 @@ async function runJob(job: any, serveUrl: string) {
     await execFileAsync('ffmpeg', ['-v', 'error', '-i', outputPath, '-f', 'null', '-']);
     const duration = Number(metadata.format?.duration ?? 0);
     if (Math.abs(duration - production.durationSeconds) > 1) throw new Error(`Duration mismatch: expected ${production.durationSeconds}s, got ${duration}s.`);
-    const video = (metadata.streams ?? []).find((stream: any) => stream.codec_type === 'video');
+    const streams = metadata.streams ?? [];
+    const video = streams.find((stream: any) => stream.codec_type === 'video');
     if (!video || video.width !== production.width || video.height !== production.height) throw new Error('Video dimensions do not match the production specification.');
-    const [frameNumerator, frameDenominator] = String(video.r_frame_rate ?? '0/1').split('/').map(Number);
+    if (video.codec_name !== 'h264') throw new Error(`Expected H.264 video, received ${video.codec_name ?? 'unknown'}.`);
+    const [frameNumerator, frameDenominator] = String(video.avg_frame_rate ?? '0/1').split('/').map(Number);
+    const [nominalNumerator, nominalDenominator] = String(video.r_frame_rate ?? '0/1').split('/').map(Number);
     const actualFps = frameDenominator ? frameNumerator / frameDenominator : 0;
-    if (Math.abs(actualFps - production.fps) > 0.05) throw new Error('Frame rate does not match the production specification.');
-    const audioPresent = (metadata.streams ?? []).some((stream: any) => stream.codec_type === 'audio');
-    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && production.scenes.some((scene) => scene.narration.trim().length > 0)));
+    const nominalFps = nominalDenominator ? nominalNumerator / nominalDenominator : 0;
+    if (Math.abs(actualFps - production.fps) > 0.05 || Math.abs(nominalFps - production.fps) > 0.05) {
+      throw new Error('Average or nominal frame rate does not match the production specification.');
+    }
+    const expectedFrames = Math.round(production.durationSeconds * production.fps);
+    const actualFrames = Number(video.nb_read_frames ?? video.nb_frames ?? 0);
+    if (!actualFrames || actualFrames !== expectedFrames) throw new Error(`Expected exactly ${expectedFrames} decoded frames, received ${actualFrames || 'unknown'}.`);
+    const visualScan = await execFileAsync('ffmpeg', [
+      '-hide_banner','-i',outputPath,'-vf','blackdetect=d=1:pix_th=0.10,freezedetect=n=-50dB:d=2',
+      '-an','-f','null','-'
+    ],{timeout:120_000,maxBuffer:1_000_000}).catch(error => {
+      const stderr = String((error as any)?.stderr ?? '');
+      if ((error as any)?.code === 0) return {stdout:'',stderr};
+      throw error;
+    });
+    const blackSegments = [...visualScan.stderr.matchAll(/black_start:([0-9.]+) black_end:([0-9.]+) black_duration:([0-9.]+)/g)]
+      .map(match => ({start:Number(match[1]),end:Number(match[2]),duration:Number(match[3])}));
+    const frozenSegments = [...visualScan.stderr.matchAll(/freeze_start:([0-9.]+) freeze_duration:([0-9.]+)/g)]
+      .map(match => ({start:Number(match[1]),duration:Number(match[2])}));
+    const audioStream = streams.find((stream: any) => stream.codec_type === 'audio');
+    const audioPresent = Boolean(audioStream);
+    const audioRequested = Boolean(production.audio?.musicEnabled || (production.audio?.voiceEnabled && (production.scenes.some((scene) => scene.narration.trim().length > 0) || (production.dialogue?.length ?? 0) > 0)));
     if (audioRequested && !audioPresent) throw new Error('Audio was requested but no audio track was found in the final MP4.');
+    if (audioRequested && audioStream.codec_name !== 'aac') throw new Error(`Expected AAC audio, received ${audioStream.codec_name ?? 'unknown'}.`);
+    const videoStreamDuration = Number(video.duration ?? duration);
+    const audioStreamDuration = Number(audioStream?.duration ?? duration);
+    const audioVideoDurationDelta = audioRequested ? Math.abs(videoStreamDuration - audioStreamDuration) : 0;
+    if (audioRequested && Number.isFinite(audioVideoDurationDelta) && audioVideoDurationDelta > 1.0) {
+      throw new Error(`Audio/video stream duration mismatch: ${audioVideoDurationDelta.toFixed(3)} seconds.`);
+    }
 
     const { data: latest, error: latestError } = await supabase.from('film_studio_jobs').select('status').eq('id', jobId).single();
     if (latestError) throw latestError;
@@ -158,7 +319,7 @@ async function runJob(job: any, serveUrl: string) {
     // Verify that the private object can be retrieved through a short-lived signed URL.
     const { data: signedObject, error: signedUrlError } = await supabase.storage.from(bucket).createSignedUrl(objectKey, 300);
     if (signedUrlError || !signedObject?.signedUrl) throw signedUrlError ?? new Error('Could not create a signed URL for the uploaded MP4.');
-    const signedDownload = await fetch(signedObject.signedUrl, { signal: AbortSignal.timeout(30000) });
+    const signedDownload = await fetch(signedObject.signedUrl, { signal: AbortSignal.timeout(90000) });
     if (!signedDownload.ok) throw new Error(`Signed MP4 download failed (HTTP ${signedDownload.status}).`);
     const downloadedFile = Buffer.from(await signedDownload.arrayBuffer());
     if (downloadedFile.length !== bytes || !downloadedFile.equals(file)) {
@@ -168,15 +329,159 @@ async function runJob(job: any, serveUrl: string) {
     await writeFile(downloadedPath, downloadedFile);
     await execFileAsync('ffmpeg', ['-v', 'error', '-i', downloadedPath, '-f', 'null', '-']);
 
-    const qcReport = {
+
+    const qcReport: Record<string, any> = {
       passed: true,
+      releaseReady: false,
+      releaseStatus: 'pending-creative-review',
       renderer,
-      checks: { exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true, durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true, audioPresent: audioRequested ? audioPresent : true, privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true },
-      durationSeconds: duration, width: video.width, height: video.height, fps: actualFps, bytes,
+      checks: {
+        exists: true, nonzeroSize: true, ffprobe: true, ffmpegDecode: true,
+        durationWithinTolerance: true, dimensionsMatch: true, frameRateMatches: true,
+        h264Video: true, aacAudio: audioRequested ? true : null,
+        audioPresent: audioRequested ? audioPresent : true,
+        audioVideoDurationAligned: audioRequested ? audioVideoDurationDelta <= 1.0 : null,
+        previewRendered: true, previewTechnicalGate: true,
+        blackFrameScan: true, freezeFrameScan: true,
+        narrationPreparedBeforeRender: true,
+        narrationWithinProductionWindow: !narrationRequested || Number(preparedAudio.report?.voiceDurationSeconds ?? Infinity) <= production.durationSeconds - 0.45,
+        wordAlignment: narrationRequested ? wordAlignments.length > 0 : null,
+        wordAlignmentCoverage: narrationRequested ? Number(preparedAudio.report?.alignedWordCoverage ?? 0) >= 0.98 : null,
+        wordSynchronizedCaptions: narrationRequested ? wordCaptionsReady : null,
+        audioManifest: audioManifestReady,
+        privateSignedUrl: true, signedDownload: true, downloadedFileMatchesUpload: true
+      },
+      durationSeconds: duration, width: video.width, height: video.height, fps: actualFps,
+      decodedFrames: actualFrames || expectedFrames, bytes,
+      sha256: createHash('sha256').update(file).digest('hex'),
       audioPresent, sizeLimitBytes: 50 * 1024 * 1024,
-      audioMode: { musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled, burnSubtitles: production.audio.burnSubtitles, musicStyle: production.audio.musicStyle },
+      preview: {width:previewProduction.width,height:previewProduction.height,fps:previewProduction.fps,durationSeconds:previewDuration,bytes:previewBytes},
+      visualSignalAnalysis: {blackSegments, frozenSegments, warningCount:blackSegments.length + frozenSegments.length},
+      audioVideoDurationDeltaSeconds: audioRequested ? audioVideoDurationDelta : null,
+      audioMode: {
+        musicEnabled: production.audio.musicEnabled, voiceEnabled: production.audio.voiceEnabled,
+        burnSubtitles: narrationRequested || production.audio.burnSubtitles, musicStyle: production.audio.musicStyle, effectsEnabled: Boolean(preparedAudio.report?.effectsGenerated),
+        narrationTracks: preparedAudio.report?.voiceLines ?? 0,
+        narrationSegments: preparedAudio.report?.voiceSegments ?? 0,
+        narrationDurationSeconds: preparedAudio.report?.voiceDurationSeconds ?? 0,
+        narrationRate: preparedAudio.report?.voiceRate ?? null,
+        captionTiming: narrationRequested ? 'edge-tts-word-boundary' : null
+      },
       validatedAt: new Date().toISOString()
     };
+
+    const creativeFrames: Array<{sceneId:string;timeSeconds:number;imageBase64:string}> = [];
+    let sceneOffsetSeconds = 0;
+    for (const [sceneIndex,scene] of production.scenes.entries()) {
+      const sceneFrameCount = Math.max(1,Math.round(scene.durationSeconds * production.fps));
+      const middleFrame = Math.floor((sceneFrameCount - 1) / 2);
+      const finalFrame = Math.max(0,sceneFrameCount - 1);
+      const selectedFrames = [...new Set([0,middleFrame,finalFrame])];
+      const selectExpression = selectedFrames.map(frame=>`eq(n\\,${frame})`).join('+');
+      const contactSheetPath = join(workDir,`creative-${sceneIndex}-${scene.id.replace(/[^a-zA-Z0-9_-]/g,'_')}.jpg`);
+      await execFileAsync('ffmpeg',[
+        '-y','-ss',String(sceneOffsetSeconds.toFixed(3)),'-i',outputPath,
+        '-vf',`select='${selectExpression}',scale=180:-2,tile=${selectedFrames.length}x1`,
+        '-frames:v','1','-q:v','10',contactSheetPath
+      ],{timeout:45_000,maxBuffer:1_000_000});
+      const contactSheet = await readFile(contactSheetPath);
+      if (!contactSheet.length || contactSheet.length > 100_000) throw new Error(`Creative QA contact sheet for scene ${scene.id} is empty or exceeds 100 KB.`);
+      creativeFrames.push({
+        sceneId:scene.id,
+        timeSeconds:sceneOffsetSeconds + scene.durationSeconds / 2,
+        imageBase64:contactSheet.toString('base64')
+      });
+      sceneOffsetSeconds += scene.durationSeconds;
+    }
+    let creativeReview: any;
+    try {
+      creativeReview = await api(`/internal/jobs/${jobId}/creative-review`,{
+        production,frames:creativeFrames,
+        technicalReport:{
+          passed:qcReport.passed,checks:qcReport.checks,
+          visualSignalAnalysis:qcReport.visualSignalAnalysis,
+          audioMode:qcReport.audioMode,
+          wordAlignmentCoverage:qcReport.checks.wordAlignmentCoverage
+        }
+      });
+    } catch (reviewError) {
+      await supabase.storage.from(bucket).remove([objectKey]).catch(()=>undefined);
+      throw reviewError;
+    }
+    qcReport.creativeReview = creativeReview;
+    qcReport.releaseReady = creativeReview.releaseApproved === true;
+    qcReport.releaseStatus = creativeReview.status;
+    const artifacts: Record<string, any> = {};
+    artifacts.preview = await uploadVerifiedArtifact(objectKey.slice(0,-4) + '.preview.mp4', await readFile(previewPath), 'video/mp4');
+    const creativeFrameArtifacts: Record<string,any> = {};
+    for (const [sceneIndex,frame] of creativeFrames.entries()) {
+      const safeSceneId = frame.sceneId.replace(/[^a-zA-Z0-9_-]/g,'_');
+      const framePath = join(workDir,`creative-${sceneIndex}-${safeSceneId}.jpg`);
+      creativeFrameArtifacts[frame.sceneId] = await uploadVerifiedArtifact(objectKey.slice(0,-4)+`.scene-${sceneIndex}-${safeSceneId}.qa.jpg`,await readFile(framePath),'image/jpeg');
+    }
+    artifacts.creativeFrames = creativeFrameArtifacts;
+    const manifest = {
+      schemaVersion: 1,
+      episode: production.title,
+      generatedAt: new Date().toISOString(),
+      productionFormat: { width: production.width, height: production.height, fps: production.fps, durationSeconds: production.durationSeconds, aspectRatio: production.aspectRatio },
+      approvedNarrationScript: production.scenes.map((scene) => scene.narration.trim()).filter(Boolean),
+      sceneManifest: production.scenes.map((scene, index) => ({
+        order: index + 1, id: scene.id, durationSeconds: scene.durationSeconds,
+        title: scene.title, visualDirection: scene.visualDirection, narration: scene.narration,
+        environmentId: scene.environmentId ?? null, actors: scene.actors ?? [], props: scene.props ?? [],
+        camera: scene.camera ?? null, lighting: scene.lighting ?? null, background: scene.background
+      })),
+      assets: (production.assets ?? []).map((asset) => {
+        const runtimeAsset = (runtimeProduction.assets ?? []).find((item:any) => item.id === asset.id);
+        const metadata = runtimeAsset?.metadata ?? {};
+        return {
+          id:asset.id,type:asset.type,libraryAssetKey:asset.libraryAssetKey ?? null,
+          libraryVersion:asset.libraryVersion ?? null,
+          resolutionStatus:metadata.resolutionStatus ?? (asset.uri ? 'external-uri-not-fetched' : 'not-resolved'),
+          resolvedMimeType:metadata.resolvedMimeType ?? null,
+          sha256:metadata.resolvedSha256 ?? null
+        };
+      }),
+      characters: (production.characters ?? []).map((character) => ({
+        id: character.id, name: character.name, rig: character.rig,
+        appearance: character.appearance, assetStatus: 'resolved-from-production-manifest'
+      })),
+      environmentAssets: (production.environments ?? []).map((environment) => ({
+        id: environment.id, name: environment.name, assetId: environment.assetId ?? null,
+        locationDescription: environment.locationDescription, timeOfDay: environment.timeOfDay ?? null,
+        weather: environment.weather ?? null, atmosphere: environment.atmosphere ?? null,
+        background: environment.background, groundColor: environment.groundColor, groundSize: environment.groundSize,
+        fog: environment.fog ?? null, props: environment.props
+      })),
+      styleInvariants: production.styleInvariants,
+      sourceProductionSpec: production
+    };
+    const manifestKey = objectKey.replace(/\.mp4$/, '.production-manifest.json');
+    artifacts.productionManifest = await uploadVerifiedArtifact(manifestKey, Buffer.from(JSON.stringify(manifest, null, 2)), 'application/json');
+
+    const audioManifestKey = objectKey.replace(/\.mp4$/, '.audio-manifest.json');
+    artifacts.audioManifest = await uploadVerifiedArtifact(audioManifestKey, await readFile(audioManifestPath), 'application/json');
+    if (wordCaptionsReady) {
+      const captionsKey = objectKey.replace(/\.mp4$/, '.word-captions.ass');
+      artifacts.wordCaptions = await uploadVerifiedArtifact(captionsKey, await readFile(wordCaptionsPath), 'text/plain');
+    }
+
+    if (narrationRequested) {
+      const alignmentPath = join(workDir, 'word-alignments.json');
+      const alignmentBytes = await readFile(alignmentPath);
+      const alignment = JSON.parse(alignmentBytes.toString('utf8'));
+      if (!Array.isArray(alignment.words) || alignment.words.length === 0) throw new Error('Word-alignment sidecar is empty.');
+      const alignmentKey = objectKey.replace(/\.mp4$/, '.word-alignments.json');
+      artifacts.wordAlignments = await uploadVerifiedArtifact(alignmentKey, alignmentBytes, 'application/json');
+    }
+
+    const creativeKey = objectKey.replace(/\.mp4$/, '.creative-qa.json');
+    artifacts.creativeQa = await uploadVerifiedArtifact(creativeKey, Buffer.from(JSON.stringify(creativeReview, null, 2)), 'application/json');
+
+    qcReport.artifacts = artifacts;
+    const technicalKey = objectKey.replace(/\.mp4$/, '.technical-qa.json');
+    artifacts.technicalQa = await uploadVerifiedArtifact(technicalKey, Buffer.from(JSON.stringify(qcReport, null, 2)), 'application/json');
     await api(`/internal/jobs/${jobId}/complete`, { outputKey: objectKey, outputBytes: bytes, qcReport });
   } finally {
     await rm(workDir, { recursive: true, force: true });

@@ -1,0 +1,53 @@
+import {describe,expect,it} from 'vitest';
+import {deriveProjectTitle,extractProductionInput} from './intake.js';
+
+describe('production source intake extraction', () => {
+  it('extracts plain text without altering its content', async () => {
+    const result = await extractProductionInput('story.txt', Buffer.from('Opening scene\\nA character enters.'));
+    expect(result.format).toBe('txt');
+    expect(result.text).toContain('A character enters.');
+  });
+  it('rejects malformed DOCX packages instead of storing them as extracted text', async () => {
+    await expect(extractProductionInput('story.docx', Buffer.from('not-a-docx-package'))).rejects.toThrow();
+  });
+  it('strips a UTF-8 BOM from text source files', async () => {
+    const result = await extractProductionInput('story.txt', Buffer.from('\uFEFFA story begins here.', 'utf8'));
+    expect(result.text).toBe('A story begins here.');
+  });
+  it('parses JSON and preserves its structured data', async () => {
+    const result = await extractProductionInput('brief.json', Buffer.from(JSON.stringify({title:'Test',scenes:[{id:'one'}]})));
+    expect(result.format).toBe('json');
+    expect(result.structuredData).toEqual({title:'Test',scenes:[{id:'one'}]});
+  });
+  it('rejects malformed JSON', async () => {
+    await expect(extractProductionInput('brief.json', Buffer.from('{bad'))).rejects.toThrow('malformed');
+  });
+  it('rejects unsupported formats', async () => {
+    await expect(extractProductionInput('story.pdf', Buffer.from('pdf'))).rejects.toThrow('Unsupported');
+  });
+  it('rejects extracted text beyond the planner input budget', async () => {
+    await expect(extractProductionInput('story.txt', Buffer.from('x'.repeat(60_001)))).rejects.toThrow('60,000-character');
+  });
+  it('rejects empty and oversized inputs', async () => {
+    await expect(extractProductionInput('story.txt', Buffer.alloc(0))).rejects.toThrow('empty');
+    await expect(extractProductionInput('story.txt', Buffer.alloc(5 * 1024 * 1024 + 1))).rejects.toThrow('5 MB');
+  });
+  it('rejects unsafe filenames', async () => {
+    await expect(extractProductionInput('../story.txt', Buffer.from('text'))).rejects.toThrow('filename');
+  });
+});
+
+describe('production project title derivation', () => {
+  it('removes the final file extension from the fallback title', () => {
+    expect(deriveProjectTitle('episode.docx')).toBe('episode');
+    expect(deriveProjectTitle('my.episode.final.txt')).toBe('my.episode.final');
+  });
+  it('trims and limits an explicitly supplied title', () => {
+    expect(deriveProjectTitle('episode.docx', '  My Episode  ')).toBe('My Episode');
+    expect(deriveProjectTitle('episode.docx', 'x'.repeat(170))).toBe('x'.repeat(160));
+  });
+  it('rejects blank and non-string explicit titles', () => {
+    expect(deriveProjectTitle('episode.docx', '   ')).toBeNull();
+    expect(deriveProjectTitle('episode.docx', 42)).toBeNull();
+  });
+});

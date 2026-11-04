@@ -49,6 +49,7 @@ jobs:
         run: |
           response="$(curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors "$API_BASE_URL/health")"
           printf '%s\\n' "$response"
+          printf '%s' "$response" | jq -e '.ok == true and .databaseConfigured == true and .databaseConnected == true' >/dev/null
       - uses: actions/checkout@v7
         if: env.FILM_STUDIO_SECRETS_MISSING != 'true'
         with:

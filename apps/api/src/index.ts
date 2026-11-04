@@ -4,10 +4,14 @@ import { CreateJobSchema } from '@film-studio/contracts';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomUUID, createHash } from 'node:crypto';
+import { deriveProjectTitle, extractProductionInput } from './intake.js';
+import { parseStructuredProductionSpec, planProductionFromSource } from './planner.js';
+import { reviewProductionCreatively } from './creative-review.js';
 import { createSupabaseApiKeyFetch } from './supabase-api-key-fetch.js';
 
 const appRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const app = Fastify({logger: true, bodyLimit: 4_000_000});
+export const app = Fastify({logger: true, bodyLimit: 8_000_000});
 const env = (key: string) => process.env[key];
 const apiToken = env('API_TOKEN');
 const workerSecret = env('RENDERER_SHARED_SECRET');
@@ -176,6 +180,191 @@ app.get('/v1/styles/:slug/engine', async (request, reply) => {
   }
 });
 
+
+
+const libraryAssetTypes = ['character','rig','environment','prop','material','texture','animation','music','voice','sound-effect','font','image','video','other'] as const;
+const libraryMimeTypes = new Set([
+  'application/json','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain',
+  'image/png','image/jpeg','image/webp','image/svg+xml',
+  'audio/mpeg','audio/wav','audio/ogg','audio/mp4',
+  'video/mp4','font/woff','font/woff2','model/gltf-binary'
+]);
+
+app.post('/v1/assets', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const body = request.body as {assetKey?:string;version?:number;assetType?:string;displayName?:string;filename?:string;mimeType?:string;contentBase64?:string;metadata?:Record<string,unknown>;provenance?:Record<string,unknown>};
+  if (!body || typeof body.assetKey !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,119}$/.test(body.assetKey) ||
+      !Number.isSafeInteger(body.version) || (body.version ?? 0) < 1 ||
+      !libraryAssetTypes.includes(body.assetType as typeof libraryAssetTypes[number]) ||
+      typeof body.displayName !== 'string' || !body.displayName.trim() || body.displayName.length > 160 ||
+      typeof body.filename !== 'string' || typeof body.mimeType !== 'string' || !libraryMimeTypes.has(body.mimeType) || typeof body.contentBase64 !== 'string') {
+    return reply.code(400).send({error:'invalid_asset_metadata'});
+  }
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.contentBase64)) return reply.code(400).send({error:'invalid_base64_content'});
+  const bytes = Buffer.from(body.contentBase64,'base64');
+  if (!bytes.length || bytes.toString('base64') !== body.contentBase64 || bytes.byteLength > 5 * 1024 * 1024) return reply.code(413).send({error:'invalid_or_oversized_asset'});
+  const filename = body.filename.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
+  if (!filename || filename.includes('..')) return reply.code(400).send({error:'invalid_asset_filename'});
+  const storageKey = `library/${body.assetKey}/v${body.version}/${filename}`;
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const db = requireDb();
+  try {
+    const {error:uploadError} = await db.storage.from(bucket).upload(storageKey,bytes,{contentType:body.mimeType,upsert:false});
+    if (uploadError) throw uploadError;
+    const {data,error} = await db.from('film_studio_asset_library').insert({
+      asset_key:body.assetKey,version:body.version,asset_type:body.assetType,display_name:body.displayName.trim(),
+      storage_key:storageKey,mime_type:body.mimeType,byte_size:bytes.byteLength,sha256,
+      metadata:body.metadata ?? {},provenance:body.provenance ?? {},status:'ready'
+    }).select('id,asset_key,version,asset_type,display_name,mime_type,byte_size,sha256,status,created_at').single();
+    if (error) {
+      try { await db.storage.from(bucket).remove([storageKey]); } catch { /* best-effort rollback */ }
+      throw error;
+    }
+    return reply.code(201).send(data);
+  } catch (error) {
+    request.log.error(error,'Reusable asset registration failed');
+    return reply.code(503).send({error:'asset_registration_failed'});
+  }
+});
+
+app.get('/v1/assets', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const query = request.query as {type?:string;q?:string;limit?:string};
+  const limit = Math.min(100,Math.max(1,Number.parseInt(query.limit ?? '50',10) || 50));
+  if (query.type && !libraryAssetTypes.includes(query.type as typeof libraryAssetTypes[number])) return reply.code(400).send({error:'invalid_asset_type'});
+  try {
+    const db = requireDb();
+    let select = db.from('film_studio_asset_library')
+      .select('id,asset_key,version,asset_type,display_name,storage_key,mime_type,byte_size,sha256,metadata,status,created_at')
+      .eq('status','ready').order('display_name').limit(limit);
+    if (query.type) select = select.eq('asset_type',query.type);
+    if (query.q?.trim()) select = select.ilike('display_name',`%${query.q.trim().slice(0,80)}%`);
+    const {data,error} = await select;
+    if (error) throw error;
+    const assets = await Promise.all((data ?? []).map(async (asset:any) => {
+      const {data:signed,error:signError} = await db.storage.from(bucket).createSignedUrl(asset.storage_key,300);
+      if (signError || !signed?.signedUrl) throw signError ?? new Error(`Could not sign asset ${asset.asset_key}.`);
+      const {storage_key,...publicMetadata} = asset;
+      return {...publicMetadata,url:signed.signedUrl,expiresInSeconds:300};
+    }));
+    return {count:assets.length,assets};
+  } catch (error) {
+    request.log.error(error,'Reusable asset lookup failed');
+    return reply.code(503).send({error:'asset_lookup_failed'});
+  }
+});
+
+app.post('/v1/intake', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const body = request.body as {filename?:string;contentBase64?:string;title?:string;description?:string;styleId?:string;aspectRatio?:'16:9'|'9:16'|'1:1'};
+  if (!body || typeof body.filename !== 'string' || typeof body.contentBase64 !== 'string') {
+    return reply.code(400).send({error:'filename_and_base64_content_required'});
+  }
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(body.contentBase64)) {
+    return reply.code(400).send({error:'invalid_base64_content'});
+  }
+  const bytes = Buffer.from(body.contentBase64,'base64');
+  if (bytes.toString('base64') !== body.contentBase64 || bytes.byteLength > 5 * 1024 * 1024) {
+    return reply.code(413).send({error:'invalid_or_oversized_source_file'});
+  }
+  let extracted;
+  try { extracted = await extractProductionInput(body.filename,bytes); }
+  catch (error) {
+    return reply.code(400).send({error:'source_extraction_failed',message:error instanceof Error ? error.message : 'Unknown extraction error'});
+  }
+  const db = requireDb();
+  const id = randomUUID();
+  const safeName = body.filename.replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
+  const sourceKey = `intake/${id}/source-${safeName}`;
+  const textKey = `intake/${id}/extracted.txt`;
+  const mime = extracted.format === 'docx'
+    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : extracted.format === 'json' ? 'application/json' : 'text/plain';
+  let projectId: string | undefined;
+  const uploadedKeys: string[] = [];
+  try {
+    const title = deriveProjectTitle(body.filename, body.title);
+    if (!title) return reply.code(400).send({error:'project_title_required'});
+    const aspectRatio = body.aspectRatio ?? '9:16';
+    if (!['16:9','9:16','1:1'].includes(aspectRatio)) return reply.code(400).send({error:'invalid_aspect_ratio'});
+    const {data:project,error:projectError} = await db.from('film_studio_projects').insert({
+      title,description:typeof body.description === 'string' ? body.description.slice(0,4000) : null,
+      default_style_id:typeof body.styleId === 'string' ? body.styleId.slice(0,100) : null,
+      default_aspect_ratio:aspectRatio
+    }).select('id,title,created_at').single();
+    if (projectError) throw projectError;
+    projectId = project.id;
+    const {error:sourceError} = await db.storage.from(bucket).upload(sourceKey,bytes,{contentType:mime,upsert:false});
+    if (sourceError) throw sourceError;
+    uploadedKeys.push(sourceKey);
+    const extractedBytes = Buffer.from(extracted.text,'utf8');
+    const {error:textError} = await db.storage.from(bucket).upload(textKey,extractedBytes,{contentType:'text/plain',upsert:false});
+    if (textError) throw textError;
+    uploadedKeys.push(textKey);
+    const {error:assetError} = await db.from('film_studio_assets').insert([
+      {project_id:projectId,asset_type:'data',storage_key:sourceKey,mime_type:mime,byte_size:bytes.byteLength,metadata:{role:'original-production-input',filename:safeName,format:extracted.format}},
+      {project_id:projectId,asset_type:'data',storage_key:textKey,mime_type:'text/plain',byte_size:extractedBytes.byteLength,metadata:{role:'extracted-production-text',sourceFilename:safeName,format:extracted.format}}
+    ]);
+    if (assetError) throw assetError;
+    return reply.code(201).send({
+      project,source:{filename:safeName,format:extracted.format,bytes:bytes.byteLength,extractedCharacters:extracted.text.length},
+      warnings:extracted.warnings,
+      nextStage:'story_interpretation_not_started'
+    });
+  } catch (error) {
+    request.log.error(error,'Production intake persistence failed');
+    try { if (uploadedKeys.length) await db.storage.from(bucket).remove(uploadedKeys); } catch { /* best-effort rollback */ }
+    try { if (projectId) await db.from('film_studio_projects').delete().eq('id',projectId); } catch { /* best-effort rollback */ }
+    return reply.code(503).send({error:'production_intake_persistence_failed'});
+  }
+});
+
+
+app.post('/v1/projects/:id/plan', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const {id} = request.params as {id:string};
+  const aiKey = env('AI_API_KEY') || env('OPENAI_API_KEY') || env('OPENROUTER_API_KEY');
+  const aiModel = env('AI_MODEL');
+  const defaultProvider = env('AI_API_KEY') || env('OPENAI_API_KEY') ? 'https://api.openai.com/v1' : 'https://openrouter.ai/api/v1';
+  const aiBaseUrl = env('AI_BASE_URL') || defaultProvider;
+  try {
+    const db = requireDb();
+    const {data:project,error:projectError} = await db.from('film_studio_projects').select('id,title,default_style_id,default_aspect_ratio').eq('id',id).maybeSingle();
+    if (projectError) throw projectError;
+    if (!project) return reply.code(404).send({error:'project_not_found'});
+    const {data:assets,error:assetError} = await db.from('film_studio_assets')
+      .select('storage_key,metadata').eq('project_id',id);
+    if (assetError) throw assetError;
+    const sourceAsset = (assets ?? []).find((asset:any) => asset.metadata?.role === 'extracted-production-text');
+    if (!sourceAsset?.storage_key) return reply.code(404).send({error:'extracted_project_source_not_found'});
+    const {data:sourceBlob,error:downloadError} = await db.storage.from(bucket).download(sourceAsset.storage_key);
+    if (downloadError || !sourceBlob) throw downloadError ?? new Error('Could not download extracted production source.');
+    const sourceText = await sourceBlob.text();
+    const structuredProduction = parseStructuredProductionSpec(sourceText);
+    if (!structuredProduction && (!aiKey || !aiModel)) return reply.code(503).send({error:'ai_planner_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['AI_BASE_URL']});
+    const projectAspectRatio = ['9:16','16:9','1:1'].includes(project.default_aspect_ratio) ? project.default_aspect_ratio as '9:16'|'16:9'|'1:1' : '9:16';
+    const production = structuredProduction ?? await planProductionFromSource(sourceText,{apiKey:aiKey!,baseUrl:aiBaseUrl!,model:aiModel!,defaults:{styleId:project.default_style_id ?? null,aspectRatio:projectAspectRatio}});
+    const validated = CreateJobSchema.safeParse({production:{
+      ...production,
+      projectMetadata:{...(production.projectMetadata ?? {}),projectId:id}
+    }});
+    if (!validated.success) return reply.code(422).send({error:'planned_production_failed_validation',details:validated.error.flatten()});
+    const {data:job,error:jobError} = await db.from('film_studio_jobs').insert({
+      project_id:id,title:validated.data.production.title || project.title,
+      idea:validated.data.production.idea,status:'queued',progress:0,
+      production_specification:validated.data.production
+    }).select('id,status,progress,created_at').single();
+    if (jobError) throw jobError;
+    const renderDispatch = await dispatchRenderer(request.log);
+    return reply.code(202).send({ ...job, projectId:id, renderDispatch, plan:{sceneCount:validated.data.production.scenes.length,durationSeconds:validated.data.production.durationSeconds,aspectRatio:validated.data.production.aspectRatio} });
+  } catch (error) {
+    request.log.error(error,'Story interpretation and planning failed');
+    const message = error instanceof Error ? error.message : 'Unknown planning error';
+    const providerFailure = /AI planner request failed|AI planner returned|AI planner output/i.test(message);
+    return reply.code(providerFailure ? 502 : 503).send({error:'story_planning_failed',message:message.slice(0,1000)});
+  }
+});
+
 app.post('/v1/jobs', async (request, reply) => {
   if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
   const parsed = CreateJobSchema.safeParse(request.body);
@@ -203,6 +392,58 @@ app.get('/v1/jobs/:id', async (request, reply) => {
     return data;
   } catch (error) {
     request.log.error(error); return reply.code(503).send({error:'job_lookup_failed'});
+  }
+});
+
+app.get('/v1/jobs/:id/artifacts', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const {id} = request.params as {id:string};
+  try {
+    const db = requireDb();
+    const {data:job,error} = await db.from('film_studio_jobs').select('status,qc_report').eq('id',id).maybeSingle();
+    if (error) throw error;
+    if (!job) return reply.code(404).send({error:'job_not_found'});
+    if (job.status !== 'completed') return reply.code(409).send({error:'artifacts_not_ready'});
+    const stored = (job.qc_report as any)?.artifacts ?? {};
+    const artifacts: Record<string, unknown> = {};
+    for (const [name, metadata] of Object.entries(stored) as Array<[string, any]>) {
+      const objectKey = metadata?.objectKey;
+      if (typeof objectKey !== 'string' || !objectKey || objectKey.includes('..')) continue;
+      const {data,error:signError} = await db.storage.from(bucket).createSignedUrl(objectKey,300);
+      if (signError || !data?.signedUrl) throw signError ?? new Error(`Could not sign artifact ${name}.`);
+      artifacts[name] = {
+        url: data.signedUrl, expiresInSeconds: 300,
+        bytes: metadata.bytes, sha256: metadata.sha256
+      };
+    }
+    return {artifacts};
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(503).send({error:'artifact_retrieval_failed'});
+  }
+});
+
+app.post('/internal/jobs/:id/creative-review', async (request, reply) => {
+  if (!requireSecret(request, workerSecret)) return reply.code(401).send({error:'unauthorized'});
+  const body = request.body as {production?:unknown;frames?:Array<{sceneId:string;timeSeconds:number;imageBase64:string}>;technicalReport?:unknown};
+  if (!body || !body.production || !Array.isArray(body.frames) || body.frames.length < 1 || body.frames.length > 30) {
+    return reply.code(400).send({error:'invalid_creative_review_payload'});
+  }
+  const totalFrameBytes = body.frames.reduce((total,frame)=>total + (typeof frame?.imageBase64 === 'string' ? frame.imageBase64.length : 0),0);
+  if (totalFrameBytes > 5_000_000 || body.frames.some(frame=>!frame || typeof frame.sceneId !== 'string' || !Number.isFinite(frame.timeSeconds) || typeof frame.imageBase64 !== 'string')) {
+    return reply.code(413).send({error:'creative_review_frames_exceed_limit'});
+  }
+  const aiKey = env('AI_API_KEY') || env('OPENAI_API_KEY') || env('OPENROUTER_API_KEY');
+  const aiModel = env('CREATIVE_QA_MODEL') || env('AI_MODEL');
+  const defaultProvider = env('AI_API_KEY') || env('OPENAI_API_KEY') ? 'https://api.openai.com/v1' : 'https://openrouter.ai/api/v1';
+  const baseUrl = env('AI_BASE_URL') || defaultProvider;
+  if (!aiKey || !aiModel) return reply.code(503).send({error:'creative_qa_not_configured',requiredEnvironment:['AI_API_KEY','AI_MODEL'],optionalEnvironment:['CREATIVE_QA_MODEL','AI_BASE_URL']});
+  try {
+    const review = await reviewProductionCreatively(body.production,body.frames,body.technicalReport,{apiKey:aiKey,baseUrl,model:aiModel});
+    return {jobId:(request.params as {id:string}).id,...review};
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(502).send({error:'creative_review_failed',message:error instanceof Error ? error.message : 'Unknown creative review failure'});
   }
 });
 
@@ -292,10 +533,12 @@ app.get('/v1/jobs/:id/output', async (request, reply) => {
   const {id} = request.params as {id:string};
   try {
     const db = requireDb();
-    const {data:job,error} = await db.from('film_studio_jobs').select('status,output_key').eq('id',id).maybeSingle();
+    const {data:job,error} = await db.from('film_studio_jobs').select('status,output_key,qc_report').eq('id',id).maybeSingle();
     if (error) throw error;
     if (!job) return reply.code(404).send({error:'job_not_found'});
     if (job.status !== 'completed' || !job.output_key) return reply.code(409).send({error:'output_not_ready'});
+    const qcReport = (job.qc_report ?? {}) as Record<string,any>;
+    if (qcReport.releaseReady !== true) return reply.code(409).send({error:'creative_qa_not_approved',releaseStatus:qcReport.releaseStatus ?? 'creative_review_missing',creativeReview:qcReport.creativeReview ?? null});
     const {data,error:signError} = await db.storage.from(bucket).createSignedUrl(job.output_key,300);
     if (signError) throw signError;
     return {url:data.signedUrl,expiresInSeconds:300};
@@ -305,4 +548,6 @@ app.get('/v1/jobs/:id/output', async (request, reply) => {
 });
 
 const port = Number(env('PORT') ?? 8080);
-app.listen({host:'0.0.0.0',port}).catch((error) => {app.log.error(error);process.exit(1);});
+if (env('NODE_ENV') !== 'test') {
+  app.listen({host:'0.0.0.0',port}).catch((error) => {app.log.error(error);process.exit(1);});
+}

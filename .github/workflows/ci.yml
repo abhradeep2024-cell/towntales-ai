@@ -5,17 +5,22 @@ on:
   pull_request:
     branches: [main]
 concurrency:
-  group: film-studio-ci
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}
+  # Never interrupt an active validation/render job because a newer commit arrived.
+  # New runs wait in the same PR/ref concurrency group and replace only older pending runs.
+  cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
+      - name: Fetch pull request base history for secret scan
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}" --depth=2
       - name: Scan full repository history for leaked credentials
         uses: gitleaks/gitleaks-action@v3
         env:
@@ -41,13 +46,15 @@ jobs:
         run: npm run build && npm run typecheck
       - name: Run unit tests
         run: npm test
-      - name: Wait for deployed Render API and verify ChatGPT Action schema and database
+      - name: Test audio alignment and kinetic caption generation
+        run: python3 -m unittest discover -s apps/renderer/scripts -p 'test_*.py' -v
+      - name: Verify deployed Render API, ChatGPT Action schema and production database
         if: github.event_name == 'push'
         run: |
           ready=0
           for attempt in $(seq 1 24); do
             if curl -fsS --max-time 12 https://film-studio-api.onrender.com/openapi.yaml -o /tmp/film-studio-openapi.yaml; then
-              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml; then
+              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs/{id}/artifacts:' /tmp/film-studio-openapi.yaml; then
                 ready=1
                 break
               fi
@@ -86,19 +93,31 @@ jobs:
             --workdir /tmp/film-studio-audio-test
       - name: Render three-scene timeline
         run: npm run render:smoke:multi
+      - name: Render reusable declarative 3D animation contract
+        run: |
+          npm run render:smoke:declarative
+          ffmpeg -v error -i /tmp/film-studio-declarative.mp4 -f null -
+          test -s /tmp/film-studio-declarative.mp4
       - name: Render vertical 9:16 format
         run: npm run render:smoke:vertical
       - name: Render Lemo-Opuscar project-page contract
         run: npm run render:lemo:smoke
       - name: Render a new film with the native Art Deco engine modules
         run: npm run render:lemo:art-deco
-      - name: Validate all MP4 outputs
+      - name: Validate generic engine smoke renders
         run: |
-          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4; do
+          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-declarative.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4; do
             test -s "$f"
             ffmpeg -v error -i "$f" -f null -
-            ffprobe -v error -show_entries format=duration,size:stream=codec_type,width,height,r_frame_rate -of json "$f"
+            ffprobe -v error -show_entries format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate -of json "$f"
           done
+      - name: Verify generic smoke output in private Supabase storage
+        working-directory: apps/renderer
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_STORAGE_BUCKET: ${{ secrets.SUPABASE_STORAGE_BUCKET }}
+        run: node scripts/verify-storage-upload.mjs /tmp/film-studio-smoke.mp4
       - name: Upload video test artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -107,8 +126,9 @@ jobs:
             /tmp/film-studio-smoke.mp4
             /tmp/film-studio-audio-smoke.mp4
             /tmp/film-studio-multi-scene.mp4
+            /tmp/film-studio-declarative.mp4
             /tmp/film-studio-vertical.mp4
             /tmp/film-studio-lemo-smoke.mp4
             /tmp/film-studio-lemo-art-deco.mp4
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 7

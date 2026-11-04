@@ -34,14 +34,209 @@ export const ProjectFilesSchema = z.record(z.string(), z.string()).superRefine((
   }
 });
 
+
+export const Vector3Schema = z.tuple([z.number(), z.number(), z.number()]);
+export const CharacterAppearanceSchema = z.object({
+  bodyColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#2563a6'),
+  skinColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#e8b58e'),
+  hairColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171717'),
+  pantsColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171a22'),
+  shoeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#f2f2f2'),
+  eyeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#171717'),
+  eyeEmissiveColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#000000'),
+  eyeEmissiveIntensity: z.number().min(0).max(5).default(0),
+  mouthColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#914d43'),
+  castShadow: z.boolean().default(true),
+  receiveShadow: z.boolean().default(true),
+  scale: z.number().min(0.25).max(3).default(1)
+}).default({
+  bodyColor: '#2563a6', skinColor: '#e8b58e', hairColor: '#171717',
+  pantsColor: '#171a22', shoeColor: '#f2f2f2', eyeColor: '#171717',
+  eyeEmissiveColor: '#000000', eyeEmissiveIntensity: 0, mouthColor: '#914d43',
+  castShadow: true, receiveShadow: true, scale: 1
+});
+export const CharacterAssetSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(120),
+  rig: z.enum(['block-humanoid','gltf-humanoid']).default('block-humanoid'),
+  assetId: z.string().min(1).max(100).optional(),
+  animationMap: z.record(z.string(),z.string().min(1).max(120)).optional(),
+  appearance: CharacterAppearanceSchema
+});
+export const ActorActionSchema = z.object({
+  type: z.enum(['idle','walk','run','wave','point','turn','jump','recoil','gesture','expression','move','disappear','appear','crouch','fall','clap','dance','talk','look-at']),
+  startSeconds: z.number().nonnegative(),
+  durationSeconds: z.number().positive().max(90),
+  intensity: z.number().min(0).max(2).default(1),
+  arm: z.enum(['left','right','both']).default('right'),
+  targetPosition: Vector3Schema.optional(),
+  targetRotationY: z.number().optional(),
+  repeat: z.number().int().min(1).max(20).default(1),
+  emotion: z.enum(['neutral','fear','shock','smile','angry','sad']).optional(),
+  note: z.string().max(500).optional()
+});
+export const SceneActorSchema = z.object({
+  characterId: z.string().min(1).max(80),
+  position: Vector3Schema.default([0,0,0]),
+  rotationY: z.number().default(0),
+  actions: z.array(ActorActionSchema).max(80).default([])
+});
+export const ScenePropSchema = z.object({
+  id: z.string().min(1).max(80),
+  type: z.enum(['box','sphere','cylinder','plane','model']),
+  assetId: z.string().min(1).max(100).optional(),
+  position: Vector3Schema,
+  scale: Vector3Schema.default([1,1,1]),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#777777'),
+  rotation: Vector3Schema.default([0,0,0]),
+  castShadow: z.boolean().default(true)
+});
+export const CameraKeyframeSchema = z.object({
+  atSeconds: z.number().nonnegative(),
+  position: Vector3Schema,
+  target: Vector3Schema,
+  fov: z.number().min(15).max(100).default(40)
+});
+export const SceneCameraSchema = z.object({
+  keyframes: z.array(CameraKeyframeSchema).min(1).max(30)
+});
+export const SceneLightingSchema = z.object({
+  ambientColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#ffffff'),
+  ambientIntensity: z.number().min(0).max(5).default(1.2),
+  keyColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#ffffff'),
+  keyIntensity: z.number().min(0).max(10).default(2),
+  keyPosition: Vector3Schema.default([4,8,5]),
+  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional()
+});
+
 export const SceneSchema = z.object({
   id: z.string().min(1).max(80),
   title: z.string().min(1).max(160),
   durationSeconds: z.number().positive().max(90),
   narration: z.string().max(5000).default(''),
   visualDirection: z.string().min(1).max(4000),
+  environmentId: z.string().max(100).optional(),
   onScreenText: z.array(z.string().max(300)).max(20).default([]),
-  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522')
+  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
+  actors: z.array(SceneActorSchema).max(40).optional(),
+  props: z.array(ScenePropSchema).max(100).optional(),
+  camera: SceneCameraSchema.optional(),
+  lighting: SceneLightingSchema.optional()
+});
+
+
+/** Provider-neutral production-manifest building blocks. Optional on v1 jobs so
+ * existing queued jobs remain readable while intake migrates to the richer contract. */
+export const AssetReferenceSchema = z.object({
+  id: z.string().min(1).max(100),
+  type: z.enum(['character','rig','environment','prop','material','texture','animation','music','voice','sound-effect','font','image','video','other']),
+  uri: z.string().min(1).max(2000).optional(),
+  version: z.string().max(80).optional(),
+  libraryAssetKey: z.string().min(1).max(120).optional(),
+  libraryVersion: z.number().int().positive().optional(),
+  required: z.boolean().default(true),
+  metadata: z.record(z.string(), z.unknown()).default({})
+}).superRefine((asset,ctx) => {
+  if ((asset.libraryAssetKey === undefined) !== (asset.libraryVersion === undefined)) ctx.addIssue({code:'custom',path:['libraryVersion'],message:'Library asset references require both libraryAssetKey and libraryVersion.'});
+});
+export const EnvironmentSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(160),
+  assetId: z.string().max(100).optional(),
+  locationDescription: z.string().max(2000).default(''),
+  timeOfDay: z.string().max(80).optional(),
+  weather: z.string().max(120).optional(),
+  atmosphere: z.string().max(1000).optional(),
+  background: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#101522'),
+  groundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#454a52'),
+  groundSize: z.number().min(10).max(500).default(80),
+  fog: z.object({color:z.string().regex(/^#[0-9a-fA-F]{6}$/),near:z.number().min(0).max(500),far:z.number().positive().max(1000)}).optional(),
+  props: z.array(ScenePropSchema).max(150).default([]),
+  lighting: SceneLightingSchema.optional(),
+  continuityNotes: z.array(z.string().max(500)).max(30).default([])
+}).superRefine((environment,ctx) => {
+  if (environment.fog && environment.fog.far <= environment.fog.near) ctx.addIssue({code:'custom',path:['fog','far'],message:'Environment fog far distance must be greater than near distance.'});
+});
+export const ShotSchema = z.object({
+  id: z.string().min(1).max(100),
+  sceneId: z.string().min(1).max(80),
+  title: z.string().max(160).default(''),
+  startSeconds: z.number().nonnegative(),
+  durationSeconds: z.number().positive().max(90),
+  visualIntent: z.string().max(2000).default(''),
+  camera: SceneCameraSchema.optional(),
+  transitionIn: z.enum(['cut','dissolve','fade','wipe','match-cut']).default('cut'),
+  transitionOut: z.enum(['cut','dissolve','fade','wipe','match-cut']).default('cut'),
+  assetIds: z.array(z.string().min(1).max(100)).max(100).default([])
+});
+export const VoiceProfileSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(120),
+  provider: z.literal('edge-tts'),
+  voice: z.string().min(1).max(120),
+  language: z.string().max(35).default('en'),
+  rate: z.enum(['-30%','-25%','-20%','-15%','-10%','+0%','+10%','+15%','+20%','+25%','+30%']).default('+0%'),
+  pitch: z.enum(['-20Hz','-10Hz','+0Hz','+10Hz','+20Hz']).default('+0Hz'),
+  volume: z.enum(['-50%','-25%','+0%','+25%','+50%']).default('+0%')
+});
+export const DialogueLineSchema = z.object({
+  id: z.string().min(1).max(100),
+  sceneId: z.string().min(1).max(80),
+  characterId: z.string().max(80).optional(),
+  speaker: z.string().min(1).max(120),
+  text: z.string().min(1).max(5000),
+  startSeconds: z.number().nonnegative(),
+  endSeconds: z.number().positive(),
+  voiceProfileId: z.string().max(100).optional(),
+  delivery: z.string().max(500).optional()
+});
+export const AudioCueSchema = z.object({
+  id: z.string().min(1).max(100),
+  sceneId: z.string().min(1).max(80),
+  type: z.enum(['music','ambience','foley','sound-effect','dialogue','narration']),
+  assetId: z.string().max(100).optional(),
+  label: z.string().min(1).max(160),
+  startSeconds: z.number().nonnegative(),
+  durationSeconds: z.number().positive().max(90).optional(),
+  gainDb: z.number().min(-60).max(12).default(0),
+  fadeInSeconds: z.number().nonnegative().default(0),
+  fadeOutSeconds: z.number().nonnegative().default(0),
+  duckingGroup: z.string().max(80).optional()
+});
+export const CaptionCueSchema = z.object({
+  id: z.string().min(1).max(100),
+  sceneId: z.string().min(1).max(80),
+  text: z.string().min(1).max(500),
+  startSeconds: z.number().nonnegative(),
+  endSeconds: z.number().positive(),
+  kind: z.enum(['dialogue','narration','title','label','sfx']).default('narration'),
+  speaker: z.string().max(120).optional(),
+  emphasis: z.enum(['none','word','phrase']).default('none')
+});
+export const TimelineTrackSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(160),
+  kind: z.enum(['actor','camera','audio','caption','visual-effect','property']),
+  targetId: z.string().max(100).optional(),
+  enabled: z.boolean().default(true),
+  order: z.number().int().min(0).max(1000).default(0)
+});
+export const QualityRuleSchema = z.object({
+  id: z.string().min(1).max(100),
+  category: z.enum(['technical','continuity','story','visual','animation','audio','caption','safety']),
+  severity: z.enum(['info','warning','error','blocking']).default('error'),
+  description: z.string().min(1).max(1000),
+  threshold: z.number().optional(),
+  enabled: z.boolean().default(true)
+});
+export const OutputProfileSchema = z.object({
+  id: z.string().min(1).max(100),
+  width: z.number().int().min(320).max(3840),
+  height: z.number().int().min(320).max(3840),
+  fps: z.union([z.literal(24),z.literal(25),z.literal(30),z.literal(50),z.literal(60)]),
+  codec: z.enum(['h264','h265','vp9']).default('h264'),
+  container: z.enum(['mp4','webm']).default('mp4'),
+  quality: z.enum(['preview','standard','master']).default('master')
 });
 
 export const ProductionSpecSchema = z.preprocess((input) => {
@@ -63,7 +258,9 @@ export const ProductionSpecSchema = z.preprocess((input) => {
 
   return {...spec, width, height};
 }, z.object({
-  schemaVersion: z.literal(1),
+  // Version 2 adds the provider-neutral production-manifest fields below.
+  // Version 1 remains readable for queued jobs and existing API clients.
+  schemaVersion: z.union([z.literal(1), z.literal(2)]),
   title: z.string().min(1).max(160),
   idea: z.string().min(1).max(8000),
   styleId: z.string().min(1).max(120),
@@ -73,6 +270,27 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   fps: z.union([z.literal(24), z.literal(25), z.literal(30)]).default(30),
   width: z.number().int().min(320).max(1920).default(1280),
   height: z.number().int().min(320).max(1920).default(720),
+  characters: z.array(CharacterAssetSchema).max(100).optional(),
+
+  assets: z.array(AssetReferenceSchema).max(1000).optional(),
+  environments: z.array(EnvironmentSchema).max(100).optional(),
+  shots: z.array(ShotSchema).max(300).optional(),
+  tracks: z.array(TimelineTrackSchema).max(500).optional(),
+  dialogue: z.array(DialogueLineSchema).max(1000).optional(),
+  voiceProfiles: z.array(VoiceProfileSchema).max(100).optional(),
+  audioCues: z.array(AudioCueSchema).max(1000).optional(),
+  captionCues: z.array(CaptionCueSchema).max(2000).optional(),
+  outputProfiles: z.array(OutputProfileSchema).max(20).optional(),
+  qaRules: z.array(QualityRuleSchema).max(200).optional(),
+  projectMetadata: z.object({
+    projectId: z.string().max(120).optional(),
+    episodeId: z.string().max(120).optional(),
+    language: z.string().max(35).default('en'),
+    locale: z.string().max(35).optional(),
+    targetPlatform: z.enum(['instagram-reels','youtube-shorts','youtube','tiktok','custom']).default('instagram-reels'),
+    notes: z.array(z.string().max(1000)).max(100).default([])
+  }).optional(),
+
   scenes: z.array(SceneSchema).min(1).max(30),
   projectFiles: ProjectFilesSchema.optional(),
   subtitles: z.array(z.object({start: z.number().nonnegative(), end: z.number().positive(), text: z.string().min(1).max(500)})).max(300).default([]),
@@ -91,8 +309,155 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   if (spec.aspectRatio === '9:16' && spec.width >= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '9:16 output requires portrait dimensions.'});
   if (spec.aspectRatio === '16:9' && spec.width <= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '16:9 output requires landscape dimensions.'});
   if (spec.aspectRatio === '1:1' && spec.width !== spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '1:1 output requires equal dimensions.'});
+
+  const uniqueIds = (values: Array<{id:string}>, path: string) => {
+    const ids = values.map(value => value.id);
+    if (new Set(ids).size !== ids.length) ctx.addIssue({code:'custom',path:[path],message:`${path} IDs must be unique.`});
+  };
+  uniqueIds(spec.assets ?? [], 'assets');
+  uniqueIds(spec.environments ?? [], 'environments');
+  uniqueIds(spec.shots ?? [], 'shots');
+  uniqueIds(spec.tracks ?? [], 'tracks');
+  uniqueIds(spec.dialogue ?? [], 'dialogue');
+  uniqueIds(spec.voiceProfiles ?? [], 'voiceProfiles');
+  uniqueIds(spec.audioCues ?? [], 'audioCues');
+  uniqueIds(spec.captionCues ?? [], 'captionCues');
+  const sceneIds = new Set(spec.scenes.map(scene => scene.id));
+  const environmentIds = new Set((spec.environments ?? []).map(environment => environment.id));
+  const characterIds = new Set((spec.characters ?? []).map(character => character.id));
+  const voiceProfileIds = new Set((spec.voiceProfiles ?? []).map(profile => profile.id));
+  const assetIds = new Set((spec.assets ?? []).map(asset => asset.id));
+  let sceneTimelineCursor = 0;
+  const sceneWindows = new Map<string,{start:number;end:number}>();
+  (spec.characters ?? []).forEach((character,index) => {
+    if (character.rig === 'gltf-humanoid' && !character.assetId) ctx.addIssue({code:'custom',path:['characters',index,'assetId'],message:'GLTF humanoid characters require a rig assetId.'});
+    if (character.assetId) {
+      const asset = (spec.assets ?? []).find(item => item.id === character.assetId);
+      if (!asset) ctx.addIssue({code:'custom',path:['characters',index,'assetId'],message:'Character assetId must reference a declared asset.'});
+      else if (!['rig','character'].includes(asset.type)) ctx.addIssue({code:'custom',path:['characters',index,'assetId'],message:'GLTF humanoid characters require a rig or character asset.'});
+    }
+  });
+  spec.scenes.forEach((scene,index) => {
+    sceneWindows.set(scene.id,{start:sceneTimelineCursor,end:sceneTimelineCursor + scene.durationSeconds});
+    sceneTimelineCursor += scene.durationSeconds;
+    (scene.actors ?? []).forEach((actor,actorIndex) => {
+      if (!characterIds.has(actor.characterId)) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'characterId'],message:'Scene actor must reference a declared character.'});
+      actor.actions.forEach((action,actionIndex) => {
+        if (action.startSeconds + action.durationSeconds > scene.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'actions',actionIndex],message:'Actor action must finish within its scene.'});
+        if ((action.type === 'move' || action.type === 'look-at') && !action.targetPosition) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Move and look-at actions require a targetPosition.'});
+        if (action.type === 'turn' && action.targetRotationY === undefined) ctx.addIssue({code:'custom',path:['scenes',index,'actors',actorIndex,'actions',actionIndex,'targetRotationY'],message:'Turn actions require targetRotationY.'});
+      });
+    });
+    (scene.camera?.keyframes ?? []).forEach((keyframe,keyframeIndex) => {
+      if (keyframe.atSeconds > scene.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['scenes',index,'camera','keyframes',keyframeIndex,'atSeconds'],message:'Camera keyframe must be within its scene.'});
+    });
+    if (scene.environmentId && !environmentIds.has(scene.environmentId)) ctx.addIssue({code:'custom',path:['scenes',index,'environmentId'],message:'Scene environmentId must reference a declared environment.'});
+    (scene.props ?? []).forEach((prop,propIndex) => {
+      if (prop.type === 'model' && !prop.assetId) ctx.addIssue({code:'custom',path:['scenes',index,'props',propIndex,'assetId'],message:'Model props require an assetId.'});
+      if (prop.assetId) {
+        const asset = (spec.assets ?? []).find(item => item.id === prop.assetId);
+        if (!asset) ctx.addIssue({code:'custom',path:['scenes',index,'props',propIndex,'assetId'],message:'Scene prop assetId must reference a declared asset.'});
+        else if (!['prop','environment'].includes(asset.type)) ctx.addIssue({code:'custom',path:['scenes',index,'props',propIndex,'assetId'],message:'Model props require a prop or environment asset.'});
+      }
+    });
+  });
+  (spec.environments ?? []).forEach((environment, index) => {
+    if (environment.assetId && !assetIds.has(environment.assetId)) ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference a declared asset.'});
+    if (environment.assetId) {
+      const asset = (spec.assets ?? []).find(item => item.id === environment.assetId);
+      if (asset && asset.type !== 'environment') ctx.addIssue({code:'custom',path:['environments',index,'assetId'],message:'Environment assetId must reference an environment asset.'});
+    }
+  });
+  (spec.shots ?? []).forEach((shot, index) => {
+    if (!sceneIds.has(shot.sceneId)) ctx.addIssue({code:'custom',path:['shots',index,'sceneId'],message:'Shot sceneId must reference a declared scene.'});
+    if (shot.startSeconds + shot.durationSeconds > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['shots',index],message:'Shot must finish within the production timeline.'});
+    shot.assetIds.forEach((assetId, assetIndex) => {
+      if (!assetIds.has(assetId)) ctx.addIssue({code:'custom',path:['shots',index,'assetIds',assetIndex],message:'Shot assetIds must reference declared assets.'});
+    });
+  });
+  (spec.dialogue ?? []).forEach((line, index) => {
+    if (!sceneIds.has(line.sceneId)) ctx.addIssue({code:'custom',path:['dialogue',index,'sceneId'],message:'Dialogue sceneId must reference a declared scene.'});
+    if (line.characterId && !characterIds.has(line.characterId)) ctx.addIssue({code:'custom',path:['dialogue',index,'characterId'],message:'Dialogue characterId must reference a declared character.'});
+    if (line.voiceProfileId && !voiceProfileIds.has(line.voiceProfileId)) ctx.addIssue({code:'custom',path:['dialogue',index,'voiceProfileId'],message:'Dialogue voiceProfileId must reference a declared voice profile.'});
+    if (line.endSeconds <= line.startSeconds || line.endSeconds > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timing must be ordered and within the production timeline.'});
+    const sceneWindow = sceneWindows.get(line.sceneId);
+    if (sceneWindow && (line.startSeconds < sceneWindow.start - 0.001 || line.endSeconds > sceneWindow.end + 0.001)) ctx.addIssue({code:'custom',path:['dialogue',index],message:'Dialogue timecodes must fall inside the referenced scene window.'});
+  });
+  (spec.audioCues ?? []).forEach((cue, index) => {
+    if (!sceneIds.has(cue.sceneId)) ctx.addIssue({code:'custom',path:['audioCues',index,'sceneId'],message:'Audio cue sceneId must reference a declared scene.'});
+    if (cue.assetId && !assetIds.has(cue.assetId)) ctx.addIssue({code:'custom',path:['audioCues',index,'assetId'],message:'Audio cue assetId must reference a declared asset.'});
+    if (cue.assetId) {
+      const asset = (spec.assets ?? []).find(item => item.id === cue.assetId);
+      const expectedTypes = cue.type === 'music' ? ['music'] : cue.type === 'dialogue' || cue.type === 'narration' ? ['voice'] : ['sound-effect'];
+      if (asset && !expectedTypes.includes(asset.type)) ctx.addIssue({code:'custom',path:['audioCues',index,'assetId'],message:`Audio cue type ${cue.type} requires an asset of type ${expectedTypes.join(' or ')}.`});
+    }
+    if (cue.startSeconds + (cue.durationSeconds ?? 0) > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['audioCues',index],message:'Audio cue must finish within the production timeline.'});
+    if (cue.fadeInSeconds + cue.fadeOutSeconds > (cue.durationSeconds ?? spec.durationSeconds)) ctx.addIssue({code:'custom',path:['audioCues',index],message:'Audio cue fades cannot exceed cue duration.'});
+  });
+  (spec.captionCues ?? []).forEach((cue, index) => {
+    if (!sceneIds.has(cue.sceneId)) ctx.addIssue({code:'custom',path:['captionCues',index,'sceneId'],message:'Caption sceneId must reference a declared scene.'});
+    if (cue.endSeconds <= cue.startSeconds || cue.endSeconds > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['captionCues',index],message:'Caption timing must be ordered and within the production timeline.'});
+  });
+  (spec.tracks ?? []).forEach((track, index) => {
+    if (track.targetId && track.kind === 'actor' && !characterIds.has(track.targetId)) ctx.addIssue({code:'custom',path:['tracks',index,'targetId'],message:'Actor tracks must reference declared character assets.'});
+    if (track.targetId && track.kind === 'camera' && !sceneIds.has(track.targetId)) ctx.addIssue({code:'custom',path:['tracks',index,'targetId'],message:'Camera track targetId must reference a scene.'});
+  });
+  (spec.outputProfiles ?? []).forEach((profile, index) => {
+    if (profile.width / profile.height !== spec.width / spec.height) ctx.addIssue({code:'custom',path:['outputProfiles',index],message:'Output profile aspect ratio must match the production aspect ratio.'});
+  });
+
+
+  if (characterIds.size !== (spec.characters ?? []).length) {
+    ctx.addIssue({code:'custom',path:['characters'],message:'Character IDs must be unique within a production.'});
+  }
+  spec.scenes.forEach((scene, sceneIndex) => {
+    (scene.actors ?? []).forEach((actor, actorIndex) => {
+      if (!characterIds.has(actor.characterId)) {
+        ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'characterId'],message:'Every scene actor must reference a declared reusable character asset.'});
+      }
+      actor.actions.forEach((action, actionIndex) => {
+        if (action.startSeconds + action.durationSeconds > scene.durationSeconds + 0.001) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex],message:'Actor actions must finish within their scene timeline.'});
+        }
+        if (action.type === 'move' && !action.targetPosition) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Move actions require a targetPosition.'});
+        }
+        if (action.type === 'look-at' && !action.targetPosition) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetPosition'],message:'Look-at actions require a targetPosition.'});
+        }
+        if (action.type === 'turn' && action.targetRotationY === undefined) {
+          ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'actors',actorIndex,'actions',actionIndex,'targetRotationY'],message:'Turn actions require targetRotationY.'});
+        }
+      });
+    });
+    const cameraKeys = scene.camera?.keyframes ?? [];
+    for (let i = 0; i < cameraKeys.length; i++) {
+      if (cameraKeys[i].atSeconds > scene.durationSeconds) {
+        ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'camera','keyframes',i,'atSeconds'],message:'Camera keyframes must fall within the scene timeline.'});
+      }
+      if (i > 0 && cameraKeys[i].atSeconds <= cameraKeys[i-1].atSeconds) {
+        ctx.addIssue({code:'custom',path:['scenes',sceneIndex,'camera','keyframes',i,'atSeconds'],message:'Camera keyframes must be strictly chronological.'});
+      }
+    }
+  });
 }));
 
 export const CreateJobSchema = z.object({production: ProductionSpecSchema});
 export type ProductionSpec = z.infer<typeof ProductionSpecSchema>;
+
+/** Upgrade a validated v1 production to the current manifest version.
+ * The migration is additive: existing scene and audio data are preserved,
+ * and all newly introduced manifest collections retain their schema defaults.
+ */
+export function migrateProductionSpec(input: unknown): ProductionSpec {
+  const parsed = ProductionSpecSchema.parse(input);
+  if (parsed.schemaVersion === 2) return parsed;
+  return ProductionSpecSchema.parse({
+    ...parsed,
+    schemaVersion: 2,
+    // Materialize this optional object so nested schema defaults are applied
+    // when older v1 jobs did not persist project metadata.
+    projectMetadata: parsed.projectMetadata ?? {}
+  });
+}
 export type JobStatus = z.infer<typeof JobStatusSchema>;
