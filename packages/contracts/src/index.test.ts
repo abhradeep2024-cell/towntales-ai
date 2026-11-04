@@ -81,6 +81,51 @@ describe('declarative animation production contract', () => {
     }
   });
 
+  it('accepts a second unrelated story without changing the production schema', () => {
+    const unrelated = structuredClone(base);
+    Object.assign(unrelated, {
+      title: 'The Clock That Forgot Tomorrow',
+      idea: 'A museum curator discovers a clock that removes one hour from the town each midnight.',
+      styleId: 'stylized-mystery',
+      durationSeconds: 6,
+      aspectRatio: '9:16',
+      width: 720,
+      height: 1280,
+      characters: [
+        { id: 'CURATOR', name: 'Mara', rig: 'block-humanoid' },
+        { id: 'CLOCK_SPIRIT', name: 'Clock Spirit', rig: 'block-humanoid' }
+      ],
+      scenes: [{
+        id: 'museum-midnight',
+        title: 'The missing hour',
+        durationSeconds: 6,
+        visualDirection: 'A giant clock skips backwards while the curator watches.',
+        actors: [
+          { characterId: 'CURATOR', actions: [{ type: 'recoil', startSeconds: 1, durationSeconds: 2 }] },
+          { characterId: 'CLOCK_SPIRIT', actions: [{ type: 'appear', startSeconds: 3, durationSeconds: 2 }] }
+        ],
+        camera: { keyframes: [{ atSeconds: 0, position: [0, 4, 10], target: [0, 1, 0] }] }
+      }]
+    });
+    expect(ProductionSpecSchema.safeParse(unrelated).success).toBe(true);
+  });
+
+  it('rejects duplicate scene IDs because scene references must be unambiguous', () => {
+    const invalid = structuredClone(base);
+    invalid.scenes.push({ ...invalid.scenes[0] });
+    invalid.durationSeconds = 12;
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it('rejects subtitles with reversed or out-of-range timecodes', () => {
+    const invalid = structuredClone(base);
+    invalid.subtitles = [
+      { start: 3, end: 2, text: 'Reversed' },
+      { start: 5, end: 7, text: 'Beyond runtime' }
+    ];
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
   it('rejects actors that reference undeclared character assets', () => {
     const invalid = structuredClone(base);
     invalid.scenes[0].actors[1].characterId = 'MISSING';
