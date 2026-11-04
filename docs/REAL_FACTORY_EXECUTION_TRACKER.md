@@ -104,3 +104,15 @@ These foundations do **not** yet prove production-ready rigs, detailed environme
 4. A successful TypeScript build or smoke render is not proof of creative quality.
 5. Do not claim a render passed until its output is available and independently validated.
 6. Do not merge PR #2 until Stage A, Episode 01, second-story generalization and final acceptance pass.
+
+## Latest verified checkpoint — 2026-11-04
+
+- Branch head validated: `9248959833f5e4a4cc62a1fc61daeecaf9180b5d`.
+- PR validation run [#41776352582](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41776352582) completed successfully. Build/type-check, unit tests, audio alignment/caption tests, all seven renderer smoke outputs, full FFmpeg decode checks, and private Supabase upload/signed retrieval/byte-integrity checks passed. The live Render/OpenAPI/database CI step was skipped because this was a pull-request event.
+- The preceding run [#41776329173](https://github.com/abhradeep2024-cell/towntales-ai/actions/runs/41776329173) also completed successfully after the audio fixes.
+- Independently downloaded and probed the latest render-suite artifact. All seven MP4s decode; the audio smoke contains H.264 video and AAC stereo audio at 30 FPS. The vertical smoke is 720x1280 at 30 FPS. These are short synthetic engine tests (5–10 seconds), not the Episode 01 60-second creative deliverable.
+- Confirmed the live Supabase project is active and healthy. The deployed schema includes `film_studio_asset_library`; the private `towntales-assets` bucket exists with `public=false` and includes the DOCX, text, JSON, image, audio, video, font and GLB MIME types needed by intake and asset storage.
+- Live privilege checks confirm RLS is enabled on the five internal film-studio tables; `anon` and `authenticated` have no SELECT privilege, while `service_role` does. The security advisor's no-policy findings are consistent with this intentionally service-role-only access model, not an exposure finding.
+- Render account inspection confirms the `film-studio-api` service is live on the main branch. Render logs show successful `GET /health` responses (HTTP 200) and successful internal queue-claim responses (HTTP 200) on the current deployed service instance. The service's Render health-check path is still empty; configure it as `/health` in the Render service settings before declaring infrastructure baseline fully accepted.
+- Tasks 1–5 remain **in progress**, not accepted. Outstanding evidence includes a fresh direct health/OpenAPI check, Render health-check configuration, successful live DOCX/TXT/JSON intake persistence, a real AI planner provider call and persisted job, asset-library upload/list/signed retrieval against the live API, and a generic submit-to-delivery run. Do not mark Stage A accepted from synthetic smoke tests alone.
+- The latest PR branch has not been deployed to Render; the production service still tracks `main`. No merge or production deploy has been performed.
