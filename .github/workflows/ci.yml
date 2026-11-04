@@ -1,7 +1,7 @@
 name: Film Studio CI
 on:
   push:
-    branches: [main]
+    branches: [main, work/phase1-infrastructure-foundation]
   pull_request:
     branches: [main]
 concurrency:
