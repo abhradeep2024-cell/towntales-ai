@@ -48,7 +48,8 @@ jobs:
         run: npm test
       - name: Test audio alignment and kinetic caption generation
         run: python3 -m unittest discover -s apps/renderer/scripts -p 'test_*.py' -v
-      - name: Wait for deployed Render API and verify ChatGPT Action schema and database
+      - name: Verify deployed Render API, ChatGPT Action schema and production database
+        if: github.event_name == 'push'
         run: |
           ready=0
           for attempt in $(seq 1 24); do
