@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {extractProductionInput} from './intake.js';
+import {deriveProjectTitle,extractProductionInput} from './intake.js';
 
 describe('production source intake extraction', () => {
   it('extracts plain text without altering its content', async () => {
@@ -34,5 +34,20 @@ describe('production source intake extraction', () => {
   });
   it('rejects unsafe filenames', async () => {
     await expect(extractProductionInput('../story.txt', Buffer.from('text'))).rejects.toThrow('filename');
+  });
+});
+
+describe('production project title derivation', () => {
+  it('removes the final file extension from the fallback title', () => {
+    expect(deriveProjectTitle('episode.docx')).toBe('episode');
+    expect(deriveProjectTitle('my.episode.final.txt')).toBe('my.episode.final');
+  });
+  it('trims and limits an explicitly supplied title', () => {
+    expect(deriveProjectTitle('episode.docx', '  My Episode  ')).toBe('My Episode');
+    expect(deriveProjectTitle('episode.docx', 'x'.repeat(170))).toBe('x'.repeat(160));
+  });
+  it('rejects blank and non-string explicit titles', () => {
+    expect(deriveProjectTitle('episode.docx', '   ')).toBeNull();
+    expect(deriveProjectTitle('episode.docx', 42)).toBeNull();
   });
 });
