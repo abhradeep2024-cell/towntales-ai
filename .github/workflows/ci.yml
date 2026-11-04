@@ -1,7 +1,7 @@
 name: Film Studio CI
 on:
   push:
-    branches: [main]
+    branches: [main, work/phase1-infrastructure-foundation]
   pull_request:
     branches: [main]
 concurrency:
@@ -49,7 +49,7 @@ jobs:
       - name: Test audio alignment and kinetic caption generation
         run: python3 -m unittest discover -s apps/renderer/scripts -p 'test_*.py' -v
       - name: Verify deployed Render API, ChatGPT Action schema and production database
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           ready=0
           for attempt in $(seq 1 24); do

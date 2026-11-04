@@ -81,6 +81,86 @@ describe('declarative animation production contract', () => {
     }
   });
 
+  it('accepts a second unrelated story without changing the production schema', () => {
+    const unrelated = structuredClone(base);
+    Object.assign(unrelated, {
+      title: 'The Clock That Forgot Tomorrow',
+      idea: 'A museum curator discovers a clock that removes one hour from the town each midnight.',
+      styleId: 'stylized-mystery',
+      durationSeconds: 6,
+      aspectRatio: '9:16',
+      width: 720,
+      height: 1280,
+      characters: [
+        { id: 'CURATOR', name: 'Mara', rig: 'block-humanoid' },
+        { id: 'CLOCK_SPIRIT', name: 'Clock Spirit', rig: 'block-humanoid' }
+      ],
+      scenes: [{
+        id: 'museum-midnight',
+        title: 'The missing hour',
+        durationSeconds: 6,
+        visualDirection: 'A giant clock skips backwards while the curator watches.',
+        actors: [
+          { characterId: 'CURATOR', actions: [{ type: 'recoil', startSeconds: 1, durationSeconds: 2 }] },
+          { characterId: 'CLOCK_SPIRIT', actions: [{ type: 'appear', startSeconds: 3, durationSeconds: 2 }] }
+        ],
+        camera: { keyframes: [{ atSeconds: 0, position: [0, 4, 10], target: [0, 1, 0] }] }
+      }]
+    });
+    expect(ProductionSpecSchema.safeParse(unrelated).success).toBe(true);
+  });
+
+  it('validates explicit scene windows and preserves transition and continuity data', () => {
+    const production: any = structuredClone(base);
+    production.scenes[0].startSeconds = 0;
+    production.scenes[0].endSeconds = 6;
+    production.scenes[0].transitionIn = 'fade';
+    production.scenes[0].continuityNotes = ['The clock remains on the north wall.'];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+    production.scenes[0].startSeconds = 1;
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+  it('accepts a complete version manifest for renderer, assets, plan, audio and render settings', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      schemaVersion: 2,
+      versionManifest: {
+        schema: '2.0.0',
+        renderer: '1.4.0',
+        asset: '3.1.0',
+        productionPlan: '2.2.0',
+        audio: '1.3.0',
+        renderSettings: '1.1.0'
+      }
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects incomplete version manifests', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      versionManifest: { schema: '2.0.0', renderer: '1.0.0' }
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+  it('rejects duplicate scene IDs because scene references must be unambiguous', () => {
+    const invalid = structuredClone(base);
+    invalid.scenes.push({ ...invalid.scenes[0] });
+    invalid.durationSeconds = 12;
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it('rejects subtitles with reversed or out-of-range timecodes', () => {
+    const invalid: any = structuredClone(base);
+    invalid.subtitles = [
+      { start: 3, end: 2, text: 'Reversed' },
+      { start: 5, end: 7, text: 'Beyond runtime' }
+    ];
+    expect(ProductionSpecSchema.safeParse(invalid).success).toBe(false);
+  });
+
   it('rejects actors that reference undeclared character assets', () => {
     const invalid = structuredClone(base);
     invalid.scenes[0].actors[1].characterId = 'MISSING';
