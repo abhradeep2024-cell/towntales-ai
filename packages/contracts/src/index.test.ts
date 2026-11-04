@@ -110,6 +110,41 @@ describe('declarative animation production contract', () => {
     expect(ProductionSpecSchema.safeParse(unrelated).success).toBe(true);
   });
 
+  it('validates explicit scene windows and preserves transition and continuity data', () => {
+    const production = structuredClone(base);
+    production.scenes[0].startSeconds = 0;
+    production.scenes[0].endSeconds = 6;
+    production.scenes[0].transitionIn = 'fade';
+    production.scenes[0].continuityNotes = ['The clock remains on the north wall.'];
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+    production.scenes[0].startSeconds = 1;
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
+  it('accepts a complete version manifest for renderer, assets, plan, audio and render settings', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      schemaVersion: 2,
+      versionManifest: {
+        schema: '2.0.0',
+        renderer: '1.4.0',
+        asset: '3.1.0',
+        productionPlan: '2.2.0',
+        audio: '1.3.0',
+        renderSettings: '1.1.0'
+      }
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(true);
+  });
+
+  it('rejects incomplete version manifests', () => {
+    const production = structuredClone(base);
+    Object.assign(production, {
+      versionManifest: { schema: '2.0.0', renderer: '1.0.0' }
+    });
+    expect(ProductionSpecSchema.safeParse(production).success).toBe(false);
+  });
+
   it('rejects duplicate scene IDs because scene references must be unambiguous', () => {
     const invalid = structuredClone(base);
     invalid.scenes.push({ ...invalid.scenes[0] });
