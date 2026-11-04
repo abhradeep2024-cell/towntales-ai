@@ -206,6 +206,34 @@ app.get('/v1/jobs/:id', async (request, reply) => {
   }
 });
 
+app.get('/v1/jobs/:id/artifacts', async (request, reply) => {
+  if (!requireSecret(request, apiToken)) return reply.code(401).send({error:'unauthorized'});
+  const {id} = request.params as {id:string};
+  try {
+    const db = requireDb();
+    const {data:job,error} = await db.from('film_studio_jobs').select('status,qc_report').eq('id',id).maybeSingle();
+    if (error) throw error;
+    if (!job) return reply.code(404).send({error:'job_not_found'});
+    if (job.status !== 'completed') return reply.code(409).send({error:'artifacts_not_ready'});
+    const stored = (job.qc_report as any)?.artifacts ?? {};
+    const artifacts: Record<string, unknown> = {};
+    for (const [name, metadata] of Object.entries(stored) as Array<[string, any]>) {
+      const objectKey = metadata?.objectKey;
+      if (typeof objectKey !== 'string' || !objectKey || objectKey.includes('..')) continue;
+      const {data,error:signError} = await db.storage.from(bucket).createSignedUrl(objectKey,300);
+      if (signError || !data?.signedUrl) throw signError ?? new Error(`Could not sign artifact ${name}.`);
+      artifacts[name] = {
+        url: data.signedUrl, expiresInSeconds: 300,
+        bytes: metadata.bytes, sha256: metadata.sha256
+      };
+    }
+    return {artifacts};
+  } catch (error) {
+    request.log.error(error);
+    return reply.code(503).send({error:'artifact_retrieval_failed'});
+  }
+});
+
 app.post('/internal/jobs/claim', async (request, reply) => {
   if (!requireSecret(request, workerSecret)) return reply.code(401).send({error:'unauthorized'});
   try {

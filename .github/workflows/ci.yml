@@ -10,12 +10,15 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
+      - name: Fetch pull request base history for secret scan
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin "${{ github.event.pull_request.base.sha }}" --depth=2
       - name: Scan full repository history for leaked credentials
         uses: gitleaks/gitleaks-action@v3
         env:
@@ -41,13 +44,15 @@ jobs:
         run: npm run build && npm run typecheck
       - name: Run unit tests
         run: npm test
+      - name: Test audio alignment and kinetic caption generation
+        run: python3 -m unittest discover -s apps/renderer/scripts -p 'test_*.py' -v
       - name: Wait for deployed Render API and verify ChatGPT Action schema and database
         if: github.event_name == 'push'
         run: |
           ready=0
           for attempt in $(seq 1 24); do
             if curl -fsS --max-time 12 https://film-studio-api.onrender.com/openapi.yaml -o /tmp/film-studio-openapi.yaml; then
-              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml; then
+              if grep -q '^openapi: 3.1.0' /tmp/film-studio-openapi.yaml && grep -q '  /v1/styles/{slug}/engine:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs:' /tmp/film-studio-openapi.yaml && grep -q '  /v1/jobs/{id}/artifacts:' /tmp/film-studio-openapi.yaml; then
                 ready=1
                 break
               fi
@@ -92,13 +97,70 @@ jobs:
         run: npm run render:lemo:smoke
       - name: Render a new film with the native Art Deco engine modules
         run: npm run render:lemo:art-deco
+      - name: Render and mux full-resolution TownTales Episode 01 master
+        run: |
+          npx remotion render apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-production-silent.mp4 --log=error
+          PYTHON_EXECUTABLE=.venv/bin/python .venv/bin/python apps/renderer/scripts/audio_pipeline.py \
+            --spec apps/renderer/fixtures/episode-01-roblox.json \
+            --video /tmp/towntales-episode-01-production-silent.mp4 \
+            --output /tmp/towntales-episode-01.mp4 \
+            --workdir /tmp/towntales-episode-01-audio \
+            --require-word-alignment
+          test -s /tmp/towntales-episode-01-audio/word-alignments.json
+          cp /tmp/towntales-episode-01-audio/word-alignments.json /tmp/towntales-episode-01-word-alignments.json
       - name: Validate all MP4 outputs
         run: |
-          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4; do
+          for f in /tmp/film-studio-smoke.mp4 /tmp/film-studio-audio-smoke.mp4 /tmp/film-studio-multi-scene.mp4 /tmp/film-studio-vertical.mp4 /tmp/film-studio-lemo-smoke.mp4 /tmp/film-studio-lemo-art-deco.mp4 /tmp/towntales-episode-01.mp4; do
             test -s "$f"
             ffmpeg -v error -i "$f" -f null -
-            ffprobe -v error -show_entries format=duration,size:stream=codec_type,width,height,r_frame_rate -of json "$f"
+            ffprobe -v error -show_entries format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate -of json "$f"
           done
+          python - <<'PY'
+          import json, subprocess
+          path = "/tmp/towntales-episode-01.mp4"
+          raw = subprocess.check_output([
+              "ffprobe", "-v", "error", "-count_frames", "-show_entries",
+              "format=duration,size:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,nb_read_frames",
+              "-of", "json", path
+          ], text=True)
+          data = json.loads(raw)
+          streams = data.get("streams", [])
+          video = [s for s in streams if s.get("codec_type") == "video"]
+          audio = [s for s in streams if s.get("codec_type") == "audio"]
+          assert len(video) == 1, f"Expected exactly one video stream, got {len(video)}"
+          assert len(audio) >= 1, "Missing audio stream"
+          v = video[0]
+          assert v.get("codec_name") == "h264", f"Expected H.264, got {v.get('codec_name')}"
+          assert audio[0].get("codec_name") == "aac", f"Expected AAC, got {audio[0].get('codec_name')}"
+          assert (v.get("width"), v.get("height")) == (1080, 1920), f"Unexpected master dimensions: {v.get('width')}x{v.get('height')}"
+          assert v.get("r_frame_rate") == "30/1", f"Expected 30 FPS, got {v.get('r_frame_rate')}"
+          assert v.get("avg_frame_rate") == "30/1", f"Expected average 30 FPS, got {v.get('avg_frame_rate')}"
+          duration = float(data["format"]["duration"])
+          assert abs(duration - 60.0) <= 0.15, f"Expected 60s duration, got {duration}"
+          size = int(data["format"]["size"])
+          assert 100_000 < size <= 50 * 1024 * 1024, f"Master output size outside private bucket limit: {size}"
+          frames = int(v.get("nb_read_frames", v.get("nb_frames", "0")))
+          assert frames == 1800, f"Expected 1800 frames, got {frames}"
+          print("Episode 01 master contract passed: 60s, 1080x1920, 30fps, H.264 + AAC, 1800 frames")
+          PY
+      - name: Render a full-resolution Episode 01 master frame
+        run: |
+          npx remotion still apps/renderer/src/index.tsx TownTalesEpisode01Production /tmp/towntales-episode-01-master-frame.png --frame=900 --log=error
+          dimensions=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 /tmp/towntales-episode-01-master-frame.png)
+          test "$dimensions" = "1080x1920"
+      - name: Verify private Supabase upload, signed download and MP4 decode
+        working-directory: apps/renderer
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_STORAGE_BUCKET: ${{ secrets.SUPABASE_STORAGE_BUCKET }}
+        run: node scripts/verify-storage-upload.mjs /tmp/towntales-episode-01.mp4
+      - name: Generate Episode 01 visual contact sheet
+        run: |
+          ffmpeg -y -v error -i /tmp/towntales-episode-01.mp4 \
+            -vf "select='eq(n,75)+eq(n,240)+eq(n,420)+eq(n,615)+eq(n,825)+eq(n,1050)+eq(n,1350)+eq(n,1605)+eq(n,1740)',scale=180:320,tile=3x3" \
+            -vsync 0 -frames:v 1 /tmp/towntales-episode-01-contact-sheet.jpg
+          test -s /tmp/towntales-episode-01-contact-sheet.jpg
       - name: Upload video test artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -110,5 +172,9 @@ jobs:
             /tmp/film-studio-vertical.mp4
             /tmp/film-studio-lemo-smoke.mp4
             /tmp/film-studio-lemo-art-deco.mp4
+            /tmp/towntales-episode-01.mp4
+            /tmp/towntales-episode-01-word-alignments.json
+            /tmp/towntales-episode-01-master-frame.png
+            /tmp/towntales-episode-01-contact-sheet.jpg
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 7
