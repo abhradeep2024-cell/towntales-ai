@@ -310,10 +310,14 @@ export const ProductionSpecSchema = z.preprocess((input) => {
   if (spec.aspectRatio === '16:9' && spec.width <= spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '16:9 output requires landscape dimensions.'});
   if (spec.aspectRatio === '1:1' && spec.width !== spec.height) ctx.addIssue({code: 'custom', path: ['width'], message: '1:1 output requires equal dimensions.'});
 
+  spec.subtitles.forEach((cue, index) => {
+    if (cue.end <= cue.start || cue.end > spec.durationSeconds + 0.001) ctx.addIssue({code:'custom',path:['subtitles',index],message:'Subtitle timing must be ordered and within the production timeline.'});
+  });
   const uniqueIds = (values: Array<{id:string}>, path: string) => {
     const ids = values.map(value => value.id);
     if (new Set(ids).size !== ids.length) ctx.addIssue({code:'custom',path:[path],message:`${path} IDs must be unique.`});
   };
+  uniqueIds(spec.scenes, 'scenes');
   uniqueIds(spec.assets ?? [], 'assets');
   uniqueIds(spec.environments ?? [], 'environments');
   uniqueIds(spec.shots ?? [], 'shots');
