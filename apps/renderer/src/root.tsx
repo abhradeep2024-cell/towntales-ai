@@ -7,7 +7,7 @@ const landscapeProduction = {
   schemaVersion: 1 as const, title: 'Film Studio', idea: 'Smoke render', styleId: 'swiss-motion',
   styleInvariants: ['Swiss grid', 'typographic hierarchy'], durationSeconds: 5, aspectRatio: '16:9' as const,
   fps: 30 as const, width: 1280, height: 720,
-  scenes: [{id:'scene-1',title:'Film Studio',durationSeconds:5,visualDirection:'A clean cinematic title reveal',narration:'',onScreenText:['FILM STUDIO'],background:'#101522'}],
+  scenes: [{id:'scene-1',title:'Film Studio',durationSeconds:5,visualDirection:'A clean cinematic title reveal',narration:'',onScreenText:['FILM STUDIO'],background:'#101522', transitionIn: 'cut' as const, transitionOut: 'cut' as const, continuityNotes: []}],
   subtitles: [{start:1,end:3,text:'Five second render test'}],
   audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
 };
@@ -17,9 +17,9 @@ const multiSceneProduction = {
   styleInvariants: ['Swiss grid', 'typographic hierarchy'], durationSeconds: 10, aspectRatio: '16:9' as const,
   fps: 30 as const, width: 1280, height: 720,
   scenes: [
-    {id:'scene-1',title:'The Signal',durationSeconds:3,visualDirection:'A signal appears in a dark field',narration:'',onScreenText:['01 · SIGNAL'],background:'#101522'},
-    {id:'scene-2',title:'The Response',durationSeconds:3,visualDirection:'The signal expands into a structured grid',narration:'',onScreenText:['02 · RESPONSE'],background:'#192a40'},
-    {id:'scene-3',title:'The Resolution',durationSeconds:4,visualDirection:'The composition resolves into a final frame',narration:'',onScreenText:['03 · RESOLUTION'],background:'#243c48'}
+    {id:'scene-1',title:'The Signal',durationSeconds:3,visualDirection:'A signal appears in a dark field',narration:'',onScreenText:['01 · SIGNAL'],background:'#101522', transitionIn: 'cut' as const, transitionOut: 'cut' as const, continuityNotes: []},
+    {id:'scene-2',title:'The Response',durationSeconds:3,visualDirection:'The signal expands into a structured grid',narration:'',onScreenText:['02 · RESPONSE'],background:'#192a40', transitionIn: 'cut' as const, transitionOut: 'cut' as const, continuityNotes: []},
+    {id:'scene-3',title:'The Resolution',durationSeconds:4,visualDirection:'The composition resolves into a final frame',narration:'',onScreenText:['03 · RESOLUTION'],background:'#243c48', transitionIn: 'cut' as const, transitionOut: 'cut' as const, continuityNotes: []}
   ],
   subtitles: [{start:0.5,end:2.5,text:'A signal appears.'},{start:3.5,end:5.5,text:'A response follows.'},{start:7,end:9.5,text:'The story resolves.'}],
   audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
@@ -29,7 +29,7 @@ const verticalProduction = {
   schemaVersion: 1 as const, title: 'Vertical format QA', idea: 'Portrait-safe video frame', styleId: 'swiss-motion',
   styleInvariants: ['Swiss grid', 'typographic hierarchy'], durationSeconds: 5, aspectRatio: '9:16' as const,
   fps: 30 as const, width: 720, height: 1280,
-  scenes: [{id:'scene-1',title:'VERTICAL',durationSeconds:5,visualDirection:'A title framed for portrait mobile viewing',narration:'',onScreenText:['9:16 · 720 × 1280'],background:'#101522'}],
+  scenes: [{id:'scene-1',title:'VERTICAL',durationSeconds:5,visualDirection:'A title framed for portrait mobile viewing',narration:'',onScreenText:['9:16 · 720 × 1280'],background:'#101522', transitionIn: 'cut' as const, transitionOut: 'cut' as const, continuityNotes: []}],
   captionCues: [{id:'vertical-title',sceneId:'scene-1',text:'VERTICAL TITLE TEST',startSeconds:0.5,endSeconds:2.5,kind:'title' as const,emphasis:'none' as const}],
   subtitles: [{start:1,end:3,text:'Portrait render check'}],
   audio: {musicEnabled:false,voiceEnabled:false,burnSubtitles:false,voice:'en-US-AriaNeural',musicVolume:0.12,voiceVolume:1,musicStyle:'ambient' as const}
