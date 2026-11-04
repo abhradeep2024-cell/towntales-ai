@@ -16,7 +16,7 @@ export function deriveProjectTitle(filename: string, suppliedTitle?: unknown): s
   if (suppliedTitle !== undefined && typeof suppliedTitle !== 'string') return null;
   const candidate = typeof suppliedTitle === 'string'
     ? suppliedTitle
-    : filename.replace(/\\.[^.]+$/, '');
+    : filename.replace(/\.[^.]+$/, '');
   const title = candidate.trim().slice(0, 160);
   return title || null;
 }
