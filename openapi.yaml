@@ -375,6 +375,7 @@ components:
           items: { type: string, maxLength: 300 }
         background: { type: string, pattern: '^#[0-9a-fA-F]{6}' }
     Asset:
+      type: object
       required: [id, type]
       properties:
         id: { type: string }
