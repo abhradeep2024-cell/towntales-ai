@@ -452,6 +452,12 @@ export type ProductionSpec = z.infer<typeof ProductionSpecSchema>;
 export function migrateProductionSpec(input: unknown): ProductionSpec {
   const parsed = ProductionSpecSchema.parse(input);
   if (parsed.schemaVersion === 2) return parsed;
-  return ProductionSpecSchema.parse({...parsed, schemaVersion: 2});
+  return ProductionSpecSchema.parse({
+    ...parsed,
+    schemaVersion: 2,
+    // The metadata object is optional for legacy v1 jobs, so Zod cannot apply
+    // its nested defaults unless migration materializes the object first.
+    projectMetadata: parsed.projectMetadata ?? {}
+  });
 }
 export type JobStatus = z.infer<typeof JobStatusSchema>;
