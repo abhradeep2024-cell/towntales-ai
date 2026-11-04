@@ -105,6 +105,8 @@ describe('declarative animation production contract', () => {
     expect(migrated.title).toBe(base.title);
     expect(migrated.scenes).toEqual(ProductionSpecSchema.parse(base).scenes);
     expect(migrated.projectMetadata?.targetPlatform).toBe('instagram-reels');
+    expect(migrated.projectMetadata?.language).toBe('en');
+    expect(migrated.projectMetadata?.notes).toEqual([]);
   });
 
   it('accepts v2 manifests and keeps migration idempotent', () => {
