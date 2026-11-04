@@ -452,6 +452,12 @@ export type ProductionSpec = z.infer<typeof ProductionSpecSchema>;
 export function migrateProductionSpec(input: unknown): ProductionSpec {
   const parsed = ProductionSpecSchema.parse(input);
   if (parsed.schemaVersion === 2) return parsed;
-  return ProductionSpecSchema.parse({...parsed, schemaVersion: 2});
+  return ProductionSpecSchema.parse({
+    ...parsed,
+    schemaVersion: 2,
+    // Materialize this optional object so nested schema defaults are applied
+    // when older v1 jobs did not persist project metadata.
+    projectMetadata: parsed.projectMetadata ?? {}
+  });
 }
 export type JobStatus = z.infer<typeof JobStatusSchema>;
