@@ -47,7 +47,7 @@ const declarativeAnimationProduction = {
   scenes: [{
     id: 'declarative-scene', title: 'Actor motion contract', durationSeconds: 6,
     visualDirection: 'An actor walks into frame, turns and waves beside a prop.',
-    narration: '', onScreenText: ['DECLARATIVE ANIMATION'], background: '#101522',
+    narration: '', onScreenText: ['DECLARATIVE ANIMATION'], background: '#101522', transitionIn: 'cut' as const, transitionOut: 'cut' as const, continuityNotes: [],
     actors: [{
       characterId: 'CHAR_QA_001', position: [-2,0,0] as [number,number,number], rotationY: 0,
       actions: [
