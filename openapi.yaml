@@ -36,6 +36,19 @@ paths:
           content:
             application/yaml:
               schema: { type: string }
+  /openapi.json:
+    get:
+      operationId: getOpenApiJson
+      summary: Get the current OpenAPI specification as JSON
+      security: []
+      responses:
+        '200':
+          description: OpenAPI 3.1 specification
+          content:
+            application/json:
+              schema:
+                type: object
+        '503': { description: OpenAPI specification unavailable }
   /v1/styles:
     get:
       operationId: listFilmStyles
