@@ -4,6 +4,7 @@ import { CreateJobSchema } from '@film-studio/contracts';
 import { readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 import { randomUUID, createHash } from 'node:crypto';
 import { deriveProjectTitle, extractProductionInput } from './intake.js';
 import { parseStructuredProductionSpec, planProductionFromSource } from './planner.js';
@@ -80,6 +81,20 @@ app.get('/openapi.yaml', async (_request, reply) => {
     return reply.type('application/yaml; charset=utf-8').send(schema);
   } catch {
     return reply.code(404).send({error:'openapi_schema_not_found'});
+  }
+});
+
+app.get('/openapi.json', async (_request, reply) => {
+  try {
+    const source = await readFile(join(appRoot, 'openapi.yaml'), 'utf8');
+    const schema = parseYaml(source);
+    if (!schema || typeof schema !== 'object' || (schema as {openapi?:unknown}).openapi !== '3.1.0') {
+      return reply.code(500).send({error:'openapi_schema_invalid'});
+    }
+    return reply.type('application/json; charset=utf-8').send(schema);
+  } catch (error) {
+    app.log.error(error, 'OpenAPI JSON conversion failed');
+    return reply.code(503).send({error:'openapi_schema_unavailable'});
   }
 });
 
